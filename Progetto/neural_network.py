@@ -43,14 +43,6 @@ def get_act_fun(net,i=0):
     else:
         return A
 
-# def neuron_calc(w,x,b,fun):
-#     a = 0
-#     for i in len(x):
-#         a += (w[i]*x[i])
-#     a += b
-#     z = fun(a)
-#     return z
-
 def layer_calc(w,x,b,fun,train=0):
     a = np.matmul(w,x)
     a = a+b
