@@ -1,7 +1,7 @@
 import numpy as np
 
 def sigmoid(x,der=0):
-    y=1/(1+np.exp(x))
+    y=1/(1+np.exp(-x))
     if der==0:
         return y
     else:

@@ -67,14 +67,14 @@ def training_foward_prop(net,x):
     B = get_biases(net)
     AF = get_act_fun(net)
     d = net['Depth']
-    a=[]        #output neurone
+    #   a=[]        #output neurone
     z=[]        #output neurone con funzione di attivazione
     d_act=[]    #derivata funzione di attivazione
     z.append(x)
     for l in range(d):
         a_loc,z_loc = layer_calc(W[l],z[l],B[l],AF[l],1)
         d_loc = AF[l](a_loc,1)
-        a.append(a_loc)
+        #   a.append(a_loc)
         z.append(z_loc)
         d_act.append(d_loc)
     return z,d_act

@@ -1,0 +1,9 @@
+"""
+    Calculate the Root Mean Square Error (RMSE) between actual and estimated positions.
+ 
+    Parameters:
+    data (dict): Dictionary containing 'Actual' and 'Estimated' keys, each with a 'Target Coordinates' key.
+ 
+    Returns:
+    rmse (float): Root Mean Square Error.
+"""
