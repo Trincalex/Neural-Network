@@ -1,56 +1,129 @@
-import random as rd
 import numpy as np
 import activation_function as af
 import error_function as ef
+
+class Neural_Network:
+    W=[]
+    B=[]
+    actFun=[]
+    depth=0
+
+    def __init__(self,in_size,hidden_size,out_size):
+        sigma=10
+        weights=[]
+        biases=[]
+        act_fun=[]
+        x=in_size                       #x: size of previus layer
+        if np.isscalar(hidden_size):
+            hidden_size=[hidden_size]
+        for l in hidden_size:           #l: size of actual layer
+            biases.append(sigma*np.random.normal(size=[l,1]))
+            weights.append(sigma*np.random.normal(size=[l,x]))
+            x=l
+            act_fun.append(af.tanh)
+        weights.append(sigma*np.random.normal(size=[out_size,x]))
+        biases.append(sigma*np.random.normal(size=[out_size,1]))
+        act_fun.append(af.identity)
+        self.W = weights
+        self.B = biases
+        self.actFun = act_fun
+        self.depth = len(weights)
+
+    def set_weights(self,w):
+        self.W = w
+
+    def get_weights(self,i=0):
+        if (i>0):
+            return self.W[i-1]
+        else:
+            return self.W
+        
+    def set_biases(self,b):
+        self.B = b
     
-def crea_rete(in_size,hidden_size,out_size):
-    sigma=10
-    weights=[]
-    biases=[]
-    act_fun=[]
-    x=in_size                       #x: size of previus layer
-    if np.isscalar(hidden_size):
-        hidden_size=[hidden_size]
-    for l in hidden_size:           #l: size of actual layer
-        biases.append(sigma*np.random.normal(size=[l,1]))
-        weights.append(sigma*np.random.normal(size=[l,x]))
-        x=l
-        act_fun.append(af.tanh)
-    weights.append(sigma*np.random.normal(size=[out_size,x]))
-    biases.append(sigma*np.random.normal(size=[out_size,1]))
-    act_fun.append(af.identity)
-    n_net={'W':weights,'B':biases,'ActFun':act_fun,'Depth':len(weights)}
-    return n_net
-
-def get_weights(net,i=0):
-    W=net['W']
-    if (i>0):
-        return W[i-1]
-    else:
-        return W
-
-def get_biases(net,i=0):
-    B=net['B']
-    if (i>0):
-        return B[i-1]
-    else:
-        return B
+    def get_biases(self,i=0):
+        if (i>0):
+            return self.B[i-1]
+        else:
+            return self.B
     
-def get_act_fun(net,i=0):
-    A=net['ActFun']
-    if (i>0):
-        return A[i-1]
-    else:
-        return A
-
-def layer_calc(w,x,b,fun,train=0):
-    a = np.matmul(w,x)
-    a = a+b
-    z = fun(a)
-    if train==0:
+    def get_actFun(self,i=0):
+        if (i>0):
+            return self.actFun[i-1]
+        else:
+            return self.actFun
+        
+    def get_depth(self):
+        return self.depth
+    
+    def layer_calc(w,x,b,fun,train=0):
+        a = np.matmul(w,x)
+        a = a+b
+        z = fun(a)
+        if train==0:
+            return z
+        else:
+            return a,z
+        
+    def foward_prop(self,x):
+        W = self.W
+        B = self.B
+        AF = self.actFun
+        d = self.depth
+        z = x
+        for l in range(d):
+            z = self.layer_calc(W[l],z,B[l],AF[l])
         return z
-    else:
-        return a,z
+    
+    
+# def crea_rete(in_size,hidden_size,out_size):
+#     sigma=10
+#     weights=[]
+#     biases=[]
+#     act_fun=[]
+#     x=in_size                       #x: size of previus layer
+#     if np.isscalar(hidden_size):
+#         hidden_size=[hidden_size]
+#     for l in hidden_size:           #l: size of actual layer
+#         biases.append(sigma*np.random.normal(size=[l,1]))
+#         weights.append(sigma*np.random.normal(size=[l,x]))
+#         x=l
+#         act_fun.append(af.tanh)
+#     weights.append(sigma*np.random.normal(size=[out_size,x]))
+#     biases.append(sigma*np.random.normal(size=[out_size,1]))
+#     act_fun.append(af.identity)
+#     n_net={'W':weights,'B':biases,'ActFun':act_fun,'Depth':len(weights)}
+#     return n_net
+
+# def get_weights(net,i=0):
+#     W=net['W']
+#     if (i>0):
+#         return W[i-1]
+#     else:
+#         return W
+
+# def get_biases(net,i=0):
+#     B=net['B']
+#     if (i>0):
+#         return B[i-1]
+#     else:
+#         return B
+    
+# def get_act_fun(net,i=0):
+#     A=net['ActFun']
+#     if (i>0):
+#         return A[i-1]
+#     else:
+#         return A
+
+# def layer_calc(w,x,b,fun,train=0):
+#     a = np.matmul(w,x)
+#     a = a+b
+#     z = fun(a)
+#     if train==0:
+#         return z
+#     else:
+#         return a,z
 
 def foward_prop(net,x):
     W = get_weights(net)
