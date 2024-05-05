@@ -175,7 +175,8 @@ def rprop(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta
         delta_ij.append([delta_zero]*d)
 
     while epoca < num_epoche:
-        der_list = back_prop(net,X_train,Y_train,err_fun)
+        cur_der = back_prop(net,X_train,Y_train,err_fun)
+        der_list.append(cur_der)
 
         for layer in range(d):
             prev_der = der_list[epoca-1][layer]
