@@ -3,8 +3,8 @@ import activation_function as af
 import error_function as ef
 
 class Neural_Network:
-    W=[]
-    B=[]
+    w=[]
+    b=[]
     actFun=[]
     depth=0
 
@@ -24,28 +24,28 @@ class Neural_Network:
         weights.append(sigma*np.random.normal(size=[out_size,x]))
         biases.append(sigma*np.random.normal(size=[out_size,1]))
         act_fun.append(af.identity)
-        self.W = weights
-        self.B = biases
+        self.w = weights
+        self.b = biases
         self.actFun = act_fun
         self.depth = len(weights)
 
     def set_weights(self,w):
-        self.W = w
+        self.w = w
 
     def get_weights(self,i=0):
         if (i>0):
-            return self.W[i-1]
+            return self.w[i-1]
         else:
-            return self.W
+            return self.w
         
     def set_biases(self,b):
-        self.B = b
+        self.b = b
     
     def get_biases(self,i=0):
         if (i>0):
-            return self.B[i-1]
+            return self.b[i-1]
         else:
-            return self.B
+            return self.b
     
     def get_actFun(self,i=0):
         if (i>0):
@@ -66,14 +66,127 @@ class Neural_Network:
             return a,z
         
     def foward_prop(self,x):
-        W = self.W
-        B = self.B
+        W = self.w
+        B = self.b
         AF = self.actFun
         d = self.depth
         z = x
         for l in range(d):
             z = self.layer_calc(W[l],z,B[l],AF[l])
         return z
+    
+    def foward_prop(self,x):
+        W = self.w
+        B = self.b
+        AF = self.actFun
+        d = self.depth
+        z = x
+        for l in range(d):
+            z = self.layer_calc(W[l],z,B[l],AF[l])
+        return z
+    
+    def training_foward_prop(self,x):
+        W = self.w
+        B = self.b
+        AF = self.actFun
+        d = self.depth
+        #   a=[]        #output neurone
+        z=[]        #output neurone con funzione di attivazione
+        d_act=[]    #derivata funzione di attivazione
+        z.append(x)
+        for l in range(d):
+            a_loc,z_loc = self.layer_calc(W[l],z[l],B[l],AF[l],1)
+            d_loc = AF[l](a_loc,1)
+            #   a.append(a_loc)
+            z.append(z_loc)
+            d_act.append(d_loc)
+        return z,d_act
+    
+    def back_prop(self,x,t,err_fun):
+        W = self.w
+        d = self.depth
+        z,d_act=self.training_foward_prop(x)
+        d_err=err_fun(z[-1],t,1)
+        delta=[]
+        delta.insert(0,d_act[-1]*d_err)
+        for l in range(d-1,0,-1):
+            delta_loc=d_act[l-1]*np.matmul(W[l].transpose(),delta[0])
+            delta.insert(0,delta_loc)
+        w_der=[]
+        b_der=[]
+        for l in range(d):
+            w_der_loc=np.matmul(delta[l],z[l].transpose())
+            w_der.append(w_der_loc)
+
+            b_der_loc=np.sum(delta[l],1,keepdims=True)
+            b_der.append(b_der_loc)
+        return w_der,b_der
+    
+    def gradient_calc(self,w_der,eta):
+        d = self.depth
+        for l in range(d):
+            self.w[l] = self.w[l]-(eta*w_der[l])
+
+    def get_accuracy_net(Z_out,T_out):
+        total_cases = T_out.shape[1]
+        good_cases = 0
+        for i in range(total_cases):
+            gold_label = np.argmax(T_out[:,i])
+            net_label = np.argmax(Z_out[:,i])
+            if gold_label == net_label:
+                good_cases += 1
+        accuracy = good_cases/total_cases
+        return accuracy
+    
+    def rprop(self,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
+        epoca = 0
+        d = self.depth
+        Z_train = self.foward_prop(X_train)
+        train_err = err_fun(Z_train,Y_train)
+        train_accuracy = self.get_accuracy_net(Z_train,Y_train)
+
+        Z_val = self.foward_prop(X_val)
+        val_err = err_fun(Z_val,Y_val)
+        val_accuracy = self.get_accuracy_net(Z_val,Y_val)
+        print("Epoca: ",-1,
+            "Training Error: ",train_err,
+            "Training Accuracy: ",train_accuracy,
+            "Validation Error: ",val_err,
+            "Validation Accuracy: ",val_accuracy)
+    
+        der_list = []
+        delta_ij = []
+
+        for i in range(num_epoche):
+            delta_ij.append([delta_zero]*d)
+
+        while epoca < num_epoche:
+            cur_der = self.back_prop(X_train,Y_train,err_fun)
+            der_list.append(cur_der)
+
+            for layer in range(d):
+                prev_der = der_list[epoca-1][layer]
+                actual_der = der_list[epoca][layer]
+                der_prod = prev_der*actual_der
+
+                delta_ij[epoca][layer] = np.where(der_prod>0, np.minimum(delta_ij[epoca-1][layer]*eta_plus, delta_max), np.where(der_prod<0, np.maximum(delta_ij[epoca-1][layer]*eta_minus, delta_min), delta_ij[epoca-1][layer]))
+
+                self.w[layer] = self.w[layer] - (np.sign(der_list[epoca][layer])*delta_ij[epoca][layer])
+
+            Z_train = self.foward_prop(X_train)
+            train_err = err_fun(Z_train,Y_train)
+            train_accuracy = self.get_accuracy_net(Z_train,Y_train)
+
+            Z_val = self.foward_prop(X_val)
+            val_err = err_fun(Z_val,Y_val)
+            val_accuracy = self.get_accuracy_net(Z_val,Y_val)
+            print("Epoca: ",epoca,
+                "Training Error: ",train_err,
+                "Training Accuracy: ",train_accuracy,
+                "Validation Error: ",val_err,
+                "Validation Accuracy: ",val_accuracy)
+        
+            epoca += 1
     
     
 # def crea_rete(in_size,hidden_size,out_size):
@@ -125,211 +238,211 @@ class Neural_Network:
 #     else:
 #         return a,z
 
-def foward_prop(net,x):
-    W = get_weights(net)
-    B = get_biases(net)
-    AF = get_act_fun(net)
-    d = net['Depth']
-    z = x
-    for l in range(d):
-        z = layer_calc(W[l],z,B[l],AF[l])
-    return z
+# def foward_prop(net,x):
+#     W = get_weights(net)
+#     B = get_biases(net)
+#     AF = get_act_fun(net)
+#     d = net['Depth']
+#     z = x
+#     for l in range(d):
+#         z = layer_calc(W[l],z,B[l],AF[l])
+#     return z
 
-def training_foward_prop(net,x):
-    W = get_weights(net)
-    B = get_biases(net)
-    AF = get_act_fun(net)
-    d = net['Depth']
-    #   a=[]        #output neurone
-    z=[]        #output neurone con funzione di attivazione
-    d_act=[]    #derivata funzione di attivazione
-    z.append(x)
-    for l in range(d):
-        a_loc,z_loc = layer_calc(W[l],z[l],B[l],AF[l],1)
-        d_loc = AF[l](a_loc,1)
-        #   a.append(a_loc)
-        z.append(z_loc)
-        d_act.append(d_loc)
-    return z,d_act
+# def training_foward_prop(net,x):
+#     W = get_weights(net)
+#     B = get_biases(net)
+#     AF = get_act_fun(net)
+#     d = net['Depth']
+#     #   a=[]        #output neurone
+#     z=[]        #output neurone con funzione di attivazione
+#     d_act=[]    #derivata funzione di attivazione
+#     z.append(x)
+#     for l in range(d):
+#         a_loc,z_loc = layer_calc(W[l],z[l],B[l],AF[l],1)
+#         d_loc = AF[l](a_loc,1)
+#         #   a.append(a_loc)
+#         z.append(z_loc)
+#         d_act.append(d_loc)
+#     return z,d_act
 
-def back_prop(net,x,t,err_fun):
-    W = get_weights(net)
-    d = net["Depth"]
-    z,d_act=training_foward_prop(net,x)
-    d_err=err_fun(z[-1],t,1)
-    delta=[]
-    delta.insert(0,d_act[-1]*d_err)
-    for l in range(d-1,0,-1):
-        delta_loc=d_act[l-1]*np.matmul(W[l].transpose(),delta[0])
-        delta.insert(0,delta_loc)
-    w_der=[]
-    b_der=[]
-    for l in range(d):
-        w_der_loc=np.matmul(delta[l],z[l].transpose())
-        w_der.append(w_der_loc)
+# def back_prop(net,x,t,err_fun):
+#     W = get_weights(net)
+#     d = net["Depth"]
+#     z,d_act=training_foward_prop(net,x)
+#     d_err=err_fun(z[-1],t,1)
+#     delta=[]
+#     delta.insert(0,d_act[-1]*d_err)
+#     for l in range(d-1,0,-1):
+#         delta_loc=d_act[l-1]*np.matmul(W[l].transpose(),delta[0])
+#         delta.insert(0,delta_loc)
+#     w_der=[]
+#     b_der=[]
+#     for l in range(d):
+#         w_der_loc=np.matmul(delta[l],z[l].transpose())
+#         w_der.append(w_der_loc)
 
-        b_der_loc=np.sum(delta[l],1,keepdims=True)
-        b_der.append(b_der_loc)
-    return w_der,b_der
+#         b_der_loc=np.sum(delta[l],1,keepdims=True)
+#         b_der.append(b_der_loc)
+#     return w_der,b_der
 
-def gradient_calc(net,w_der,eta):
-    d = net["Depth"]
-    for l in range(d):
-        net["W"][l] = net["W"][l]-(eta*w_der[l])
+# def gradient_calc(net,w_der,eta):
+#     d = net["Depth"]
+#     for l in range(d):
+#         net["W"][l] = net["W"][l]-(eta*w_der[l])
 
-def get_accuracy_net(Z_out,T_out):
-    total_cases = T_out.shape[1]
-    good_cases = 0
-    for i in range(total_cases):
-        gold_label = np.argmax(T_out[:,i])
-        net_label = np.argmax(Z_out[:,i])
-        if gold_label == net_label:
-            good_cases += 1
-    accuracy = good_cases/total_cases
-    return accuracy
+# def get_accuracy_net(Z_out,T_out):
+#     total_cases = T_out.shape[1]
+#     good_cases = 0
+#     for i in range(total_cases):
+#         gold_label = np.argmax(T_out[:,i])
+#         net_label = np.argmax(Z_out[:,i])
+#         if gold_label == net_label:
+#             good_cases += 1
+#     accuracy = good_cases/total_cases
+#     return accuracy
 
-def train_backpropagation(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta=0.1):
-    epoca = 0
-    Z_train = foward_prop(net,X_train)
-    train_err = err_fun(Z_train,Y_train)
-    train_accuracy = get_accuracy_net(Z_train,Y_train)
+# def train_backpropagation(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta=0.1):
+#     epoca = 0
+#     Z_train = foward_prop(net,X_train)
+#     train_err = err_fun(Z_train,Y_train)
+#     train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-    Z_val = foward_prop(net,X_val)
-    val_err = err_fun(Z_val,Y_val)
-    val_accuracy = get_accuracy_net(Z_val,Y_val)
-    print("Epoca: ",-1,
-          "Training Error: ",train_err,
-          "Training Accuracy: ",train_accuracy,
-          "Validation Error: ",val_err,
-          "Validation Accuracy: ",val_accuracy)
+#     Z_val = foward_prop(net,X_val)
+#     val_err = err_fun(Z_val,Y_val)
+#     val_accuracy = get_accuracy_net(Z_val,Y_val)
+#     print("Epoca: ",-1,
+#           "Training Error: ",train_err,
+#           "Training Accuracy: ",train_accuracy,
+#           "Validation Error: ",val_err,
+#           "Validation Accuracy: ",val_accuracy)
 
-    while epoca<num_epoche:
-        w_der = back_prop(net,X_train,Y_train,err_fun)[0]
+#     while epoca<num_epoche:
+#         w_der = back_prop(net,X_train,Y_train,err_fun)[0]
 
-        gradient_calc(net,w_der,eta)
+#         gradient_calc(net,w_der,eta)
 
-        Z_train = foward_prop(net,X_train)
-        train_err = err_fun(Z_train,Y_train)
-        train_accuracy = get_accuracy_net(Z_train,Y_train)
+#         Z_train = foward_prop(net,X_train)
+#         train_err = err_fun(Z_train,Y_train)
+#         train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-        Z_val = foward_prop(net,X_val)
-        val_err = err_fun(Z_val,Y_val)
-        val_accuracy = get_accuracy_net(Z_val,Y_val)
+#         Z_val = foward_prop(net,X_val)
+#         val_err = err_fun(Z_val,Y_val)
+#         val_accuracy = get_accuracy_net(Z_val,Y_val)
 
-        if epoca == num_epoche-1:
-            print("Epoca: ",epoca,
-            "Training Error: ",train_err,
-            "Training Accuracy: ",train_accuracy,
-            "Validation Error: ",val_err,
-            "Validation Accuracy: ",val_accuracy)
+#         if epoca == num_epoche-1:
+#             print("Epoca: ",epoca,
+#             "Training Error: ",train_err,
+#             "Training Accuracy: ",train_accuracy,
+#             "Validation Error: ",val_err,
+#             "Validation Accuracy: ",val_accuracy)
 
-        epoca += 1
+#         epoca += 1
 
-def rprop(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
-    epoca = 0
-    d = net["Depth"]
-    Z_train = foward_prop(net,X_train)
-    train_err = err_fun(Z_train,Y_train)
-    train_accuracy = get_accuracy_net(Z_train,Y_train)
+# def rprop(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
+#     epoca = 0
+#     d = net["Depth"]
+#     Z_train = foward_prop(net,X_train)
+#     train_err = err_fun(Z_train,Y_train)
+#     train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-    Z_val = foward_prop(net,X_val)
-    val_err = err_fun(Z_val,Y_val)
-    val_accuracy = get_accuracy_net(Z_val,Y_val)
-    print("Epoca: ",-1,
-          "Training Error: ",train_err,
-          "Training Accuracy: ",train_accuracy,
-          "Validation Error: ",val_err,
-          "Validation Accuracy: ",val_accuracy)
+#     Z_val = foward_prop(net,X_val)
+#     val_err = err_fun(Z_val,Y_val)
+#     val_accuracy = get_accuracy_net(Z_val,Y_val)
+#     print("Epoca: ",-1,
+#           "Training Error: ",train_err,
+#           "Training Accuracy: ",train_accuracy,
+#           "Validation Error: ",val_err,
+#           "Validation Accuracy: ",val_accuracy)
     
-    der_list = []
-    delta_ij = []
+#     der_list = []
+#     delta_ij = []
 
-    for i in range(num_epoche):
-        delta_ij.append([delta_zero]*d)
+#     for i in range(num_epoche):
+#         delta_ij.append([delta_zero]*d)
 
-    while epoca < num_epoche:
-        cur_der = back_prop(net,X_train,Y_train,err_fun)
-        der_list.append(cur_der)
+#     while epoca < num_epoche:
+#         cur_der = back_prop(net,X_train,Y_train,err_fun)
+#         der_list.append(cur_der)
 
-        for layer in range(d):
-            prev_der = der_list[epoca-1][layer]
-            actual_der = der_list[epoca][layer]
-            der_prod = prev_der*actual_der
+#         for layer in range(d):
+#             prev_der = der_list[epoca-1][layer]
+#             actual_der = der_list[epoca][layer]
+#             der_prod = prev_der*actual_der
 
-            delta_ij[epoca][layer] = np.where(der_prod>0, np.minimum(delta_ij[epoca-1][layer]*eta_plus, delta_max), np.where(der_prod<0, np.maximum(delta_ij[epoca-1][layer]*eta_minus, delta_min), delta_ij[epoca-1][layer]))
+#             delta_ij[epoca][layer] = np.where(der_prod>0, np.minimum(delta_ij[epoca-1][layer]*eta_plus, delta_max), np.where(der_prod<0, np.maximum(delta_ij[epoca-1][layer]*eta_minus, delta_min), delta_ij[epoca-1][layer]))
 
-            net["W"][layer] = net["W"][layer] - (np.sign(der_list[epoca][layer])*delta_ij[epoca][layer])
+#             net["W"][layer] = net["W"][layer] - (np.sign(der_list[epoca][layer])*delta_ij[epoca][layer])
 
-        Z_train = foward_prop(net,X_train)
-        train_err = err_fun(Z_train,Y_train)
-        train_accuracy = get_accuracy_net(Z_train,Y_train)
+#         Z_train = foward_prop(net,X_train)
+#         train_err = err_fun(Z_train,Y_train)
+#         train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-        Z_val = foward_prop(net,X_val)
-        val_err = err_fun(Z_val,Y_val)
-        val_accuracy = get_accuracy_net(Z_val,Y_val)
-        print("Epoca: ",epoca,
-            "Training Error: ",train_err,
-            "Training Accuracy: ",train_accuracy,
-            "Validation Error: ",val_err,
-            "Validation Accuracy: ",val_accuracy)
+#         Z_val = foward_prop(net,X_val)
+#         val_err = err_fun(Z_val,Y_val)
+#         val_accuracy = get_accuracy_net(Z_val,Y_val)
+#         print("Epoca: ",epoca,
+#             "Training Error: ",train_err,
+#             "Training Accuracy: ",train_accuracy,
+#             "Validation Error: ",val_err,
+#             "Validation Accuracy: ",val_accuracy)
         
-        epoca += 1
+#         epoca += 1
 
-def rprop_plus(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
-    epoca = 0
-    d = net["Depth"]
-    Z_train = foward_prop(net,X_train)
-    train_err = err_fun(Z_train,Y_train)
-    train_accuracy = get_accuracy_net(Z_train,Y_train)
+# def rprop_plus(net,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
+#     epoca = 0
+#     d = net["Depth"]
+#     Z_train = foward_prop(net,X_train)
+#     train_err = err_fun(Z_train,Y_train)
+#     train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-    Z_val = foward_prop(net,X_val)
-    val_err = err_fun(Z_val,Y_val)
-    val_accuracy = get_accuracy_net(Z_val,Y_val)
-    print("Epoca: ",-1,
-          "Training Error: ",train_err,
-          "Training Accuracy: ",train_accuracy,
-          "Validation Error: ",val_err,
-          "Validation Accuracy: ",val_accuracy)
+#     Z_val = foward_prop(net,X_val)
+#     val_err = err_fun(Z_val,Y_val)
+#     val_accuracy = get_accuracy_net(Z_val,Y_val)
+#     print("Epoca: ",-1,
+#           "Training Error: ",train_err,
+#           "Training Accuracy: ",train_accuracy,
+#           "Validation Error: ",val_err,
+#           "Validation Accuracy: ",val_accuracy)
     
-    der_list = []
-    delta_ij = []
-    delta_wij = []
+#     der_list = []
+#     delta_ij = []
+#     delta_wij = []
 
-    for i in range(num_epoche):
-        delta_ij.append([delta_zero]*d)
-        delta_wij.append([0]*d)
+#     for i in range(num_epoche):
+#         delta_ij.append([delta_zero]*d)
+#         delta_wij.append([0]*d)
     
-    while epoca < num_epoche:
-        der_list.append(back_prop(net,X_train,Y_train,err_fun))
+#     while epoca < num_epoche:
+#         der_list.append(back_prop(net,X_train,Y_train,err_fun))
 
-        for layer in range(d):
-            if epoca == 0:
-                delta_wij[epoca][layer] = np.where(der_list[epoca][layer] > 0, - delta_ij[epoca][layer], np.where(der_list[epoca][layer] < 0, delta_ij[epoca][layer], 0))
-                net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
+#         for layer in range(d):
+#             if epoca == 0:
+#                 delta_wij[epoca][layer] = np.where(der_list[epoca][layer] > 0, - delta_ij[epoca][layer], np.where(der_list[epoca][layer] < 0, delta_ij[epoca][layer], 0))
+#                 net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
 
-            if epoca > 0:
-                prev_der = der_list[epoca-1][layer]
-                actual_der = der_list[epoca][layer]
-                der_prod = prev_der*actual_der
+#             if epoca > 0:
+#                 prev_der = der_list[epoca-1][layer]
+#                 actual_der = der_list[epoca][layer]
+#                 der_prod = prev_der*actual_der
 
-                delta_ij[epoca][layer] = np.where(der_prod>0, np.minimum(delta_ij[epoca-1][layer]*eta_plus, delta_max), np.where(der_prod<0, np.maximum(delta_ij[epoca-1][layer]*eta_minus, delta_min), delta_ij[epoca-1][layer]))
-                delta_wij[epoca][layer] = np.where(der_prod >= 0, - ((np.sign(der_list[epoca][layer])) * delta_ij[epoca][layer]), - delta_wij[epoca - 1][layer])
+#                 delta_ij[epoca][layer] = np.where(der_prod>0, np.minimum(delta_ij[epoca-1][layer]*eta_plus, delta_max), np.where(der_prod<0, np.maximum(delta_ij[epoca-1][layer]*eta_minus, delta_min), delta_ij[epoca-1][layer]))
+#                 delta_wij[epoca][layer] = np.where(der_prod >= 0, - ((np.sign(der_list[epoca][layer])) * delta_ij[epoca][layer]), - delta_wij[epoca - 1][layer])
 
-                net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
+#                 net["W"][layer] = net["W"][layer] + delta_wij[epoca][layer]
 
-                der_list[epoca][layer] = np.where(der_prod<0, 0, der_list[epoca][layer])
+#                 der_list[epoca][layer] = np.where(der_prod<0, 0, der_list[epoca][layer])
 
-        Z_train = foward_prop(net,X_train)
-        train_err = err_fun(Z_train,Y_train)
-        train_accuracy = get_accuracy_net(Z_train,Y_train)
+#         Z_train = foward_prop(net,X_train)
+#         train_err = err_fun(Z_train,Y_train)
+#         train_accuracy = get_accuracy_net(Z_train,Y_train)
 
-        Z_val = foward_prop(net,X_val)
-        val_err = err_fun(Z_val,Y_val)
-        val_accuracy = get_accuracy_net(Z_val,Y_val)
-        print("Epoca: ",epoca,
-            "Training Error: ",train_err,
-            "Training Accuracy: ",train_accuracy,
-            "Validation Error: ",val_err,
-            "Validation Accuracy: ",val_accuracy)
+#         Z_val = foward_prop(net,X_val)
+#         val_err = err_fun(Z_val,Y_val)
+#         val_accuracy = get_accuracy_net(Z_val,Y_val)
+#         print("Epoca: ",epoca,
+#             "Training Error: ",train_err,
+#             "Training Accuracy: ",train_accuracy,
+#             "Validation Error: ",val_err,
+#             "Validation Accuracy: ",val_accuracy)
         
-        epoca += 1
+#         epoca += 1
