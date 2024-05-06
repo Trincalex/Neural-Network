@@ -12,18 +12,19 @@ import matplotlib.pyplot as plot
 # d=rete['Depth']
 
 rete = nn.Neural_Network(5,[3,4,2],6)
-W = rete.get_weights()
-B = rete.get_biases()
-d = rete.get_depth()
 
-for M in W:
-    print(M.shape)
-    auxfunc.stampa_matrice(M)
-    print()
+for i in range(len(rete.get_weights())):
+    print("Shape del %do vettore dei pesi: " % (i+1), rete.get_weights()[i].shape)
 
-for N in B:
-    for e in N:
-        print (e," ")
-    print()
+print("\n")
+pprint.pprint(rete.get_weights())
+pprint.pprint(rete.get_weights())
 
-print(d)
+print("\n")
+print(rete.get_depth())
+
+'''
+Riferimenti
+-   https://www.geeksforgeeks.org/python-output-formatting/
+
+'''

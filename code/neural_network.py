@@ -4,22 +4,18 @@ import activation_function as af
 import error_function as ef
 
 class Neural_Network:
-    w=[]
-    b=[]
-    actFun=[]
-    depth=0
 
-    def __init__(self,input_size,hidden_size,output_size):
+    def __init__(self, input_size, hidden_size_list, output_size):
         weights=[]
         biases=[]
         act_fun=[]
 
         x = input_size                       #x: size of previus layer
 
-        if np.isscalar(hidden_size):
-            hidden_size=[hidden_size]
+        if np.isscalar(hidden_size_list):
+            hidden_size_list=[hidden_size_list]
 
-        for l in hidden_size:           #l: size of actual layer
+        for l in hidden_size_list:           #l: size of actual layer
             weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,x]))
             biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,1]))
             act_fun.append(af.tanh)
@@ -195,6 +191,12 @@ class Neural_Network:
                 "Validation Accuracy: ",val_accuracy)
         
             epoca += 1
+    
+    def train():
+        pass
+
+    def predict():
+        pass
     
     
 # def crea_rete(input_size,hidden_size,output_size):
