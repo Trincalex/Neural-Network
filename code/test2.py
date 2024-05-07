@@ -1,6 +1,9 @@
 '''
 
     test2.py
+    - Alessandro Trincone
+    - Mario Gabriele Carofano
+    
     https://www.geeksforgeeks.org/implementation-of-neural-network-from-scratch-using-numpy/
 
 '''

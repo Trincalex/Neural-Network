@@ -1,7 +1,6 @@
 import numpy as np
 import constants
-import activation_function as af
-import error_function as ef
+import auxfunc
 
 class Neural_Network:
 
@@ -18,12 +17,12 @@ class Neural_Network:
         for l in hidden_size_list:           #l: size of actual layer
             weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,x]))
             biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,1]))
-            act_fun.append(af.tanh)
+            act_fun.append(auxfunc.tanh)
             x=l
 
         weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,x]))
         biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,1]))
-        act_fun.append(af.identity)
+        act_fun.append(auxfunc.identity)
 
         self.w = weights
         self.b = biases
@@ -211,10 +210,10 @@ class Neural_Network:
 #         biases.append(sigma*np.random.normal(size=[l,1]))
 #         weights.append(sigma*np.random.normal(size=[l,x]))
 #         x=l
-#         act_fun.append(af.tanh)
+#         act_fun.append(auxfunc.tanh)
 #     weights.append(sigma*np.random.normal(size=[output_size,x]))
 #     biases.append(sigma*np.random.normal(size=[output_size,1]))
-#     act_fun.append(af.identity)
+#     act_fun.append(auxfunc.identity)
 #     n_net={'W':weights,'B':biases,'ActFun':act_fun,'Depth':len(weights)}
 #     return n_net
 
