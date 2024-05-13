@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    ...
+    Questo file contiene l'implementazione di una rete neurale tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
 
 '''
 
@@ -149,27 +149,31 @@ class Neuron:
     # ####################################################################### #
     # METODI
 
-    '''
-        Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
-    '''
     def output(self, train=False):
+        """
+            Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
+
+            :param train: ...
+            :return: l'output del neurone
+        """
+
         self.out_val = np.dot(self.inputs, self.weights) + self.bias
-        if not self.out_val > 0:
-            self.out_val = 0
         self.act_val = self.act_fun(self.out_val)
 
         if train:
             return self.out_val, self.act_val
         
         return self.act_val
-
     # end
 
-    '''
-        Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Neuron.
-    '''
     def __repr__(self) -> str:
-        return f'Neuron(\n\tid={self.id},\n\tsize={self.neuron_size},\n\tinputs={pprint.pformat(self.inputs)},\n\tweights={pprint.pformat(self.weights)},\n\tbias={self.bias},\n\tact_fun={self.act_fun}\n)'
+        """
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Neuron.
+            
+            :return: una stringa contenente i dettagli dell'oggetto.
+        """
+        
+        return f'Neuron(\n\tid = {self.id},\n\tsize = {self.neuron_size},\n\tinputs = {pprint.pformat(self.inputs)},\n\tweights = {pprint.pformat(self.weights)},\n\tbias = {self.bias},\n\tact_fun = {self.act_fun}\n)'
     # end
 
     # end class Neuron
@@ -206,7 +210,7 @@ class Layer:
     # end
 
     # ####################################################################### #
-    # METODI
+    # COSTRUTTORE
 
     def __init__(self, ls, ns) -> None:
         self.layer_size = int(ls) # richiama il setter della property
@@ -216,11 +220,35 @@ class Layer:
             self.units.append(Neuron(ns))
     # end
 
-    '''
-        Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Layer.
-    '''
+    # ####################################################################### #
+    # METODI
+
+    def output(self):
+        """
+            Calcola gli output dei neuroni del layer corrente.
+            
+            :return: un numpy.ndarray contenente tutti gli output dei neuroni.
+        """
+        
+        layer_output = []
+
+        for i in range(len(self.units)):
+            n = self.units[i]
+            layer_output.append(n.output())
+
+        return np.array(layer_output)
+    
+    # end
+
     def __repr__(self) -> str:
-        pass
+        """
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Layer.
+            
+            :return: una stringa contenente i dettagli dell'oggetto.
+        """
+
+        return f'Layer(\n\tsize = {self.layer_size}\n)'
+    # end
 
     # end class Layer
 
@@ -300,7 +328,8 @@ class NeuralNetwork:
 
     def __init__(self, input_size, hidden_sizes, output_size) -> None:
         
-        # inizializzazione dell'input layer
+        # Inizializzazione dell'input layer
+        # Per implementarlo correttamente affinche' i suoi neuroni (anche detti unita') non abbiano ne' pesi ne' funzione di attivazione, utilizziamo un vettore dei pesi composto di soli '1' e bias '0' (in modo tale da non dare contributo alla combinazione lineare) e utilizziamo la funzione identita' per restituire in output l'input originale.
         self.input_layer = Layer(input_size, constants.DIMENSIONE_NEURONE_INPUT)
         for i in range(len(self.input_layer.units)):
             n = self.input_layer.units[i]
@@ -347,52 +376,133 @@ class NeuralNetwork:
             Dato che 'h_sizes' tiene gia' conto dell'input layer e di tutti gli hidden layers, per contare l'output layer è necessario aggiungere solo '1'.
         '''
         self.depth = len(h_sizes) + 1
+        
+        self.network_error = 0.0
+        self.network_accuracy = 0.0
+        self.average_error = 0.0
 
     # end
     
     # ####################################################################### #
     # METODI
 
-    def load_input(self, x):
+    def load_input(self, x : list[float]) -> None:
+        """
+            Carica ogni componente del vettore 'x' in un neurone dell'input layer.
+            
+            :param x: il vettore di dati in input da caricare nella rete neurale
+            :return: None
+        """
+
         for i in range(len(self.input_layer.units)):
             n = self.input_layer.units[i]
             n.inputs[0] = x[i]
+            
     # end
 
     def forward_propagation(self):
-        # calcola output neuroni input layer
+        """
+            Calcola l'output complessivo della rete neurale, propagando i dati attraverso le connessioni di input dell'input layer, attraverso i calcoli intermedi degli hidden layers e, infine, attraverso l'ultimo strato dell'output layer.
+            
+            :return: un numpy.ndarray contenente l'output complessivo della rete.
+        """
 
-        # calcola output neuroni 1° hidden layer
-        # ...
-        # calcola output neuroni n-esimo hidden layer
+        # calcola output dell'input layer
+        il_output = self.input_layer.output()
+        # pprint.pprint(il_output)
 
-        # calcola output neuroni output layer
+        hl_input = il_output
+        for i in range(len(self.hidden_layers)):
+            hl = self.hidden_layers[i]
 
-        pass
+            # aggiorna input dell'i-esimo hidden layer
+            for j in range(len(hl.units)):
+                n = hl.units[j]
+                n.inputs = hl_input
+            
+            # calcola output dell'i-esimo hidden layer
+            hl_output = hl.output()
+            hl_input = hl_output
+
+        # pprint.pprint(hl_output)
+
+        # aggiorna input dell'output layer
+        ol_input = hl_output
+        for j in range(len(self.output_layer.units)):
+            n = self.output_layer.units[j]
+            n.inputs = ol_input
+
+        # calcola output dell'output layer
+        ol_output = self.output_layer.output()
+        pprint.pprint(ol_output)
+
+        return ol_output
     
     # end
 
+    def back_propagation(self):
+        """
+            ...
+            
+            :param ...: ...
+            :return: 
+        """
+        
+        pass
+    # end
+
     def resilient_back_propagation(self):
+        """
+            ...
+            
+            :param ...: ...
+            :return: 
+        """
+        
         pass
     # end
 
     def train(self):
+        """
+            ...
+            
+            :param ...: ...
+            :return: 
+        """
+
         pass
     # end
 
     def predict(self):
+        """
+            ...
+            
+            :param ...: ...
+            :return: 
+        """
+        
         pass
     # end
 
     def compute_accuracy(self):
+        """
+            ...
+            
+            :param ...: ...
+            :return: 
+        """
+        
         pass
     # end
 
-    '''
-        Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe NeuralNetwork.
-    '''
     def __repr__(self) -> str:
-        pass
+        """
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe NeuralNetwork.
+            
+            :return: una stringa contenente i dettagli dell'oggetto.
+        """
+        
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_layer = {repr(self.input_layer)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
 
     # end class NeuralNetwork
 
@@ -405,3 +515,5 @@ class NeuralNetwork:
 # https://stackoverflow.com/questions/40185437/no-module-named-numpy-visual-studio-code
 # https://stackoverflow.com/questions/2627002/whats-the-pythonic-way-to-use-getters-and-setters
 # https://www.digitalocean.com/community/tutorials/python-str-repr-functions
+# https://testdriven.io/blog/documenting-python/
+# https://stackoverflow.com/questions/32514502/neural-networks-what-does-the-input-layer-consist-of

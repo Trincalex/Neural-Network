@@ -42,6 +42,9 @@ a =[0, 0, 1, 1, 0, 0,
    1, 0, 0, 0, 0, 1]
 
 net.load_input(a)
+net.forward_propagation()
 
-for n in net.input_layer.units:
-    print(repr(n))
+# for n in net.input_layer.units:
+#     print(repr(n))
+# print(repr(net.input_layer))
+# print(repr(net))
