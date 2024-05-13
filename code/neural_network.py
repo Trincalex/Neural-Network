@@ -190,6 +190,20 @@ class Neural_Network:
                 "Validation Accuracy: ",val_accuracy)
         
             epoca += 1
+
+        #K-fold
+
+    def split_dataset(dataset,labels,k):
+         k_fold_dataset = np.array_split(dataset,k)
+         k_fold_labels = np.array_split(labels,k)
+         return k_fold_dataset,k_fold_labels
+
+    
+    def train():
+        pass
+
+    def predict():
+        pass
     
     
 # def crea_rete(input_size,hidden_size,output_size):
