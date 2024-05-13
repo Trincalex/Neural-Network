@@ -10,4 +10,20 @@
 
 '''
 
+# ########################################################################### #
+# CODICI DI ERRORE
+
+
+
+# ########################################################################### #
+# COSTANTI
+
 STANDARD_DEVIATION = 10
+
+NUMERO_CLASSI = 10
+
+COPPIE_TRAINING = 12500
+
+K_FOLD_VALUE = 10
+
+DIMENSIONE_NEURONE_INPUT = 1

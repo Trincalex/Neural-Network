@@ -191,12 +191,6 @@ class Neural_Network:
         
             epoca += 1
     
-    def train():
-        pass
-
-    def predict():
-        pass
-    
     
 # def crea_rete(input_size,hidden_size,output_size):
 #     sigma=10
