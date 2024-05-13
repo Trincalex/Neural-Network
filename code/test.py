@@ -5,23 +5,31 @@ import random as rd
 import numpy as np
 import neural_network as nn
 import matplotlib.pyplot as plot
+import dataset as ds
 
 # rete=nn.crea_rete(5,[3,4,2],6)
 # W=rete['W']
 # B=rete['B']
 # d=rete['Depth']
 
-rete = nn.Neural_Network(5,[3,4,2],6)
+Xtrain,Ytrain, Xtest,Ytest = ds.loadDataset()
+x=Xtrain[:,20000]
+#y = Ytrain[10000]
+#print(y)
+ix=np.reshape(x,(28,28))
+ds.show_image(ix)
 
-for i in range(len(rete.get_weights())):
-    print("Shape del %do vettore dei pesi: " % (i+1), rete.get_weights()[i].shape)
+# rete = nn.Neural_Network(5,[3,4,2],6)
 
-print("\n")
-pprint.pprint(rete.get_weights())
-pprint.pprint(rete.get_weights())
+# for i in range(len(rete.get_weights())):
+#     print("Shape del %do vettore dei pesi: " % (i+1), rete.get_weights()[i].shape)
 
-print("\n")
-print(rete.get_depth())
+# print("\n")
+# pprint.pprint(rete.get_weights())
+# pprint.pprint(rete.get_weights())
+
+# print("\n")
+# print(rete.get_depth())
 
 '''
 Riferimenti
