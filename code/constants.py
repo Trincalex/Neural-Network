@@ -48,7 +48,7 @@ DIMENSIONE_NEURONE_INPUT = 1
 # COSTANTI
 
 ActivationFunctionType = Callable[[float, Optional[bool]], float]
-ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float]
+ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | np.ndarray]
 
 # ########################################################################### #
 # RIFERIMENTI
