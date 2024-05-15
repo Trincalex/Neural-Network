@@ -38,6 +38,7 @@ class Neuron:
     @id.setter
     def id(self, value):
         self._id = value
+    # end
 
     # È la dimensione del vettore di input e dei pesi del neurone.
     @property
@@ -104,28 +105,34 @@ class Neuron:
     @property
     def out_val(self):
         return self._out_val
+    # end
 
     @out_val.setter
     def out_val(self, value):
         self._out_val = value
+    # end
 
     # È la funzione di attivazione del neurone.
     @property
     def act_fun(self):
         return self._act_fun
+    # end
 
     @act_fun.setter
     def act_fun(self, fun):
         self._act_fun = fun
+    # end
 
     # È il risultato dell'applicazione della funzione di attivazione
     @property
     def act_val(self):
         return self._act_val
+    # end
 
     @act_val.setter
     def act_val(self, value):
         self._act_val = value
+    # end
 
     # ####################################################################### #
     # COSTRUTTORE
@@ -190,10 +197,12 @@ class Layer:
     @property
     def units(self):
         return self._units
+    # end
 
     @units.setter
     def units(self, value):
         self._units = value
+    # end
 
     # È la dimensione del layer
     @property
@@ -264,19 +273,12 @@ class NeuralNetwork:
     @property
     def depth(self):
         return self._depth
+    # end
 
     @depth.setter
     def depth(self, value):
         self._depth = value
-
-    # # È il Layer che raccoglie tutte le connessioni in input nella rete.
-    # @property
-    # def input_layer(self):
-    #     return self._input_layer
-
-    # @input_layer.setter
-    # def input_layer(self, value):
-    #     self._input_layer = value
+    # end
 
     # È la dimensione del vettore di input della rete neurale.
     @property
@@ -313,61 +315,62 @@ class NeuralNetwork:
     @property
     def hidden_layers(self):
         return self._hidden_layers
+    # end
 
     @hidden_layers.setter
     def hidden_layers(self, value):
         self._hidden_layers = value
+    # end
 
     # È il Layer che raccoglie l'output complessivo della rete.
     @property
     def output_layer(self):
         return self._output_layer
+    # end
 
     @output_layer.setter
     def output_layer(self, value):
         self._output_layer = value
+    # end
 
     # ...
     @property
     def network_error(self):
         return self._network_error
+    # end
 
     @network_error.setter
     def network_error(self, value):
         self._network_error = value
+    # end
 
     # ...
     @property
     def average_error(self):
         return self._average_error
+    # end
 
     @average_error.setter
     def average_error(self, value):
         self._average_error = value
+    # end
 
     # ...
     @property
     def network_accuracy(self):
         return self._network_accuracy
+    # end
 
     @network_accuracy.setter
     def network_accuracy(self, value):
         self._network_accuracy = value
+    # end
 
     # ####################################################################### #
     # COSTRUTTORE
 
     def __init__(self, i_size, hidden_sizes, output_size) -> None:
         
-        # Inizializzazione dell'input layer
-        # Per implementarlo correttamente affinche' i suoi neuroni (anche detti unita') non abbiano ne' pesi ne' funzione di attivazione, utilizziamo un vettore dei pesi composto di soli '1' e bias '0' (in modo tale da non dare contributo alla combinazione lineare) e utilizziamo la funzione identita' per restituire in output l'input originale.
-        # self.input_layer = Layer(input_size, constants.DIMENSIONE_NEURONE_INPUT)
-        # for i in range(len(self.input_layer.units)):
-        #     n = self.input_layer.units[i]
-        #     n.weights = np.ones(constants.DIMENSIONE_NEURONE_INPUT)
-        #     n.bias = 0.0
-        #     n.act_fun = auxfunc.identity
-
         # Inizializzazione dell'input
         self.input_size = i_size
         self.inputs = np.zeros(self.input_size)
@@ -406,12 +409,6 @@ class NeuralNetwork:
             n.bias = constants.STANDARD_DEVIATION * np.random.normal()
             n.act_fun = auxfunc.sigmoid
 
-        # '''
-        #     La profondita' della rete e' data dal numero di layer totali.
-        #     Dato che 'h_sizes' tiene gia' conto dell'input layer e di tutti gli hidden layers, per contare l'output layer è necessario aggiungere solo '1'.
-        # '''
-        # self.depth = len(h_sizes) + 1
-
         '''
             La profondita' della rete e' data dal numero di layer totali.
             Dato che 'h_sizes' tiene conto della dimensione dell'input e di tutte le dimensioni degli hidden layers, per contare la profondita' e' necessario togliere (input) e aggiungere (output) il valore 1.
@@ -428,13 +425,6 @@ class NeuralNetwork:
     # METODI
 
     def load_input(self, x : list[float]) -> None:
-        # """
-        #     Carica ogni componente del vettore 'x' in un neurone dell'input layer.
-            
-        #     :param x: il vettore di dati in input da caricare nella rete neurale
-        #     :return: None
-        # """
-
         """
             Copia il vettore 'x' nel vettore 'inputs' della rete neurale.
 
@@ -572,9 +562,8 @@ class NeuralNetwork:
             :return: una stringa contenente i dettagli dell'oggetto.
         """
         
-        # return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_layer = {repr(self.input_layer)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
-
         return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
+    # end
 
     # end class NeuralNetwork
 
