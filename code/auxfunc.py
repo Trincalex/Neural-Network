@@ -17,48 +17,49 @@ import numpy as np
 # ########################################################################### #
 # FUNZIONI DI ATTIVAZIONE
 
-def sigmoid(x,der=0):
-    y=1/(1+np.exp(-x))
-    if der==0:
-        return y
-    else:
-        return y*(1-y)
+def sigmoid(x, der=False):
+    y = 1 / (1 + np.exp(-x))
+    if der:
+        return y * (1 - y)
+    return y
+# end
 
-def tanh(x,der=0):
-    a=np.exp(2*x)
-    y=(a-1)/(a+1)
-    if der==0:
-        return y
-    else:
-        return 1-y*y
+def tanh(x, der=False):
+    a = np.exp(2 * x)
+    y = (a - 1) / (a + 1)
+    if der:
+        return 1 - y * y
+    return y
+# end
     
-def identity(x,der=0):
-    if der==0:
-        return x
-    else:
+def identity(x, der=False):
+    if der:
         return 1
+    return x
+# end
 
 # ########################################################################### #
 # FUNZIONI DI ERRORE
     
-def sum_of_square (x,t,der=0):
-    z = x+t
-    if der==0:
-        return (1/2)*np.sum(np.power(z,2))
-    else:
+def sum_of_square(x, t, der=False):
+    z = x + t
+    if der:
         return z
+    return (1/2) * np.sum(np.power(z, 2))
+# end
 
 def soft_max(x):
-    x_exp=np.exp(x-x.max(0))
-    z=x_exp/np.sum(x_exp,0)
+    x_exp = np.exp(x - x.max(0))
+    z = x_exp / np.sum(x_exp, 0)
     return z
+# end
 
-def cross_entropy(x,t,der=0):
-    z=soft_max(x)
-    if der==0:
-        return -(t*np.log(z)).sum()
-    else:
+def cross_entropy(x, t, der=False):
+    z = soft_max(x)
+    if der:
         return z-t
+    return -(t*np.log(z)).sum()
+# end
 
 # ########################################################################### #
 # ALTRE FUNZIONI

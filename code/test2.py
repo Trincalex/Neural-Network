@@ -41,8 +41,10 @@ a =[0, 0, 1, 1, 0, 0,
    1, 0, 0, 0, 0, 1,
    1, 0, 0, 0, 0, 1]
 
-net.load_input(a)
-net.forward_propagation()
+y = [1, 0, 0] # one-hot
+
+net.forward_propagation(a, y)
+# net.back_propagation(a, y, 0.1)
 
 # for n in net.input_layer.units:
 #     print(repr(n))

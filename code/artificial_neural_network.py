@@ -269,14 +269,45 @@ class NeuralNetwork:
     def depth(self, value):
         self._depth = value
 
-    # È il Layer che raccoglie tutte le connessioni in input nella rete.
-    @property
-    def input_layer(self):
-        return self._input_layer
+    # # È il Layer che raccoglie tutte le connessioni in input nella rete.
+    # @property
+    # def input_layer(self):
+    #     return self._input_layer
 
-    @input_layer.setter
-    def input_layer(self, value):
-        self._input_layer = value
+    # @input_layer.setter
+    # def input_layer(self, value):
+    #     self._input_layer = value
+
+    # È la dimensione del vettore di input della rete neurale.
+    @property
+    def input_size(self):
+        return self._input_size
+    # end
+
+    @input_size.setter
+    def input_size(self, value):
+        if (value <= 0):
+            raise ValueError("La dimensione dell'input della rete neurale deve essere maggiore di 0")
+        
+        self._input_size = int(value)
+    # end
+
+    # È l'array di valori in input alla rete neurale.
+    @property
+    def inputs(self):
+        return self._inputs
+    # end
+
+    @inputs.setter
+    def inputs(self, value):
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore degli input deve essere di tipo 'numpy.ndarray'.")
+        
+        if (not len(value) == self.input_size):
+            raise ValueError("La dimensione del vettore degli input non e' compatibile.")
+        
+        self._inputs = value
+    # end
 
     # È una lista di tutti i Layer nascosti della rete.
     @property
@@ -326,27 +357,31 @@ class NeuralNetwork:
     # ####################################################################### #
     # COSTRUTTORE
 
-    def __init__(self, input_size, hidden_sizes, output_size) -> None:
+    def __init__(self, i_size, hidden_sizes, output_size) -> None:
         
         # Inizializzazione dell'input layer
         # Per implementarlo correttamente affinche' i suoi neuroni (anche detti unita') non abbiano ne' pesi ne' funzione di attivazione, utilizziamo un vettore dei pesi composto di soli '1' e bias '0' (in modo tale da non dare contributo alla combinazione lineare) e utilizziamo la funzione identita' per restituire in output l'input originale.
-        self.input_layer = Layer(input_size, constants.DIMENSIONE_NEURONE_INPUT)
-        for i in range(len(self.input_layer.units)):
-            n = self.input_layer.units[i]
-            n.weights = np.ones(constants.DIMENSIONE_NEURONE_INPUT)
-            n.bias = 0.0
-            n.act_fun = auxfunc.identity
+        # self.input_layer = Layer(input_size, constants.DIMENSIONE_NEURONE_INPUT)
+        # for i in range(len(self.input_layer.units)):
+        #     n = self.input_layer.units[i]
+        #     n.weights = np.ones(constants.DIMENSIONE_NEURONE_INPUT)
+        #     n.bias = 0.0
+        #     n.act_fun = auxfunc.identity
 
-        # calcolo del numero di layers
+        # Inizializzazione dell'input
+        self.input_size = i_size
+        self.inputs = np.zeros(self.input_size)
+
+        # Calcolo del numero di layers
         h_sizes = []
-        h_sizes.insert(0, input_size)
+        h_sizes.insert(0, self.input_size)
         if np.isscalar(hidden_sizes):
             h_sizes.append(hidden_sizes)
         else:
             for hs in hidden_sizes:
                 h_sizes.append(hs)
 
-        # inizializzazione degli hidden layers
+        # Inizializzazione degli hidden layers
         self.hidden_layers = []
         for i in range(1, len(h_sizes)):
             # print(f'Hidden layer n.{i}')
@@ -363,19 +398,25 @@ class NeuralNetwork:
 
             self.hidden_layers.append(hl)
 
-        # inizializzazione dell'output layer
+        # Inizializzazione dell'output layer
         self.output_layer = Layer(output_size, h_sizes[-1])
-        for i in range(len(self.output_layer.units)):
-            n = self.output_layer.units[i]
+        for j in range(len(self.output_layer.units)):
+            n = self.output_layer.units[j]
             n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=h_sizes[-1]))
             n.bias = constants.STANDARD_DEVIATION * np.random.normal()
             n.act_fun = auxfunc.sigmoid
 
+        # '''
+        #     La profondita' della rete e' data dal numero di layer totali.
+        #     Dato che 'h_sizes' tiene gia' conto dell'input layer e di tutti gli hidden layers, per contare l'output layer è necessario aggiungere solo '1'.
+        # '''
+        # self.depth = len(h_sizes) + 1
+
         '''
             La profondita' della rete e' data dal numero di layer totali.
-            Dato che 'h_sizes' tiene gia' conto dell'input layer e di tutti gli hidden layers, per contare l'output layer è necessario aggiungere solo '1'.
+            Dato che 'h_sizes' tiene conto della dimensione dell'input e di tutte le dimensioni degli hidden layers, per contare la profondita' e' necessario togliere (input) e aggiungere (output) il valore 1.
         '''
-        self.depth = len(h_sizes) + 1
+        self.depth = len(h_sizes) - 1 + 1
         
         self.network_error = 0.0
         self.network_accuracy = 0.0
@@ -387,68 +428,97 @@ class NeuralNetwork:
     # METODI
 
     def load_input(self, x : list[float]) -> None:
-        """
-            Carica ogni componente del vettore 'x' in un neurone dell'input layer.
+        # """
+        #     Carica ogni componente del vettore 'x' in un neurone dell'input layer.
             
+        #     :param x: il vettore di dati in input da caricare nella rete neurale
+        #     :return: None
+        # """
+
+        """
+            Copia il vettore 'x' nel vettore 'inputs' della rete neurale.
+
             :param x: il vettore di dati in input da caricare nella rete neurale
             :return: None
         """
 
-        for i in range(len(self.input_layer.units)):
-            n = self.input_layer.units[i]
-            n.inputs[0] = x[i]
+        if (len(x) > self.input_size):
+            raise ValueError("La dimensione del vettore degli input non e' compatibile.")
+        
+        self.inputs = np.array(x)
             
     # end
 
-    def forward_propagation(self):
+    def forward_propagation(self,
+                            x : list[float],
+                            train=False):
         """
             Calcola l'output complessivo della rete neurale, propagando i dati attraverso le connessioni di input dell'input layer, attraverso i calcoli intermedi degli hidden layers e, infine, attraverso l'ultimo strato dell'output layer.
             
-            :return: un numpy.ndarray contenente l'output complessivo della rete.
+            :return: se train=False, un numpy.ndarray contenente l'output complessivo della rete.
+            :return: se train=True, una lista contenente gli output di tutti gli strati della rete.
         """
 
-        # calcola output dell'input layer
-        il_output = self.input_layer.output()
-        # pprint.pprint(il_output)
+        out = []
 
-        hl_input = il_output
+        # Carica input nella rete neurale
+        self.load_input(x)
+
+        # Passa input al primo hidden layer
+        # out.append(self.input_layer.output())
+        out.append(self.inputs)
+        pprint.pprint(out[-1])
+
         for i in range(len(self.hidden_layers)):
             hl = self.hidden_layers[i]
 
-            # aggiorna input dell'i-esimo hidden layer
+            # Aggiorna input dell'i-esimo hidden layer
             for j in range(len(hl.units)):
                 n = hl.units[j]
-                n.inputs = hl_input
+                n.inputs = out[-1]
             
-            # calcola output dell'i-esimo hidden layer
-            hl_output = hl.output()
-            hl_input = hl_output
+            # Calcola output dell'i-esimo hidden layer
+            out.append(hl.output())
 
-        # pprint.pprint(hl_output)
+        pprint.pprint(out[-1])
 
-        # aggiorna input dell'output layer
-        ol_input = hl_output
+        # Aggiorna input dell'output layer
         for j in range(len(self.output_layer.units)):
             n = self.output_layer.units[j]
-            n.inputs = ol_input
+            n.inputs = out[-1]
 
-        # calcola output dell'output layer
-        ol_output = self.output_layer.output()
-        pprint.pprint(ol_output)
+        # Calcola output dell'output layer
+        out.append(self.output_layer.output())
+        pprint.pprint(out[-1])
 
-        return ol_output
+        if train:
+            return out
+
+        return out[-1]
     
     # end
 
-    def back_propagation(self):
+    def back_propagation(self,
+                         x : list[float],
+                         y : list[float],
+                         learning_rate):
         """
-            ...
+            E' un algoritmo iterativo utilizzato per l'addestramento delle reti neurali. Serve a minimizzare la funzione di costo () determinando quali pesi e quali bias devono essere modificati. La sua implementazione si basa sulla 'regola della catena', utile a navigare attraverso i molteplici strati della rete neurale.
             
-            :param ...: ...
+            :param x: ...
+            :param y: ...
+            :param learning_rate: ...
             :return: 
         """
+
+        all_outputs = self.forward_propagation(x, train=True)
+        predicted_output = all_outputs[-1]
+        output_error = y - predicted_output
+        output_delta = output_error - auxfunc.sigmoid(predicted_output, der=True)
+
+        print(output_error)
+        # TODO: da completare
         
-        pass
     # end
 
     def resilient_back_propagation(self):
@@ -502,7 +572,9 @@ class NeuralNetwork:
             :return: una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_layer = {repr(self.input_layer)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
+        # return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_layer = {repr(self.input_layer)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
+
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
 
     # end class NeuralNetwork
 
