@@ -11,6 +11,12 @@
 '''
 
 # ########################################################################### #
+# LIBRERIE
+
+import numpy as np
+from typing import Callable, Optional
+
+# ########################################################################### #
 # CODICI DI ERRORE e EXCEPTIONS
 
 class HiddenLayerError(Exception):
@@ -24,7 +30,6 @@ class HiddenLayerError(Exception):
     # end
 
 # end class HiddenLayerError
-    
 
 # ########################################################################### #
 # COSTANTI
@@ -38,6 +43,12 @@ COPPIE_TRAINING = 12500
 K_FOLD_VALUE = 10
 
 DIMENSIONE_NEURONE_INPUT = 1
+
+# ########################################################################### #
+# COSTANTI
+
+ActivationFunctionType = Callable[[float, Optional[bool]], float]
+ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float]
 
 # ########################################################################### #
 # RIFERIMENTI

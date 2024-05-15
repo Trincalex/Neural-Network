@@ -13,63 +13,200 @@
 # LIBRERIE
 
 import numpy as np
+import math
 
 # ########################################################################### #
 # FUNZIONI DI ATTIVAZIONE
 
-def sigmoid(x, der=False):
-    y = 1 / (1 + np.exp(-x))
+# def sigmoid(input : float, der : bool = False) -> float:
+#     out = 1 / (1 + np.exp(-input))
+#     if der:
+#         return out * (1 - out)
+#     return out
+# # end
+
+def sigmoid(input : float, der : bool = False) -> float:
+
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
+    fx = 1 + math.exp(-input)
+
     if der:
-        return y * (1 - y)
-    return y
+        return (-math.exp(-input)) / (-math.pow(fx, 2))
+    return 1 / fx
+
 # end
 
-def tanh(x, der=False):
-    a = np.exp(2 * x)
-    y = (a - 1) / (a + 1)
+# def tanh(input : float, der : bool = False) -> float:
+#     temp = np.exp(2 * input)
+#     out = (temp - 1) / (temp + 1)
+#     if der:
+#         return 1 - out * out
+#     return out
+# # end
+
+def tanh(input : float, der : bool = False) -> float:
+
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
+    sinh = (math.exp(input) - math.exp(-input)) / 2
+    cosh = (math.exp(input) + math.exp(-input)) / 2
+
     if der:
-        return 1 - y * y
-    return y
+        return 1 / (cosh ** 2)
+    return sinh / cosh
+
 # end
     
-def identity(x, der=False):
+def identity(input : float, der : bool = False) -> float:
+
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
     if der:
         return 1
-    return x
+    return input
+
 # end
 
 # ########################################################################### #
 # FUNZIONI DI ERRORE
     
-def sum_of_square(x, t, der=False):
-    z = x + t
+# def sum_of_square(x : np.ndarray, t : np.ndarray, der : bool = False) -> float:
+#     z = x + t
+#     if der:
+#         return z
+#     return (1/2) * np.sum(np.power(z, 2))
+# # end
+
+def sum_of_square(
+        prediction : np.ndarray, 
+        target : np.ndarray,
+        der : bool = False
+) -> float:
+    
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
+    # print(target)
+    # print(prediction)
+
+    errors = prediction - target
+    print(errors)
+
+    length = len(errors)
+    # print(length)
+
+    # sum = np.sum(errors ** 2)
+    # print(sum)
+
+    # mean = sum / length
+    # print(mean)
+
     if der:
-        return z
-    return (1/2) * np.sum(np.power(z, 2))
+        return 2 * np.sum(errors) / length
+    
+    return np.sum(errors ** 2) / length
+
 # end
 
-def soft_max(x):
-    x_exp = np.exp(x - x.max(0))
+def soft_max(prediction : np.ndarray) -> np.ndarray:
+
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
+    x_exp = np.exp(prediction - prediction.max(0))
     z = x_exp / np.sum(x_exp, 0)
     return z
+
 # end
 
-def cross_entropy(x, t, der=False):
-    z = soft_max(x)
+def cross_entropy(
+        prediction : np.ndarray,
+        target : np.ndarray,
+        der : bool = False
+) -> float:
+    
+    """
+
+        ...
+
+        Parameters:
+        -   
+
+        Returns:
+        -   
+    
+    """
+    
+    z = soft_max(prediction)
+
     if der:
-        return z-t
-    return -(t*np.log(z)).sum()
+        return z - target
+    
+    # return -(target*np.log(z)).sum()
+    return -np.sum(target * np.log(z))
+
 # end
 
 # ########################################################################### #
 # ALTRE FUNZIONI
 
-def stampa_matrice(matrice):
-    for riga in matrice:
-        for elemento in riga:
-            print(int(elemento), end=" ")
-        print()
+# def stampa_matrice(matrice):
+#     for riga in matrice:
+#         for elemento in riga:
+#             print(int(elemento), end=" ")
+#         print()
 
 # ########################################################################### #
 # RIFERIMENTI
 
+# https://www.matematika.it/public/allegati/33/Grafici_domini_derivate_funzioni_iperboliche_1_1.pdf
+# https://www.matematika.it/public/allegati/33/11_44_Derivate_2_3.pdf

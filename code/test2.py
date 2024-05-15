@@ -33,7 +33,7 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
-net = ann.NeuralNetwork(30, 5, 3, auxfunc.sigmoid, auxfunc.sigmoid, auxfunc.cross_entropy)
+net = ann.NeuralNetwork(30, 5, 3)
 print("Totale neuroni:", ann.tot_neurons)
 
 a =[0, 0, 1, 1, 0, 0,
@@ -44,10 +44,19 @@ a =[0, 0, 1, 1, 0, 0,
 
 y = [1, 0, 0] # one-hot
 
-net.forward_propagation(a, y)
+# net.forward_propagation(a, y)
 # net.back_propagation(a, y, 0.1)
 
 # for n in net.input_layer.units:
 #     print(repr(n))
 # print(repr(net.input_layer))
 # print(repr(net))
+
+# print(auxfunc.sigmoid(3.14, der=False))
+# print(auxfunc.sigmoid(3.14, der=True))
+
+# print(auxfunc.tanh(3.14, der=False))
+# print(auxfunc.tanh(3.14, der=True))
+
+# print(auxfunc.sum_of_square(np.array([1,1,1]), np.array(y), der=False))
+# print(auxfunc.sum_of_square(np.array([1,1,1]), np.array(y), der=True))
