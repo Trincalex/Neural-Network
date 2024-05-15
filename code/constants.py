@@ -11,9 +11,20 @@
 '''
 
 # ########################################################################### #
-# CODICI DI ERRORE
+# CODICI DI ERRORE e EXCEPTIONS
 
+class HiddenLayerError(Exception):
+ 
+    def __init__(self, value):
+        self.value = value
+    # end
+ 
+    def __str__(self):
+        return(repr(self.value))
+    # end
 
+# end class HiddenLayerError
+    
 
 # ########################################################################### #
 # COSTANTI
@@ -27,3 +38,8 @@ COPPIE_TRAINING = 12500
 K_FOLD_VALUE = 10
 
 DIMENSIONE_NEURONE_INPUT = 1
+
+# ########################################################################### #
+# RIFERIMENTI
+
+# https://www.geeksforgeeks.org/user-defined-exceptions-python-examples/

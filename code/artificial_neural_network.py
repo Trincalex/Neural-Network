@@ -29,9 +29,9 @@ class Neuron:
     # ####################################################################### #
     # ATTRIBUTI DI CLASSE
 
-    # È l'identificativo univoco del neurone.
     @property
     def id(self):
+        """È l'identificativo univoco del neurone."""
         return self._id
     # end
 
@@ -40,9 +40,9 @@ class Neuron:
         self._id = value
     # end
 
-    # È la dimensione del vettore di input e dei pesi del neurone.
     @property
     def neuron_size(self):
+        """È la dimensione del vettore di input e dei pesi del neurone."""
         return self._neuron_size
     # end
 
@@ -54,9 +54,9 @@ class Neuron:
         self._neuron_size = int(value)
     # end
 
-    # È l'array di valori in input al neurone.
     @property
     def inputs(self):
+        """È l'array di valori in input al neurone."""
         return self._inputs
     # end
 
@@ -72,9 +72,9 @@ class Neuron:
         self._inputs = value
     # end
 
-    # È l'array di pesi del neurone.
     @property
     def weights(self):
+        """È l'array di pesi del neurone."""
         return self._weights
     # end
 
@@ -90,9 +90,9 @@ class Neuron:
         self._weights = value
     # end
 
-    # È il bias del neurone che modifica la combinazione lineare di input e pesi.
     @property
     def bias(self):
+        """È il bias del neurone che modifica la combinazione lineare di input e pesi."""
         return self._bias
     # end
 
@@ -101,9 +101,9 @@ class Neuron:
         self._bias = float(value)
     # end
 
-    # È lo scalare dato dalla somma del bias e della combinazione lineare di input e pesi.
     @property
     def out_val(self):
+        """È lo scalare dato dalla somma del bias e della combinazione lineare di input e pesi."""
         return self._out_val
     # end
 
@@ -112,9 +112,9 @@ class Neuron:
         self._out_val = value
     # end
 
-    # È la funzione di attivazione del neurone.
     @property
     def act_fun(self):
+        """È la funzione di attivazione del neurone."""
         return self._act_fun
     # end
 
@@ -123,9 +123,9 @@ class Neuron:
         self._act_fun = fun
     # end
 
-    # È il risultato dell'applicazione della funzione di attivazione
     @property
     def act_val(self):
+        """È il risultato dell'applicazione della funzione di attivazione."""
         return self._act_val
     # end
 
@@ -138,6 +138,15 @@ class Neuron:
     # COSTRUTTORE
 
     def __init__(self, ns) -> None:
+        """
+            È il costruttore della classe Neuron.
+            Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
+
+            :param ns: è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi
+
+            :return: None
+        """
+
         global tot_neurons
         tot_neurons = tot_neurons + 1
         self.id = tot_neurons
@@ -160,8 +169,10 @@ class Neuron:
         """
             Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
 
-            :param train: ...
-            :return: l'output del neurone
+            :param train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno
+
+            :return: se train=False, restituisce l'output del neurone
+            :return: se train=True, restituisce sia l'output del neurone che anche il valore intermedio prima dell'applicazione della funzione di attivazione
         """
 
         self.out_val = np.dot(self.inputs, self.weights) + self.bias
@@ -183,7 +194,7 @@ class Neuron:
         return f'Neuron(\n\tid = {self.id},\n\tsize = {self.neuron_size},\n\tinputs = {pprint.pformat(self.inputs)},\n\tweights = {pprint.pformat(self.weights)},\n\tbias = {self.bias},\n\tact_fun = {self.act_fun}\n)'
     # end
 
-    # end class Neuron
+# end class Neuron
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE LAYER
@@ -193,9 +204,9 @@ class Layer:
     # ####################################################################### #
     # ATTRIBUTI DI CLASSE
 
-    # È la lista di neuroni del layer
     @property
     def units(self):
+        """È la lista di neuroni del layer."""
         return self._units
     # end
 
@@ -204,9 +215,9 @@ class Layer:
         self._units = value
     # end
 
-    # È la dimensione del layer
     @property
     def layer_size(self):
+        """È la dimensione del layer, cioe' il numero di neuroni di cui e' composto."""
         return self._layer_size
     # end
 
@@ -222,11 +233,23 @@ class Layer:
     # COSTRUTTORE
 
     def __init__(self, ls, ns) -> None:
-        self.layer_size = int(ls) # richiama il setter della property
-        self.units = []
+        """
+            È il costruttore della classe Layer.
+            Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
+            :param ls: è la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
+            :param ns: è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
+
+            :return: None
+        """
+
+        # Richiama il setter della property "layer_size"
+        self.layer_size = int(ls)
+
+        self.units = []
         for i in range(ls):
             self.units.append(Neuron(ns))
+
     # end
 
     # ####################################################################### #
@@ -259,7 +282,7 @@ class Layer:
         return f'Layer(\n\tsize = {self.layer_size}\n)'
     # end
 
-    # end class Layer
+# end class Layer
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE NEURAL NETWORK
@@ -269,9 +292,9 @@ class NeuralNetwork:
     # ####################################################################### #
     # ATTRIBUTI DI CLASSE
 
-    # È la profondità della rete, cioe' il numero totale di Layer.
     @property
     def depth(self):
+        """È la profondità della rete, cioe' il numero totale di Layer."""
         return self._depth
     # end
 
@@ -280,9 +303,9 @@ class NeuralNetwork:
         self._depth = value
     # end
 
-    # È la dimensione del vettore di input della rete neurale.
     @property
     def input_size(self):
+        """È la dimensione del vettore di input della rete neurale."""
         return self._input_size
     # end
 
@@ -294,9 +317,9 @@ class NeuralNetwork:
         self._input_size = int(value)
     # end
 
-    # È l'array di valori in input alla rete neurale.
     @property
     def inputs(self):
+        """È l'array di valori in input alla rete neurale."""
         return self._inputs
     # end
 
@@ -311,9 +334,9 @@ class NeuralNetwork:
         self._inputs = value
     # end
 
-    # È una lista di tutti i Layer nascosti della rete.
     @property
     def hidden_layers(self):
+        """È una lista di tutti i Layer nascosti della rete."""
         return self._hidden_layers
     # end
 
@@ -322,9 +345,9 @@ class NeuralNetwork:
         self._hidden_layers = value
     # end
 
-    # È il Layer che raccoglie l'output complessivo della rete.
     @property
     def output_layer(self):
+        """È il Layer che raccoglie l'output complessivo della rete."""
         return self._output_layer
     # end
 
@@ -333,9 +356,20 @@ class NeuralNetwork:
         self._output_layer = value
     # end
 
-    # ...
+    @property
+    def err_fun(self):
+        """È la funzione di errore utilizzata per verificare la qualità della rete neurale."""
+        return self._err_fun
+    # end
+
+    @err_fun.setter
+    def err_fun(self, value):
+        self._err_fun = value
+    # end
+
     @property
     def network_error(self):
+        """..."""
         return self._network_error
     # end
 
@@ -344,9 +378,9 @@ class NeuralNetwork:
         self._network_error = value
     # end
 
-    # ...
     @property
     def average_error(self):
+        """..."""
         return self._average_error
     # end
 
@@ -355,9 +389,9 @@ class NeuralNetwork:
         self._average_error = value
     # end
 
-    # ...
     @property
     def network_accuracy(self):
+        """..."""
         return self._network_accuracy
     # end
 
@@ -369,27 +403,68 @@ class NeuralNetwork:
     # ####################################################################### #
     # COSTRUTTORE
 
-    def __init__(self, i_size, hidden_sizes, output_size) -> None:
+    def __init__(
+            self,
+            i_size,
+            hidden_sizes,
+            output_size,
+            hidden_act_funs,
+            output_act_fun,
+            e_fun) -> None:
+        
+        """
+            È il costruttore della classe NeuralNetwork.
+            Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
+
+            :param i_size: è la dimensione del vettore in input alla rete neurale
+            :param hidden_sizes: può essere un numero o una lista contenente la dimensione di uno o più hidden layer della rete neurale.
+            :param output_size: è la dimensione dell'output layer della rete neurale.
+            :param hidden_act_funs: può essere una funzione o una lista contenente la funzione di attivazione di uno o più hidden layer della rete neurale.
+            :param output_act_fun: è la funzione di attivazione dei neuroni dell'output layer.
+            :param e_fun: è la funzione di errore utilizzata per verificare la qualità della rete neurale.
+
+            :return: None
+        """
         
         # Inizializzazione dell'input
         self.input_size = i_size
         self.inputs = np.zeros(self.input_size)
 
-        # Calcolo del numero di layers
-        h_sizes = []
-        h_sizes.insert(0, self.input_size)
+        # Inserimento delle dimensioni dell'input e degli hidden layer in una lista
+        l_sizes = []
+        l_sizes.insert(0, self.input_size)
         if np.isscalar(hidden_sizes):
-            h_sizes.append(hidden_sizes)
+            l_sizes.append(hidden_sizes)
         else:
             for hs in hidden_sizes:
-                h_sizes.append(hs)
+                l_sizes.append(hs)
+        
+        # Inserimento delle funzioni di attivazioni degli hidden e dell'output layer in una lista
+        l_act_funs = []
+        if not isinstance(hidden_act_funs, list):
+            l_act_funs.append(hidden_act_funs)
+        else:
+            for hf in hidden_act_funs:
+                l_act_funs.append(hf)
+        l_act_funs.append(output_act_fun)
+
+        # Controllo sul numero di hidden layer e funzioni di attivazioni inserite
+        if (len(l_sizes) != len(l_act_funs)):
+            raise constants.HiddenLayerError("Errore durante la costruzione della rete neurale.")
+
+        # Inizializzazione della profondita' della rete neurale
+        '''
+            La profondita' della rete e' data dal numero di layer totali.
+            Dato che 'l_sizes' tiene conto della dimensione dell'input e di tutte le dimensioni degli hidden layers, per contare la profondita' e' necessario togliere (input) e aggiungere (output) il valore 1.
+        '''
+        self.depth = len(l_sizes) - 1 + 1
 
         # Inizializzazione degli hidden layers
         self.hidden_layers = []
-        for i in range(1, len(h_sizes)):
+        for i in range(1, len(l_sizes)):
             # print(f'Hidden layer n.{i}')
-            prev_size = h_sizes[i-1]
-            actual_size = h_sizes[i]
+            prev_size = l_sizes[i-1]
+            actual_size = l_sizes[i]
             hl = Layer(actual_size, prev_size)
 
             for j in range(len(hl.units)):
@@ -397,24 +472,22 @@ class NeuralNetwork:
                 n = hl.units[j]
                 n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=prev_size))
                 n.bias = constants.STANDARD_DEVIATION * np.random.normal()
-                n.act_fun = auxfunc.sigmoid
+                n.act_fun = l_act_funs[i]
 
             self.hidden_layers.append(hl)
 
         # Inizializzazione dell'output layer
-        self.output_layer = Layer(output_size, h_sizes[-1])
+        self.output_layer = Layer(output_size, l_sizes[-1])
         for j in range(len(self.output_layer.units)):
             n = self.output_layer.units[j]
-            n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=h_sizes[-1]))
+            n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=l_sizes[-1]))
             n.bias = constants.STANDARD_DEVIATION * np.random.normal()
-            n.act_fun = auxfunc.sigmoid
+            n.act_fun = l_act_funs[-1]
 
-        '''
-            La profondita' della rete e' data dal numero di layer totali.
-            Dato che 'h_sizes' tiene conto della dimensione dell'input e di tutte le dimensioni degli hidden layers, per contare la profondita' e' necessario togliere (input) e aggiungere (output) il valore 1.
-        '''
-        self.depth = len(h_sizes) - 1 + 1
+        # Inizializzazione della funzione di errore della rete
+        self.err_fun = e_fun
         
+        # Inizializzazione delle metriche di errore
         self.network_error = 0.0
         self.network_accuracy = 0.0
         self.average_error = 0.0
@@ -429,6 +502,7 @@ class NeuralNetwork:
             Copia il vettore 'x' nel vettore 'inputs' della rete neurale.
 
             :param x: il vettore di dati in input da caricare nella rete neurale
+
             :return: None
         """
 
@@ -444,6 +518,8 @@ class NeuralNetwork:
                             train=False):
         """
             Calcola l'output complessivo della rete neurale, propagando i dati attraverso le connessioni di input dell'input layer, attraverso i calcoli intermedi degli hidden layers e, infine, attraverso l'ultimo strato dell'output layer.
+
+            :param train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno
             
             :return: se train=False, un numpy.ndarray contenente l'output complessivo della rete.
             :return: se train=True, una lista contenente gli output di tutti gli strati della rete.
@@ -455,7 +531,6 @@ class NeuralNetwork:
         self.load_input(x)
 
         # Passa input al primo hidden layer
-        # out.append(self.input_layer.output())
         out.append(self.inputs)
         pprint.pprint(out[-1])
 
@@ -469,8 +544,7 @@ class NeuralNetwork:
             
             # Calcola output dell'i-esimo hidden layer
             out.append(hl.output())
-
-        pprint.pprint(out[-1])
+            pprint.pprint(out[-1])
 
         # Aggiorna input dell'output layer
         for j in range(len(self.output_layer.units)):
@@ -491,13 +565,14 @@ class NeuralNetwork:
     def back_propagation(self,
                          x : list[float],
                          y : list[float],
-                         learning_rate):
+                         learning_rate=0.00001):
         """
             E' un algoritmo iterativo utilizzato per l'addestramento delle reti neurali. Serve a minimizzare la funzione di costo () determinando quali pesi e quali bias devono essere modificati. La sua implementazione si basa sulla 'regola della catena', utile a navigare attraverso i molteplici strati della rete neurale.
             
             :param x: ...
             :param y: ...
             :param learning_rate: ...
+
             :return: 
         """
 
@@ -516,6 +591,7 @@ class NeuralNetwork:
             ...
             
             :param ...: ...
+
             :return: 
         """
         
@@ -527,6 +603,7 @@ class NeuralNetwork:
             ...
             
             :param ...: ...
+
             :return: 
         """
 
@@ -538,6 +615,7 @@ class NeuralNetwork:
             ...
             
             :param ...: ...
+
             :return: 
         """
         
@@ -549,6 +627,7 @@ class NeuralNetwork:
             ...
             
             :param ...: ...
+
             :return: 
         """
         
@@ -562,10 +641,10 @@ class NeuralNetwork:
             :return: una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\terr_fun = {self.err_fun},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
     # end
 
-    # end class NeuralNetwork
+# end class NeuralNetwork
 
 # ########################################################################### #
 # RIFERIMENTI

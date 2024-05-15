@@ -1,3 +1,4 @@
+import auxfunc
 import constants
 import artificial_neural_network as ann
 import numpy as np
@@ -32,7 +33,7 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
-net = ann.NeuralNetwork(30, 5, 3)
+net = ann.NeuralNetwork(30, 5, 3, auxfunc.sigmoid, auxfunc.sigmoid, auxfunc.cross_entropy)
 print("Totale neuroni:", ann.tot_neurons)
 
 a =[0, 0, 1, 1, 0, 0,
