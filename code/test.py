@@ -6,18 +6,28 @@ import numpy as np
 import neural_network as nn
 import matplotlib.pyplot as plot
 import dataset as ds
+import auxfunc as af
 
 # rete=nn.crea_rete(5,[3,4,2],6)
 # W=rete['W']
 # B=rete['B']
 # d=rete['Depth']
 
-Xtrain,Ytrain, Xtest,Ytest = ds.loadDataset()
-x=Xtrain[:,20000]
-#y = Ytrain[10000]
-#print(y)
-ix=np.reshape(x,(28,28))
-ds.show_image(ix)
+data = np.arange(1,101)
+test = np.arange(1,101)
+k_data,k_test = af.split_dataset(data,test,10)
+print(k_data[1])
+print(k_test[1])
+senza = np.concatenate((k_data[:1],k_data[1+1:]))
+print(senza)
+
+
+# Xtrain,Ytrain, Xtest,Ytest = ds.loadDataset()
+# x=Xtrain[:,20000]
+# #y = Ytrain[10000]
+# #print(y)
+# ix=np.reshape(x,(28,28))
+# ds.show_image(ix)
 
 # rete = nn.Neural_Network(5,[3,4,2],6)
 

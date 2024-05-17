@@ -1,6 +1,6 @@
 import numpy as np
 import constants
-import auxfunc
+import auxfunc as af
 
 class Neural_Network:
 
@@ -17,12 +17,12 @@ class Neural_Network:
         for l in hidden_size_list:           #l: size of actual layer
             weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,x]))
             biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,1]))
-            act_fun.append(auxfunc.tanh)
+            act_fun.append(af.tanh)
             x=l
 
         weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,x]))
         biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,1]))
-        act_fun.append(auxfunc.identity)
+        act_fun.append(af.identity)
 
         self.w = weights
         self.b = biases
@@ -151,11 +151,14 @@ class Neural_Network:
         Z_val = self.forward_prop(X_val)
         val_err = err_fun(Z_val,Y_val)
         val_accuracy = self.get_accuracy_net(Z_val,Y_val)
+        evaluation_parameters = []
         print("Epoca: ",-1,
             "Training Error: ",train_err,
             "Training Accuracy: ",train_accuracy,
             "Validation Error: ",val_err,
             "Validation Accuracy: ",val_accuracy)
+        
+        evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
     
         der_list = []
         delta_ij = []
@@ -189,16 +192,51 @@ class Neural_Network:
                 "Validation Error: ",val_err,
                 "Validation Accuracy: ",val_accuracy)
         
+            evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
             epoca += 1
-
-        #K-fold
-
-    def split_dataset(dataset,labels,k):
-         k_fold_dataset = np.array_split(dataset,k)
-         k_fold_labels = np.array_split(labels,k)
-         return k_fold_dataset,k_fold_labels
-
+        return evaluation_parameters
     
+    def k_fold_cross_validation(self,dataset,labels,err_fun,k=10):
+        k_fold_dataset,k_fold_labels = af.split_dataset(dataset,labels,k)
+        total_evaluation = []
+        for i in range(k):
+            train_set = np.concatenate((k_fold_dataset[:i],k_fold_dataset[i+1:]))
+            train_labels = np.concatenate((k_fold_labels[:i],k_fold_labels[i+1:]))
+            validation_set = k_fold_dataset[i]
+            validation_labels = k_fold_labels[i]
+            evaluation_parameters = self.rprop(train_set,train_labels,validation_set,validation_labels,err_fun)
+            total_evaluation.append(evaluation_parameters)
+
+        return total_evaluation
+    
+    def average (total_evaluation):
+        num_epoche = len(total_evaluation[0])
+        k = len(total_evaluation)
+
+        avg_train_err = np.zeros(num_epoche)
+        avg_train_acc = np.zeros(num_epoche)
+        avg_val_err = np.zeros(num_epoche)
+        avg_val_acc = np.zeros(num_epoche)
+
+        # Somma delle metriche per ogni epoca
+        for fold in total_evaluation:
+            for epoch in range(num_epoche):
+                train_err, train_acc, val_err, val_acc = fold[epoch]
+                avg_train_err[epoch] += train_err
+                avg_train_acc[epoch] += train_acc
+                avg_val_err[epoch] += val_err
+                avg_val_acc[epoch] += val_acc
+
+        # Calcolo della media delle metriche
+        avg_train_err /= k
+        avg_train_acc /= k
+        avg_val_err /= k
+        avg_val_acc /= k
+
+        # Restituzione delle medie delle metriche per ciascuna epoca
+        return avg_train_err, avg_train_acc, avg_val_err, avg_val_acc
+
+
     def train():
         pass
 

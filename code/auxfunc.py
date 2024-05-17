@@ -179,6 +179,11 @@ def cross_entropy(
     
     return -np.sum(target * np.log(z))
 
+def split_dataset(dataset,labels,k):
+    k_fold_dataset = np.array_split(dataset,k)
+    k_fold_labels = np.array_split(labels,k)
+    return k_fold_dataset,k_fold_labels
+
 # end
 
 # ########################################################################### #
