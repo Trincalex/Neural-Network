@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale shallow feed-forward (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
+    Questo file contiene l'implementazione di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
 
 '''
 
@@ -143,7 +143,7 @@ class Neuron:
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
-            -   ns: è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi
+            -   ns : è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi
 
             Returns:
             -   None
@@ -173,7 +173,7 @@ class Neuron:
             Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
 
             Parameters:
-            -   train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
+            -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
 
             Returns:
             -   se train=False, restituisce l'output del neurone.
@@ -187,9 +187,11 @@ class Neuron:
             return self.out_val, self.act_val
         
         return self.act_val
-        # https://www.youtube.com/watch?v=IHZwWFHWa-w&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi&index=2
+        # https://youtu.be/IHZwWFHWa-w
         
     # end
+
+    # ####################################################################### #
 
     def __repr__(self) -> str:
         """
@@ -246,8 +248,8 @@ class Layer:
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
-            -   ls: è la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
-            -   ns: è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
+            -   ls : è la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
+            -   ns : è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
 
             Returns:
             -   None
@@ -282,6 +284,8 @@ class Layer:
         return np.array(layer_output)
     
     # end
+
+    # ####################################################################### #
 
     def __repr__(self) -> str:
         """
@@ -431,12 +435,12 @@ class NeuralNetwork:
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
-            -   i_size: è la dimensione del vettore in input alla rete neurale
-            -   hidden_sizes: può essere un numero o una lista contenente la dimensione di uno o più-  hidden layer della rete neurale.
-            -   output_size: è la dimensione dell'output layer della rete neurale.
-            -   hidden_act_funs: può essere una funzione o una lista contenente le funzioni di attivazione di uno o più hidden layer della rete neurale.
-            -   output_act_fun: è la funzione di attivazione dei neuroni dell'output layer.
-            -   e_fun: è la funzione di errore utilizzata per verificare la qualità della rete neurale.
+            -   i_size : è la dimensione del vettore in input alla rete neurale
+            -   hidden_sizes : può essere un numero o una lista contenente la dimensione di uno o più-  hidden layer della rete neurale.
+            -   output_size : è la dimensione dell'output layer della rete neurale.
+            -   hidden_act_funs : può essere una funzione o una lista contenente le funzioni di attivazione di uno o più hidden layer della rete neurale.
+            -   output_act_fun : è la funzione di attivazione dei neuroni dell'output layer.
+            -   e_fun : è la funzione di errore utilizzata per verificare la qualità della rete neurale.
 
             Returns:
             -   None
@@ -511,14 +515,14 @@ class NeuralNetwork:
     # end
     
     # ####################################################################### #
-    # METODI
+    # METODI PRIVATI
 
-    def load_input(self, x : list[float]) -> None:
+    def __load_input(self, x : list[float]) -> None:
         """
             Copia il vettore 'x' nel vettore 'inputs' della rete neurale.
 
             Parameters:
-            -   x: il vettore di dati in input da caricare nella rete neurale
+            -   x : il vettore di dati in input da caricare nella rete neurale.
 
             Returns:
             -   None
@@ -527,11 +531,14 @@ class NeuralNetwork:
         if (len(x) > self.input_size):
             raise ValueError("La dimensione del vettore degli input non e' compatibile.")
         
-        self.inputs = np.array(x)
+        if (not isinstance(x, np.ndarray)):
+            self.inputs = np.array(x)
+        else:
+            self.inputs = x
             
     # end
 
-    def forward_propagation(self,
+    def __forward_propagation(self,
                             x : list[float],
                             train : bool = False
     ) -> np.ndarray | list[np.ndarray]:
@@ -540,7 +547,8 @@ class NeuralNetwork:
             Calcola l'output complessivo della rete neurale, propagando i dati attraverso le connessioni di input dell'input layer, attraverso i calcoli intermedi degli hidden layers e, infine, attraverso l'ultimo strato dell'output layer.
 
             Parameters:
-            -   train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno
+            -   x : il vettore di dati in input.
+            -   train : serve a distinguere se l'applicazione del metodo è per la fase di training o meno.
             
             Returns:
             -   se train=False, un numpy.ndarray contenente l'output complessivo della rete.
@@ -550,11 +558,11 @@ class NeuralNetwork:
         out = []
 
         # Carica input nella rete neurale
-        self.load_input(x)
+        self.__load_input(x)
 
         # Passa input al primo hidden layer
         out.append(self.inputs)
-        pprint.pprint(out[-1])
+        # pprint.pprint(out[-1])
 
         for i in range(len(self.hidden_layers)):
             hl = self.hidden_layers[i]
@@ -566,7 +574,7 @@ class NeuralNetwork:
             
             # Calcola output dell'i-esimo hidden layer
             out.append(hl.output())
-            pprint.pprint(out[-1])
+            # pprint.pprint(out[-1])
 
         # Aggiorna input dell'output layer
         for j in range(len(self.output_layer.units)):
@@ -575,7 +583,7 @@ class NeuralNetwork:
 
         # Calcola output dell'output layer
         out.append(self.output_layer.output())
-        pprint.pprint(out[-1])
+        # pprint.pprint(out[-1])
 
         if train:
             return out
@@ -584,21 +592,20 @@ class NeuralNetwork:
     
     # end
 
-    def back_propagation(self,
+    def __back_propagation(self,
                          x : list[float],
                          y : list[float],
                          learning_rate : float = 0.00001
-    ):
+    ) -> np.ndarray:
         
         """
-            La backpropagation è l’algoritmo utilizzato durante la fase di addestramento delle reti neurali per determinare come un singolo campione del training set dovrebbe aggiustare i pesi ed i bias della rete, non solo in termini di aumento o diminuzione, ma in termini di qual è la proporzione relativa a tale cambiamento che possa causare la diminuzione più rapida possibile del valore della funzione di costo.
-
-            Per capire quanto e' sensibile il valore della funzione di costo al cambiare dei pesi e dei bias dell'ultimo layer della rete, dobbiamo calcolarne la derivata prima parziale rispetto a questi pesi utilizzando iterativamente la regola della catena verso i layer precedenti, siccome questi aggiustamenti provocano una catena di effetti in tutta la rete.
+            Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo. Calcola la derivata prima parziale del valore della funzione di costo rispetto a tutti questi pesi utilizzando iterativamente la regola della catena verso i layer precedenti (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
             
             Parameters:
-            -   x: ...
-            -   y: ...
-            -   learning_rate: ...
+            -   x : ...
+            -   y : ...
+            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
+            -   ...
 
             Returns:
             -   numpy.ndarray : l'opposto del gradiente della funzione di costo.
@@ -614,46 +621,87 @@ class NeuralNetwork:
         
     # end
 
-    def resilient_back_propagation(self):
+    def __resilient_back_propagation(self):
         """
             ...
             
             Parameters:
-            -   ...: ...
+            -   ... : ...
 
             Returns:
-            -   ...
+            -   ... : ...
         """
         
         pass
     # end
 
-    def train(self):
+    
+    # ####################################################################### #
+    # METODI PUBBLICI
+
+    def train(self,
+              training_data : np.ndarray,
+              training_labels : np.ndarray,
+              validation_data : np.ndarray,
+              validation_labels : np.ndarray,
+              epochs : int = 35,
+              learning_rate : float = 0.00001
+    ):
+        
         """
-            ...
+            Addestra la rete neurale tramite il training set ed il validation set dati in input.
+            Il processo di addestramento ripete le fasi di forward propagation, calcolo dell'errore, backpropagation e il conseguente aggiornamento dei pesi per un numero limitato di iterazioni (epochs).
             
             Parameters:
-            -   ...: ...
+            -   training_data : una matrice numpy.ndarray contenente i dati di input per l'addestramento. Ogni riga rappresenta un esempio di addestramento.
+            -   training_labels : una matrice numpy.ndarray contenente le etichette corrispondenti per i dati di addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
+            -   validation_data : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta un esempio di addestramento.
+            -   validation_labels : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
+            -   epochs : il numero di iterazioni per cui il modello deve essere addestrato. Un'epoca e' un'esecuzione completa dell'addestramento attraverso l'intero training_set.
+            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   ...
+            -   ... : ...
         """
 
-        pass
+        # TODO: controllo sulla compatibilita' di training_data e training_labels (shape)
+        # TODO: controllo sulla compatibilita' di validation_data e validation_labels
+
+        training_set = zip(training_data, training_labels)
+        validation_set = zip(validation_data, validation_labels)
+
+        for e in range(epochs):
+
+            pass
+
     # end
 
-    def predict(self):
+    def predict(self, x : list[float]) -> int:
         """
-            ...
+            Calcola una predizione per l'input dato in base alla configurazione attuale di pesi e bias della rete neurale. Inoltre, visualizza nel terminale le probabilita' delle predizioni di tutto l'output layer utilizzando la funzione "auxfunc.softmax()".
             
             Parameters:
-            -   ...: ...
+            -   x : il vettore di dati in input.
 
             Returns:
-            -   ...
+            -   label : l'indice del neurone nell'output layer che ottiene il valore di attivazione piu' alto.
         """
+
+        prediction = self.__forward_propagation(x)
+        label = np.argmax(prediction)
+
+        print("\nPredizione della rete:")
+        print(f'\t{constants.ETICHETTE_CLASSI[label]}')
+
+        # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
+        probabilities = auxfunc.softmax(prediction)
+        print("Probabilità delle predizioni:")
+        for i in range(len(probabilities)):
+            prob = probabilities[i]
+            print(f'\tClasse {i}: {prob}')
+
+        return label
         
-        pass
     # end
 
     def compute_accuracy(self):
@@ -661,14 +709,16 @@ class NeuralNetwork:
             ...
             
             Parameters:
-            -   ...: ...
+            -   ... : ...
 
             Returns:
-            -   ...
+            -   ... : ...
         """
         
         pass
     # end
+
+    # ####################################################################### #
 
     def __repr__(self) -> str:
         """

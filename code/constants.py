@@ -40,6 +40,20 @@ STANDARD_DEVIATION = 10
 NUMERO_CLASSI = 10
 """ ... """
 
+ETICHETTE_CLASSI = [
+    "Cifra 0",
+    "Cifra 1",
+    "Cifra 2",
+    "Cifra 3",
+    "Cifra 4",
+    "Cifra 5",
+    "Cifra 6",
+    "Cifra 7",
+    "Cifra 8",
+    "Cifra 9",
+]
+""" ... """
+
 COPPIE_TRAINING = 12500
 """ ... """
 

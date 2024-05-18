@@ -1,6 +1,7 @@
 import auxfunc
 import constants
 import artificial_neural_network as ann
+import dataset_function as df
 import numpy as np
 import pprint
 
@@ -71,8 +72,8 @@ y = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # print(type(y), y.shape)
 # print(type(y[0]), y[0].shape)
 
-net.forward_propagation(dataset[0])
-net.back_propagation(a, y, learning_rate=0.01)
+# net.back_propagation(a, y, learning_rate=0.01)
+prediction = net.predict(dataset[0])
 
 # for n in net.input_layer.units:
 #     print(repr(n))

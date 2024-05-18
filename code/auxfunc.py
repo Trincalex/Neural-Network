@@ -131,7 +131,7 @@ def sum_of_squares(
 
 # end
 
-def soft_max(prediction : np.ndarray) -> np.ndarray:
+def softmax(prediction : np.ndarray) -> np.ndarray:
 
     """
 
@@ -172,7 +172,7 @@ def cross_entropy(
     
     """
     
-    z = soft_max(prediction)
+    z = softmax(prediction)
 
     if der:
         return z - target
