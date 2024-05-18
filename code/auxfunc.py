@@ -181,15 +181,18 @@ def cross_entropy(
 
 # end
 
-def split_dataset(dataset,labels,k):
+def split_dataset(dataset : np.array ,labels : np.array ,k : int):
     """
-        ...
-        
-        Parameters:
-        -   ...: ...
+        Divide il dataset e le label in k sottoinsiemi
 
+        Parameters:
+        -   dataset: il dataset da dividere
+        -   labels: i valori target del dataset
+        -   k: il numero di insiemi in cui dividere i dataset e le labels
+        
         Returns:
-        -   ...
+        -   k_fold_dataset: array che contiene i k array in cui è stato suddiviso il dataset
+        -   k_fold: array che contiene i k array in cui sono state divise le labels
     """
 
     k_fold_dataset = np.array_split(dataset,k)

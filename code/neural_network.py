@@ -141,7 +141,45 @@ class Neural_Network:
 
         return good_cases / total_cases
     
-    def rprop(self,X_train,Y_train,X_val,Y_val,err_fun,num_epoche=0,eta_minus=0.5,eta_plus=1.2,delta_zero=0.0125,delta_min=0.00001,delta_max=1):
+    def rprop(
+            self,
+            X_train : np.array,
+            Y_train : np.array,
+            X_val : np.array,
+            Y_val : np.array,
+            err_fun : function,
+            num_epoche : int = 0,
+            eta_minus : float = 0.5,
+            eta_plus : float = 1.2,
+            delta_zero : float = 0.0125,
+            delta_min : float = 0.00001,
+            delta_max : float = 1
+            ) -> list:
+        
+        """
+            Esegue la Resilient Propagation (Rprop) per l'addestramento di una rete neurale
+
+            Parameters:
+            -   X_train: Il dataset di addestramento.
+            -   Y_train: I valori target corrispondenti al dataset di addestramento.
+            -   X_val: Il dataset di validazione.
+            -   Y_val: I valori target corrispondenti al dataset di validazione.
+            -   err_fun (function): La funzione di errore utilizzata per calcolare la perdita.
+            -   num_epoche: Il numero di epoche per l'addestramento. Default è 0.
+            -   eta_minus: Il fattore di decremento per l'aggiornamento dei pesi. Default è 0.5.
+            -   eta_plus: Il fattore di incremento per l'aggiornamento dei pesi. Default è 1.2.
+            -   delta_zero: Il valore iniziale per gli incrementi dei pesi. Default è 0.0125.
+            -   delta_min: Il valore minimo per gli incrementi dei pesi. Default è 0.00001.
+            -   delta_max: Il valore massimo per gli incrementi dei pesi. Default è 1.
+
+            Returns:
+            -   evaluation_parameters: Una lista contenente tuple con i seguenti valori per ogni epoca:
+            -   Errore di addestramento
+            -   Accuratezza di addestramento
+            -   Errore di validazione
+            -   Accuratezza di validazione
+        """
+
         epoca = 0
         d = self.depth
         Z_train = self.forward_prop(X_train)
@@ -196,7 +234,30 @@ class Neural_Network:
             epoca += 1
         return evaluation_parameters
     
-    def k_fold_cross_validation(self,dataset,labels,err_fun,k=10):
+    def k_fold_cross_validation(
+            self,
+            dataset,labels : np.array,
+            err_fun : function,
+            k : int = 10
+            ) -> list:
+        
+        """
+            Esegue la k-fold cross validation, una tecnica di validazione incrociata
+            utilizzata per valutare le prestazioni di un modello predittivo.
+
+            Parameters:
+            -   dataset: Il dataset di input su cui il modello verrà addestrato e validato.
+            -   labels: I valori target associati agli elementi del dataset.
+            -   k: Il numero di fold in cui dividere il dataset.
+                Ogni fold sarà utilizzato una volta come set di validazione
+                mentre i restanti k-1 fold saranno utilizzati come set di addestramento.
+
+
+            Returns:
+            -   total_evaluation: Una lista contenente le medie delle metriche di valutazione
+                calcolate su ciascun fold per ogni epoca.
+        """
+
         k_fold_dataset,k_fold_labels = af.split_dataset(dataset,labels,k)
         total_evaluation = []
         for i in range(k):
@@ -209,7 +270,26 @@ class Neural_Network:
 
         return total_evaluation
     
-    def average (total_evaluation):
+    def total_average (total_evaluation : list):
+        """
+            Calcola la media delle metriche di validazione per ciascuna epoca.
+
+            Parameters:
+            -   total_evaluation (list of list of tuples): Una lista contenente i risultati delle metriche di validazione
+                per ciascun fold della k-fold cross validation. Ogni elemento della lista esterna rappresenta un fold,
+                e ogni elemento della lista interna è una tupla contenente:
+                -   Errore di addestramento
+                -   Accuratezza di addestramento
+                -   Errore di validazione
+                -   Accuratezza di validazione
+
+            Returns:
+            -   avg_train_err: Array contenente la media degli errori di addestramento per ciascuna epoca.
+            -   avg_train_acc: Array contenente la media delle accuratezze di addestramento per ciascuna epoca.
+            -   avg_val_err: Array contenente la media degli errori di validazione per ciascuna epoca.
+            -   avg_val_acc: Array contenente la media delle accuratezze di validazione per ciascuna epoca.
+
+        """
         num_epoche = len(total_evaluation[0])
         k = len(total_evaluation)
 
