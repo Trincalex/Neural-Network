@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
+    Questo file contiene l'implementazione di una rete neurale shallow feed-forward (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
 
 '''
 
@@ -173,11 +173,11 @@ class Neuron:
             Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
 
             Parameters:
-            -   train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno
+            -   train: serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
 
             Returns:
-            -   se train=False, restituisce l'output del neurone
-            -   se train=True, restituisce sia l'output del neurone che anche il valore intermedio prima dell'applicazione della funzione di attivazione
+            -   se train=False, restituisce l'output del neurone.
+            -   se train=True, restituisce sia l'output del neurone che anche il valore intermedio prima dell'applicazione della funzione di attivazione.
         """
 
         self.out_val = np.dot(self.inputs, self.weights) + self.bias
@@ -187,6 +187,7 @@ class Neuron:
             return self.out_val, self.act_val
         
         return self.act_val
+        # https://www.youtube.com/watch?v=IHZwWFHWa-w&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi&index=2
         
     # end
 
@@ -586,11 +587,13 @@ class NeuralNetwork:
     def back_propagation(self,
                          x : list[float],
                          y : list[float],
-                         learning_rate : float =0.00001
+                         learning_rate : float = 0.00001
     ):
         
         """
-            E' un algoritmo iterativo utilizzato per l'addestramento delle reti neurali. Serve a minimizzare la funzione di costo () determinando quali pesi e quali bias devono essere modificati. La sua implementazione si basa sulla 'regola della catena', utile a navigare attraverso i molteplici strati della rete neurale.
+            La backpropagation è l’algoritmo utilizzato durante la fase di addestramento delle reti neurali per determinare come un singolo campione del training set dovrebbe aggiustare i pesi ed i bias della rete, non solo in termini di aumento o diminuzione, ma in termini di qual è la proporzione relativa a tale cambiamento che possa causare la diminuzione più rapida possibile del valore della funzione di costo.
+
+            Per capire quanto e' sensibile il valore della funzione di costo al cambiare dei pesi e dei bias dell'ultimo layer della rete, dobbiamo calcolarne la derivata prima parziale rispetto a questi pesi utilizzando iterativamente la regola della catena verso i layer precedenti, siccome questi aggiustamenti provocano una catena di effetti in tutta la rete.
             
             Parameters:
             -   x: ...
@@ -598,15 +601,15 @@ class NeuralNetwork:
             -   learning_rate: ...
 
             Returns:
-            -   ...
+            -   numpy.ndarray : l'opposto del gradiente della funzione di costo.
         """
 
-        all_outputs = self.forward_propagation(x, train=True)
-        predicted_output = all_outputs[-1]
-        output_error = y - predicted_output
-        output_delta = output_error - auxfunc.sigmoid(predicted_output, der=True)
+        # all_outputs = self.forward_propagation(x, train=True)
+        # predicted_output = all_outputs[-1]
+        # output_error = y - predicted_output
+        # output_delta = output_error - auxfunc.sigmoid(predicted_output, der=True)
 
-        print(output_error)
+        # print(output_error)
         # TODO: da completare
         
     # end

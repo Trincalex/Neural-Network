@@ -7,6 +7,8 @@ import neural_network as nn
 import matplotlib.pyplot as plot
 import auxfunc as af
 import dataset_function as ds
+import pprint
+import constants
 
 # rete=nn.crea_rete(5,[3,4,2],6)
 # W=rete['W']
@@ -21,13 +23,20 @@ import dataset_function as ds
 # senza = np.concatenate((k_data[:1],k_data[1+1:]))
 # print(senza)
 
+Xtrain,Ytrain, Xtest,Ytest = ds.loadDataset(constants.COPPIE_TRAINING)
 
-Xtrain,Ytrain, Xtest,Ytest = ds.loadDataset()
-x=Xtrain[:,20000]
+for i in range(10):
+    print(Xtrain.shape)
+    print(Ytrain.shape)
+    index = int(i * np.random.normal())
+    # print(Ytrain[:, index])
+    print(ds.convert_to_single_label(Ytrain[:, index]))
+    x=Xtrain[:,index]
+    ix=np.reshape(x,(constants.DIMENSIONE_IMMAGINE, constants.DIMENSIONE_IMMAGINE))
+    ds.show_image(ix)
+
 #y = Ytrain[10000]
 #print(y)
-ix=np.reshape(x,(28,28))
-ds.show_image(ix)
 
 # rete = nn.Neural_Network(5,[3,4,2],6)
 
@@ -44,5 +53,6 @@ ds.show_image(ix)
 '''
 Riferimenti
 -   https://www.geeksforgeeks.org/python-output-formatting/
+-   https://numpy.org/doc/1.25/reference/random/generated/numpy.random.shuffle.html
 
 '''

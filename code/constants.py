@@ -35,20 +35,34 @@ class HiddenLayerError(Exception):
 # COSTANTI
 
 STANDARD_DEVIATION = 10
+""" ... """
 
 NUMERO_CLASSI = 10
+""" ... """
 
 COPPIE_TRAINING = 12500
+""" ... """
 
 K_FOLD_VALUE = 10
+""" ... """
 
 DIMENSIONE_NEURONE_INPUT = 1
+""" ... """
+
+DIMENSIONE_PIXEL = 255
+""" ... """
+
+DIMENSIONE_IMMAGINE = 28
+""" ... """
 
 # ########################################################################### #
 # COSTANTI
 
 ActivationFunctionType = Callable[[float, Optional[bool]], float]
+""" ... """
+
 ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | np.ndarray]
+""" ... """
 
 # ########################################################################### #
 # RIFERIMENTI

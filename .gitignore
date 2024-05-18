@@ -1,6 +1,6 @@
 
 .DS_Store
 /code/__pycache__
-/dataset/mnist_train.cvs
-/dataset/mnist_test.cvs
+/dataset/mnist_train.csv
+/dataset/mnist_test.csv
 /code/test.py
