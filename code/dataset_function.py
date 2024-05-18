@@ -74,8 +74,7 @@ def convert_to_single_label(vet : np.ndarray) -> int:
         -   ...
     """
 
-    out = np.where(vet == 1)
-    return int(out[0])
+    return int(vet.argmax())
 
 # end
 
