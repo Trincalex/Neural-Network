@@ -118,7 +118,7 @@ def sum_of_squares(
     """
     Sia 'n' la lunghezza dei vettori in output.
     Il valore da restituire in output dovrebbe essere diviso per 'n' per poterne calcolare la media ed ottenere dei risultati più consistenti che non dipendono da questa dimensione.
-    In realtà, però, si può dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
+    In realtà, però, si puo' dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
     In particolare, scegliamo 2: in questo modo, nell'andare a calcolare la derivata prima, tale prodotto si cancella e rende i calcoli successivi più semplici e leggibili.
     """
 
@@ -179,10 +179,22 @@ def cross_entropy(
     
     return -np.sum(target * np.log(z))
 
+# end
+
 def split_dataset(dataset,labels,k):
+    """
+        ...
+        
+        Parameters:
+        -   ...: ...
+
+        Returns:
+        -   ...
+    """
+
     k_fold_dataset = np.array_split(dataset,k)
     k_fold_labels = np.array_split(labels,k)
-    return k_fold_dataset,k_fold_labels
+    return k_fold_dataset, k_fold_labels
 
 # end
 

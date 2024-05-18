@@ -34,18 +34,45 @@ import pprint
 #     print(repr(n))
 
 net = ann.NeuralNetwork(30, 5, 3)
+# net = ann.NeuralNetwork(784, 32, 10) # una possibile configurazione per il problema della classificazione delle cifre MNIST
 print("Totale neuroni:", ann.tot_neurons)
 
-a =[0, 0, 1, 1, 0, 0,
-   0, 1, 0, 0, 1, 0,
-   1, 1, 1, 1, 1, 1,
-   1, 0, 0, 0, 0, 1,
-   1, 0, 0, 0, 0, 1]
+# Creating dataset
+# Letter A
+a = [0, 0, 1, 1, 0, 0,
+     0, 1, 0, 0, 1, 0,
+     1, 1, 1, 1, 1, 1,
+     1, 0, 0, 0, 0, 1,
+     1, 0, 0, 0, 0, 1]
 
-y = [1, 0, 0] # one-hot
+# Letter B
+b = [0, 1, 1, 1, 1, 0,
+     0, 1, 0, 0, 1, 0,
+     0, 1, 1, 1, 1, 0,
+     0, 1, 0, 0, 1, 0,
+     0, 1, 1, 1, 1, 0]
 
-# net.forward_propagation(a, y)
-# net.back_propagation(a, y, 0.1)
+# Letter C
+c = [0, 1, 1, 1, 1, 0,
+     0, 1, 0, 0, 0, 0,
+     0, 1, 0, 0, 0, 0,
+     0, 1, 0, 0, 0, 0,
+     0, 1, 1, 1, 1, 0]
+
+dataset = np.array([a, b, c])
+ 
+# Creating labels (one-hot)
+y = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+# pprint.pprint(dataset)
+# print(type(dataset), dataset.shape)
+# print(type(dataset[0]), dataset[0].shape)
+# pprint.pprint(y)
+# print(type(y), y.shape)
+# print(type(y[0]), y[0].shape)
+
+net.forward_propagation(dataset[0])
+net.back_propagation(a, y, learning_rate=0.01)
 
 # for n in net.input_layer.units:
 #     print(repr(n))
@@ -58,5 +85,5 @@ y = [1, 0, 0] # one-hot
 # print(auxfunc.tanh(3.14, der=False))
 # print(auxfunc.tanh(3.14, der=True))
 
-# print(auxfunc.sum_of_square(np.array([1,1,1]), np.array(y), der=False))
-# print(auxfunc.sum_of_square(np.array([1,1,1]), np.array(y), der=True))
+# print(auxfunc.sum_of_squares(np.array([1,1,1]), np.array(y), der=False))
+# print(auxfunc.sum_of_squares(np.array([1,1,1]), np.array(y), der=True))
