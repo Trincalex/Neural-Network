@@ -46,7 +46,7 @@ class TrainError(Exception):
 # ########################################################################### #
 # COSTANTI
 
-STANDARD_DEVIATION = 10
+STANDARD_DEVIATION = 0.1
 """ ... """
 
 NUMERO_CLASSI = 10

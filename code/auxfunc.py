@@ -137,6 +137,9 @@ def sum_of_squares(
     
     """
 
+    # print(prediction)
+    # print(target)
+
     # Calcolo delle distanze tra predizioni e target (errori)
     errors = prediction - target
     # print(errors)

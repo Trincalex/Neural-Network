@@ -35,7 +35,7 @@ import pprint
 #     print(repr(n))
 
 # net = ann.NeuralNetwork(30, 5, 3)
-net = ann.NeuralNetwork(30, 5, 3)
+net = ann.NeuralNetwork(30, 3, 2)
 # net = ann.NeuralNetwork(784, 32, 10) # una possibile configurazione per il problema della classificazione delle cifre MNIST
 # print("Totale neuroni:", ann.tot_neurons)
 
@@ -63,10 +63,11 @@ c = [0, 1, 1, 1, 1, 0,
 
 # dataset = np.array([a, b, c])
 dataset = np.array([a, b])
+# dataset = np.array([[0], [1]])
  
 # Creating labels (one-hot)
 # labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-labels = np.array([[1, 0, 0], [0, 1, 0]])
+labels = np.array([[1, 0], [0, 1]])
 
 # pprint.pprint(dataset)
 # print(type(dataset), dataset.shape)
