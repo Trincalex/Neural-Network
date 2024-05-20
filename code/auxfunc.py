@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene alcune funzionalità aggiuntive per la creazione
+    Questo file contiene alcune funzionalita' aggiuntive per la creazione
     della rete neurale e l'esecuzione del programma, tra cui la definizione
     delle funzioni di attivazione e delle funzioni di errore.
 
@@ -15,21 +15,45 @@
 
 import numpy as np
 import math
+import constants
 
 # ########################################################################### #
 # FUNZIONI DI ATTIVAZIONE
 
-def sigmoid(input : float, der : bool = False) -> float:
-
+def leaky_relu(input : float, der : bool = False) -> float:
     """
 
-        ...
+        Calcola il valore di attivazione di un neurone utilizzando un miglioramento della classica ReLU (Rectified Linear Unit), in quanto la sua derivata prima e' sempre un valore non negativo.
 
         Parameters:
-        -   
+        -   input : il valore di cui applicare la funzione di attivazione.
+        -   der : indica se si vuole calcolare la derivata prima o meno.
 
         Returns:
-        -   
+        -   se der=False, restituisce l'attivazione della Leaky ReLU.
+        -   se der=True, invece, ne restituisce il gradiente.
+    
+    """
+
+    if der:
+        return np.where(input >= 0, 1, constants.LEAKY_RELU_ALPHA)
+
+    return np.where(input >= 0, input, constants.LEAKY_RELU_ALPHA * input)
+
+# end
+
+def sigmoid(input : float, der : bool = False) -> float:
+    """
+
+        Calcola il valore di attivazione di un neurone utilizzando la funzione logistica.
+
+        Parameters:
+        -   input : il valore di cui applicare la funzione di attivazione.
+        -   der : indica se si vuole calcolare la derivata prima o meno.
+
+        Returns:
+        -   se der=False, restituisce l'attivazione della sigmoide.
+        -   se der=True, invece, ne restituisce il gradiente.
     
     """
     
@@ -43,16 +67,17 @@ def sigmoid(input : float, der : bool = False) -> float:
 # end
 
 def tanh(input : float, der : bool = False) -> float:
-
     """
 
-        ...
+        Calcola il valore di attivazione di un neurone utilizzando la tangente iperbolica.
 
         Parameters:
-        -   
+        -   input : il valore di cui applicare la funzione di attivazione.
+        -   der : indica se si vuole calcolare la derivata prima o meno.
 
         Returns:
-        -   
+        -   se der=False, restituisce l'attivazione della tangente iperbolica.
+        -   se der=True, invece, ne restituisce il gradiente.
     
     """
     
@@ -67,16 +92,17 @@ def tanh(input : float, der : bool = False) -> float:
 # end
     
 def identity(input : float, der : bool = False) -> float:
-
     """
 
-        ...
+        Calcola il valore di attivazione di un neurone utilizzando la funzione identita'.
 
         Parameters:
-        -   
+        -   input : il valore di cui applicare la funzione di attivazione.
+        -   der : indica se si vuole calcolare la derivata prima o meno.
 
         Returns:
-        -   
+        -   se der=False, restituisce l'input.
+        -   se der=True, invece, ne restituisce il gradiente, cioe' 1.
     
     """
     
@@ -98,11 +124,11 @@ def sum_of_squares(
     
     """
 
-        È una funzione di errore tipicamente utilizzata per i problemi di regressione.
+        E' una funzione di errore tipicamente utilizzata per i problemi di regressione.
 
         Parameters:
-        -   prediction: è l'output fornito dalla rete neurale su una determinata coppia del dataset.
-        -   target: è l'etichetta di classificazione di una determinata coppia del dataset.
+        -   prediction: e l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   target: e l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
@@ -117,9 +143,9 @@ def sum_of_squares(
 
     """
     Sia 'n' la lunghezza dei vettori in output.
-    Il valore da restituire in output dovrebbe essere diviso per 'n' per poterne calcolare la media ed ottenere dei risultati più consistenti che non dipendono da questa dimensione.
-    In realtà, però, si puo' dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
-    In particolare, scegliamo 2: in questo modo, nell'andare a calcolare la derivata prima, tale prodotto si cancella e rende i calcoli successivi più semplici e leggibili.
+    Il valore da restituire in output dovrebbe essere diviso per 'n' per poterne calcolare la media ed ottenere dei risultati piu' consistenti che non dipendono da questa dimensione.
+    In realta', pero', si puo' dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
+    In particolare, scegliamo 2: in questo modo, nell'andare a calcolare la derivata prima, tale prodotto si cancella e rende i calcoli successivi piu' semplici e leggibili.
     """
 
     if der:
@@ -159,11 +185,11 @@ def cross_entropy(
     
     """
 
-        È una funzione di errore tipicamente utilizzata per i problemi di classificazione.
+        E' una funzione di errore tipicamente utilizzata per i problemi di classificazione.
 
         Parameters:
-        -   prediction: è l'output fornito dalla rete neurale su una determinata coppia del dataset.
-        -   target: è l'etichetta di classificazione di una determinata coppia del dataset.
+        -   prediction: e l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   target: e l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
@@ -191,7 +217,7 @@ def split_dataset(dataset : np.array ,labels : np.array ,k : int):
         -   k: il numero di insiemi in cui dividere i dataset e le labels
         
         Returns:
-        -   k_fold_dataset: array che contiene i k array in cui è stato suddiviso il dataset
+        -   k_fold_dataset: array che contiene i k array in cui e' stato suddiviso il dataset
         -   k_fold: array che contiene i k array in cui sono state divise le labels
     """
 
@@ -217,3 +243,4 @@ def split_dataset(dataset : np.array ,labels : np.array ,k : int):
 # https://www.matematika.it/public/allegati/33/11_44_Derivate_2_3.pdf
 # https://www.quora.com/Why-is-the-sum-of-squares-in-linear-regression-divided-by-2n-where-n-is-the-number-of-observations-instead-of-just-n
 # https://www.youtube.com/watch?v=f50tlks5caI
+# https://www.digitalocean.com/community/tutorials/relu-function-in-python

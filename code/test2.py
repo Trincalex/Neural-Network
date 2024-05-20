@@ -34,9 +34,10 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
+# net = ann.NeuralNetwork(30, 5, 3)
 net = ann.NeuralNetwork(30, 5, 3)
 # net = ann.NeuralNetwork(784, 32, 10) # una possibile configurazione per il problema della classificazione delle cifre MNIST
-print("Totale neuroni:", ann.tot_neurons)
+# print("Totale neuroni:", ann.tot_neurons)
 
 # Creating dataset
 # Letter A
@@ -60,10 +61,12 @@ c = [0, 1, 1, 1, 1, 0,
      0, 1, 0, 0, 0, 0,
      0, 1, 1, 1, 1, 0]
 
-dataset = np.array([a, b, c])
+# dataset = np.array([a, b, c])
+dataset = np.array([a, b])
  
 # Creating labels (one-hot)
-y = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+# labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+labels = np.array([[1, 0, 0], [0, 1, 0]])
 
 # pprint.pprint(dataset)
 # print(type(dataset), dataset.shape)
@@ -73,7 +76,9 @@ y = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # print(type(y[0]), y[0].shape)
 
 # net.back_propagation(a, y, learning_rate=0.01)
-prediction = net.predict(dataset[0])
+
+net.train(dataset, labels, dataset, labels, epochs=1)
+# prediction = net.predict(dataset[0])
 
 # for n in net.input_layer.units:
 #     print(repr(n))

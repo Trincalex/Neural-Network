@@ -31,6 +31,18 @@ class HiddenLayerError(Exception):
 
 # end class HiddenLayerError
 
+class TrainError(Exception):
+
+    def __init__(self, value):
+        self.value = value
+    # end
+
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class TrainError
+
 # ########################################################################### #
 # COSTANTI
 
@@ -67,6 +79,9 @@ DIMENSIONE_PIXEL = 255
 """ ... """
 
 DIMENSIONE_IMMAGINE = 28
+""" ... """
+
+LEAKY_RELU_ALPHA = 0.01
 """ ... """
 
 # ########################################################################### #

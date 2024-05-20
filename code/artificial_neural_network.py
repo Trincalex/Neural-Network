@@ -15,6 +15,7 @@ import constants
 import auxfunc
 import numpy as np
 import pprint
+import time
 
 # ########################################################################### #
 # VARIABILI GLOBALI
@@ -49,7 +50,7 @@ class Neuron:
     @neuron_size.setter
     def neuron_size(self, value : int) -> None:
         if (value <= 0):
-            raise ValueError("La dimensione del neurone deve essere maggiore di 0")
+            raise ValueError("La dimensione del neurone deve essere maggiore di 0.")
         
         self._neuron_size = value
     # end
@@ -168,23 +169,36 @@ class Neuron:
     # ####################################################################### #
     # METODI
 
-    def output(self, train : bool = False) -> float:
+    def output(self) -> float:
         """
-            Calcola la somma tra il bias e la combinazione lineare di input e pesi e ne restituisce l'applicazione della funzione di attivazione.
+            Calcola la somma tra il bias e la combinazione lineare di input e pesi.
+
+            Returns:
+            -   float : il valore di output del neurone
+        """
+
+        self.out_val = np.dot(self.inputs, self.weights) + self.bias
+        return self.out_val
+    
+    # end
+
+    def activate(self, train : bool = False) -> float | tuple[float, float]:
+        """
+            Applica la funzione di attivazione all'output del neurone.
 
             Parameters:
             -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
 
             Returns:
-            -   se train=False, restituisce l'output del neurone.
-            -   se train=True, restituisce sia l'output del neurone che anche il valore intermedio prima dell'applicazione della funzione di attivazione.
+            -   se train=False, restituisce il valore di attivazione del neurone.
+            -   se train=True, restituisce sia l'output intermedio prima dell'applicazione della funzione di attivazione sia il valore di attivazione del neurone.
         """
 
-        self.out_val = np.dot(self.inputs, self.weights) + self.bias
-        self.act_val = self.act_fun(self.out_val)
+        out = self.output()
+        self.act_val = self.act_fun(out)
 
         if train:
-            return self.out_val, self.act_val
+            return out, self.act_val
         
         return self.act_val
         # https://youtu.be/IHZwWFHWa-w
@@ -235,21 +249,35 @@ class Layer:
     @layer_size.setter
     def layer_size(self, value : int) -> None:
         if (value <= 0):
-            raise ValueError("La dimensione del layer deve essere maggiore di 0")
+            raise ValueError("La dimensione del layer deve essere maggiore di 0.")
         self._layer_size = value
+    # end
+
+    @property
+    def act_fun(self) -> constants.ActivationFunctionType:
+        """È la funzione di attivazione di tutti i neuroni del layer, con dominio e codominio a valori reali."""
+        return self._act_fun
+    # end
+
+    @act_fun.setter
+    def act_fun(self, fun : constants.ActivationFunctionType) -> None:
+        self._act_fun = fun
+        for i in range(len(self.units)):
+            self.units[i].act_fun = fun
     # end
 
     # ####################################################################### #
     # COSTRUTTORE
 
-    def __init__(self, ls : int, ns : int) -> None:
+    def __init__(self, ls : int, ns : int, af : constants.ActivationFunctionType) -> None:
         """
             È il costruttore della classe Layer.
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
-            -   ls : è la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
-            -   ns : è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
+            -   ls : e' la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
+            -   ns : e' la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
+            -   af : e' la funzione di attivazione da associare a tutti i neuroni del layer.
 
             Returns:
             -   None
@@ -261,6 +289,8 @@ class Layer:
         self.units = []
         for i in range(ls):
             self.units.append(Neuron(ns))
+        
+        self.act_fun = af
 
     # end
 
@@ -274,14 +304,59 @@ class Layer:
             Returns:
             -   un numpy.ndarray contenente tutti gli output dei neuroni.
         """
+
+        layer_outputs = [n.output() for n in self.units]
+        return np.array(layer_outputs)
+
+    # end
+
+    def activate(self, train : bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+        """
+            Calcola i valori di attivazione dei neuroni del layer corrente.
+
+            Parameters:
+            -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
+
+            Returns:
+            -   se train=False, un numpy.ndarray contenente tutti i valori di attivazione dei neuroni.
+            -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
+            
+        """
+
+        layer_outputs = []
+        layer_activations = []
+
+        if train:
+            for neuron in self.units:
+                out, act = neuron.activate(train=train)
+                layer_outputs.append(out)
+                layer_activations.append(act)
+
+            return np.array(layer_outputs), np.array(layer_activations)
+
+        layer_activations = [neuron.activate() for neuron in self.units]
+        return np.array(layer_activations)
+    
+    # end
+
+    def weights(self) -> np.ndarray:
+        """
+            ...
+
+            Parameters:
+            -   ... : ...
+            
+            Returns:
+            -   ... : ...
+        """
+
+        layer_weights = []
+
+        for n in self.units:
+            w = n.weights
+            layer_weights.append(w)
         
-        layer_output = []
-
-        for i in range(len(self.units)):
-            n = self.units[i]
-            layer_output.append(n.output())
-
-        return np.array(layer_output)
+        return np.reshape(layer_weights, (self.layer_size, self.units[0].neuron_size)).T
     
     # end
 
@@ -329,7 +404,7 @@ class NeuralNetwork:
     @input_size.setter
     def input_size(self, value : int) -> None:
         if (value <= 0):
-            raise ValueError("La dimensione dell'input della rete neurale deve essere maggiore di 0")
+            raise ValueError("La dimensione dell'input della rete neurale deve essere maggiore di 0.")
         
         self._input_size = value
     # end
@@ -352,25 +427,14 @@ class NeuralNetwork:
     # end
 
     @property
-    def hidden_layers(self) -> list[Layer]:
+    def layers(self) -> list[Layer]:
         """È una lista di tutti i Layer nascosti della rete."""
         return self._hidden_layers
     # end
 
-    @hidden_layers.setter
-    def hidden_layers(self, value : list[Layer]) -> None:
+    @layers.setter
+    def layers(self, value : list[Layer]) -> None:
         self._hidden_layers = value
-    # end
-
-    @property
-    def output_layer(self) -> Layer:
-        """È il Layer che raccoglie l'output complessivo della rete."""
-        return self._output_layer
-    # end
-
-    @output_layer.setter
-    def output_layer(self, value : Layer) -> None:
-        self._output_layer = value
     # end
 
     @property
@@ -385,25 +449,25 @@ class NeuralNetwork:
     # end
 
     @property
-    def network_error(self):
+    def training_error(self):
         """..."""
-        return self._network_error
+        return self._training_error
     # end
 
-    @network_error.setter
-    def network_error(self, value) -> None:
-        self._network_error = value
+    @training_error.setter
+    def training_error(self, value) -> None:
+        self._training_error = value
     # end
 
     @property
-    def average_error(self):
+    def validation_error(self):
         """..."""
-        return self._average_error
+        return self._validation_error
     # end
 
-    @average_error.setter
-    def average_error(self, value) -> None:
-        self._average_error = value
+    @validation_error.setter
+    def validation_error(self, value):
+        self._validation_error = value
     # end
 
     @property
@@ -472,45 +536,42 @@ class NeuralNetwork:
         if (len(l_sizes) != len(l_act_funs)):
             raise constants.HiddenLayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
 
-        # Inizializzazione della profondita' della rete neurale
-        """
-            La profondita' della rete e' data dal numero di layer totali.
-            Dato che 'l_sizes' tiene conto della dimensione dell'input e di tutte le dimensioni degli hidden layers, per contare la profondita' e' necessario togliere (input) e aggiungere (output) il valore 1.
-        """
-        self.depth = len(l_sizes) - 1 + 1
-
         # Inizializzazione degli hidden layers
-        self.hidden_layers = []
+        self.network_layers = []
         for i in range(1, len(l_sizes)):
             # print(f'Hidden layer n.{i}')
             prev_size = l_sizes[i-1]
             actual_size = l_sizes[i]
-            hl = Layer(actual_size, prev_size)
+            hl = Layer(actual_size, prev_size, l_act_funs[i])
 
             for j in range(len(hl.units)):
                 # print(f'Neuron n.{j}')
                 n = hl.units[j]
                 n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=prev_size))
                 n.bias = constants.STANDARD_DEVIATION * np.random.normal()
-                n.act_fun = l_act_funs[i]
 
-            self.hidden_layers.append(hl)
+            self.network_layers.append(hl)
 
         # Inizializzazione dell'output layer
-        self.output_layer = Layer(output_size, l_sizes[-1])
-        for j in range(len(self.output_layer.units)):
-            n = self.output_layer.units[j]
+        ol = Layer(output_size, l_sizes[-1], l_act_funs[-1])
+        for j in range(len(ol.units)):
+            n = ol.units[j]
             n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=l_sizes[-1]))
             n.bias = constants.STANDARD_DEVIATION * np.random.normal()
-            n.act_fun = l_act_funs[-1]
+
+        self.network_layers.append(ol)
+
+        # Inizializzazione della profondita' della rete neurale
+        # La profondita' della rete e' data dal numero di layer totali.
+        self.depth = len(self.network_layers)
 
         # Inizializzazione della funzione di errore della rete
         self.err_fun = e_fun
         
         # Inizializzazione delle metriche di errore
-        self.network_error = 0.0
+        self.training_error = 0.0
+        self.validation_error = 0.0
         self.network_accuracy = 0.0
-        self.average_error = 0.0
 
     # end
     
@@ -538,9 +599,10 @@ class NeuralNetwork:
             
     # end
 
-    def __forward_propagation(self,
-                            x : list[float],
-                            train : bool = False
+    def __forward_propagation(
+            self,
+            x : list[float],
+            train : bool = False
     ) -> np.ndarray | list[np.ndarray]:
         
         """
@@ -551,44 +613,37 @@ class NeuralNetwork:
             -   train : serve a distinguere se l'applicazione del metodo è per la fase di training o meno.
             
             Returns:
-            -   se train=False, un numpy.ndarray contenente l'output complessivo della rete.
-            -   se train=True, una lista contenente gli output di tutti gli strati della rete.
+            -   se train=False, un numpy.ndarray contenente i valori di attivazione complessivi della rete, cioe' i valori di attivazione dell'output layer.
+            -   se train=True, una lista contenente i valori di attivazione di tutti i layer della rete.
         """
 
-        out = []
+        activations = []
 
         # Carica input nella rete neurale
         self.__load_input(x)
 
         # Passa input al primo hidden layer
-        out.append(self.inputs)
-        # pprint.pprint(out[-1])
+        activations.append(self.inputs)
+        # pprint.pprint(activations[-1])
 
-        for i in range(len(self.hidden_layers)):
-            hl = self.hidden_layers[i]
+        for i in range(self.depth):
+            l = self.network_layers[i]
 
-            # Aggiorna input dell'i-esimo hidden layer
-            for j in range(len(hl.units)):
-                n = hl.units[j]
-                n.inputs = out[-1]
+            # Aggiorna input dell'i-esimo layer
+            for j in range(len(l.units)):
+                n = l.units[j]
+                n.inputs = activations[-1]
             
-            # Calcola output dell'i-esimo hidden layer
-            out.append(hl.output())
-            # pprint.pprint(out[-1])
+            # Calcola output dell'i-esimo layer
+            activations.append(l.activate())
+            # pprint.pprint(activations[-1])
 
-        # Aggiorna input dell'output layer
-        for j in range(len(self.output_layer.units)):
-            n = self.output_layer.units[j]
-            n.inputs = out[-1]
-
-        # Calcola output dell'output layer
-        out.append(self.output_layer.output())
-        # pprint.pprint(out[-1])
+            # TODO: capire bene qual e' la differenza tra train=False e train=True
 
         if train:
-            return out
+            return activations
 
-        return out[-1]
+        return activations[-1]
     
     # end
 
@@ -596,7 +651,7 @@ class NeuralNetwork:
                          x : list[float],
                          y : list[float],
                          learning_rate : float = 0.00001
-    ) -> np.ndarray:
+    ) -> None:
         
         """
             Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo. Calcola la derivata prima parziale del valore della funzione di costo rispetto a tutti questi pesi utilizzando iterativamente la regola della catena verso i layer precedenti (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
@@ -608,16 +663,54 @@ class NeuralNetwork:
             -   ...
 
             Returns:
-            -   numpy.ndarray : l'opposto del gradiente della funzione di costo.
+            -   None
         """
 
-        # all_outputs = self.forward_propagation(x, train=True)
-        # predicted_output = all_outputs[-1]
-        # output_error = y - predicted_output
-        # output_delta = output_error - auxfunc.sigmoid(predicted_output, der=True)
+        network_activations = self.__forward_propagation(x, train=True)
 
-        # print(output_error)
-        # TODO: da completare
+        # for l in range(self.depth-1, -1, -1):
+        #     print("Layer:", l)
+
+            # if l == 0:
+            #     prev_activations = self.inputs
+            # else:
+            #     prev_activations = network_layers[l-1].activate()
+
+            # prev_activations = network_activations[l]
+            # print(f"prev_activations:", len(prev_activations))
+            
+            # curr_outputs = network_layers[l].output()
+            # curr_activations = network_layers[l].activate()
+            # curr_act_fun = network_layers[l].act_fun
+            
+            # print("prev_activations:", prev_activations.shape)
+            # print("curr_outputs:", curr_outputs.shape)
+            # print("curr_activations:", curr_activations.shape)
+            # print("curr_act_fun:", curr_act_fun)
+
+            # self.__compute_gradient(
+            #     l,
+            #     prev_activations,
+            #     curr_outputs,
+            #     curr_activations,
+            #     curr_act_fun,
+            #     y
+            # )
+
+        # for l in range(len(network_layers)-1, -1, -1):
+        #     curr_layer = network_layers[l]
+        #     prev_layer = network_layers[l-1]
+            
+            # if l == len(network_layers):
+            #     delta_output = np.sum(prev_layer.activate())
+            #     # print("delta_output: ", delta_output.shape)
+            #     delta_activation = np.sum([curr_layer.act_fun(out, der=True) for out in curr_layer.output()])
+            # else:
+            #     pass
+            # delta_error = np.sum(self.err_fun(curr_layer.activate(), y, der=True))
+
+            # delta = delta_output * delta_activation * delta_error
+            # print(l, delta)
         
     # end
 
@@ -664,15 +757,30 @@ class NeuralNetwork:
             -   ... : ...
         """
 
-        # TODO: controllo sulla compatibilita' di training_data e training_labels (shape)
-        # TODO: controllo sulla compatibilita' di validation_data e validation_labels
+        # Controllo sulla compatibilita' di training_data e training_labels
+        if (not training_data.shape[0] == training_labels.shape[0]):
+            raise constants.TrainError(f"Le dimensioni del dataset [{training_data.shape[0]}] e delle labels [{training_labels.shape[0]}] di addestramento non sono compatibili.")
 
-        training_set = zip(training_data, training_labels)
-        validation_set = zip(validation_data, validation_labels)
+        # Controllo sulla compatibilita' di validation_data e validation_labels
+        if (not validation_data.shape[0] == validation_labels.shape[0]):
+            raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
+
+        l = []
+        start_time = time.time()
 
         for e in range(epochs):
+            print(f"Epoca n.{e+1}\n")
+            for t_example, t_label in zip(training_data, training_labels):
+                # print(f"\tExample: {t_example}\n\tLabel: {t_label}\n")
+                self.__back_propagation(t_example, t_label)
+                print()
 
             pass
+
+        end_time = time.time()
+        tot_time = end_time - start_time
+
+        print(f"L'addestramento ha impiegato {round(tot_time, 3)} secondi.")
 
     # end
 
@@ -728,7 +836,7 @@ class NeuralNetwork:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\thidden_layers = {pprint.pformat(self.hidden_layers)},\n\toutput_layer = {self.output_layer},\n\terr_fun = {self.err_fun},\n\tnetwork_error = {self.network_error},\n\tnetwork_accuracy = {self.network_accuracy},\n\taverage_error = {self.average_error}\n)'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\tnetwork_layers = {pprint.pformat(self.network_layers)},\n\terr_fun = {self.err_fun},\n\ttraining_error = {self.training_error},\n\tvalidation_error = {self.validation_error},\n\tnetwork_accuracy = {self.network_accuracy}\n)'
     
     # end
 
@@ -747,3 +855,4 @@ class NeuralNetwork:
 # https://stackoverflow.com/questions/32514502/neural-networks-what-does-the-input-layer-consist-of
 # https://stackoverflow.com/questions/37835179/how-can-i-specify-the-function-type-in-my-type-hints
 # https://docs.python.org/3/library/typing.html
+# https://towardsdatascience.com/understanding-backpropagation-algorithm-7bb3aa2f95fd
