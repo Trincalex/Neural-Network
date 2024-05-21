@@ -261,21 +261,24 @@ class Layer:
             Returns:
             -   una matrice contenente i pesi di tutti i neuroni del layer, dove la la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione indica il numero di pesi all'interno del singolo neurone.
         """
-
-        layer_weights = []
-
-        for n in self.units:
-            w = n.weights
-            layer_weights.append(w)
         
-        return np.reshape(layer_weights, (self.layer_size, self.units[0].neuron_size))
+        return np.reshape([n.weights for n in self.units], (self.layer_size, self.units[0].neuron_size))
     
     # end
 
     @weights.setter
-    def weights(self, value):
-        # TODO: aggiornare pesi di tutto il layer
-        self._weights = value
+    def weights(self, value : np.ndarray) -> None:
+        # print("Layer:", len(value), self.weights.size)
+        if (len(value) <= 0 or len(value) > self.weights.size):
+            raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
+
+        start = 0
+        end = 0
+        for n in self.units:
+            end += len(n.weights)
+            n.weights = value[start:end]
+            start = end
+
     # end
 
     @property
@@ -286,22 +289,25 @@ class Layer:
             Returns:
             -   un vettore colonna contenente i bias di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione e' 1 perche' il bias e' uno scalare.
         """
-
-        layer_biases = []
-
-        for n in self.units:
-            b = n.bias
-            layer_biases.append(b)
         
         # Si utilizza -1 per recuperare la dimensione della lista originale.
-        return np.reshape(layer_biases, (-1,1))
+        return np.reshape([n.bias for n in self.units], (-1,1))
     
     # end
 
     @biases.setter
-    def biases(self, value):
-        # TODO: aggiornare bias di tutto il layer
-        self._biases = value
+    def biases(self, value : np.ndarray) -> None:
+        # print("Layer:", len(value), len(self.biases))
+        if (len(value) <= 0 or len(value) > len(self.biases)):
+            raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
+        
+        start = 0
+        end = 0
+        for n in self.units:
+            end += 1
+            n.bias = value[start]
+            start = end
+
     # end
 
     @property
@@ -469,25 +475,44 @@ class NeuralNetwork:
 
     @property
     def weights(self) -> np.ndarray:
-        """E' la lista di pesi di tutti i neuroni della la rete neurale."""
+        """E' il vettore serializzato di tutti i pesi di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete."""
         return np.array([w_elem for l in self.layers for w_vet in l.weights for w_elem in w_vet])
     # end
 
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
-        # TODO: aggiornare pesi di tutta la rete
-        self._weights = value
+        # print("Neural Network:", len(value), len(self.weights))
+        if (len(value) <= 0 or len(value) > len(self.weights)):
+            raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
+
+        start = 0
+        end = 0
+        for l in self.layers:
+            end += l.weights.size
+            l.weights = value[start:end]
+            start = end
+
     # end
 
     @property
     def biases(self) -> np.ndarray:
+        """E' il vettore serializzato di tutti i bias di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete."""
         return np.array([b_elem for l in self.layers for b_vet in l.biases for b_elem in b_vet])
     # end
 
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
-        # TODO: aggiornare bias di tutta la rete
-        self._biases = value
+        # print("Neural Network:", len(value), len(self.biases))
+        if (len(value) <= 0 or len(value) > len(self.biases)):
+            raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
+        
+        start = 0
+        end = 0
+        for l in self.layers:
+            end += l.layer_size
+            l.biases = value[start:end]
+            start = end
+
     # end
 
     @property
@@ -667,7 +692,7 @@ class NeuralNetwork:
             
             Returns:
             -   se train=False, un numpy.ndarray contenente i valori di attivazione complessivi della rete, cioe' i valori di attivazione dell'output layer.
-            -   se train=True, una lista contenente i valori di attivazione di tutti i layer della rete.
+            -   se train=True, una prima lista contenente i valori degli output intermedi di ogni layer della rete ed una seconda lista contenente i valori di attivazione di ogni layer della rete.
         """
 
         outputs = []
@@ -689,8 +714,12 @@ class NeuralNetwork:
                 n.inputs = activations[-1]
             
             # Calcola output dell'i-esimo layer
-            out, act = l.activate(train=train)
-            outputs.append(out)
+            if train:
+                out, act = l.activate(train=True)
+                outputs.append(out)
+            else:
+                act = l.activate(train=False)
+                
             activations.append(act)
             # pprint.pprint(activations[-1])
         
@@ -771,31 +800,30 @@ class NeuralNetwork:
     
     # end
 
-    def __back_propagation(self,
-                         x : list[float],
-                         y : list[float],
-                         learning_rate : float = 0.00001
+    def __back_propagation(
+            self,
+            network_outputs : list[np.ndarray],
+            network_activations : list[np.ndarray],
+            target_label : list[float],
+            learning_rate : float = 0.00001
     ) -> np.ndarray:
         
         """
             Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo rispetto all'esempio di training e la corrispondente etichetta in input. Calcola la derivata prima parziale (gradiente) del valore della funzione di costo rispetto a tutti i pesi della rete utilizzando iterativamente la regola della catena verso i layer precedenti (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
             
             Parameters:
-            -   x : la rappresentazione dell'esempio di training
-            -   y : l'etichetta dell'esempio di training
+            -   network_outputs : la lista di output di ogni layer della rete.
+            -   network_activations : la lista di valori di attivazione di ogni layer della rete.
+            -   target_label : l'etichetta dell'esempio di training
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   np.ndarray : il nuovo vettore contenente tutti i pesi e i bias aggiustati.
+            -   np.ndarray : il gradiente della funzione di costo rispetto ai pesi della rete neurale.
+            -   np.ndarray : il gradiente della funzione di costo rispetto ai bias della rete neurale.
         """
 
-        network_outputs, network_activations = self.__forward_propagation(x, train=True)
-        # print("network_outputs\n")
-        # pprint.pprint(network_outputs)
-        # print("network_activations\n")
-        # pprint.pprint(network_activations)
-
-        gradient = []
+        gradient_weights = []
+        gradient_biases = []
         gradient_size = 0
 
         for l in reversed(range(self.depth)):
@@ -812,7 +840,7 @@ class NeuralNetwork:
                     l, j,
                     network_outputs,
                     network_activations,
-                    y
+                    target_label
                 )
 
                 for k in range(prev_size):
@@ -825,7 +853,7 @@ class NeuralNetwork:
                     # print("\tdelta_az:", round(delta_az, 3))
                     # print("\tdelta_Ca:", round(delta_Ca, 3), "\n")
 
-                    gradient.append(delta)
+                    gradient_weights.append(delta)
 
                     # Conteggio posizioni del gradiente per i pesi della rete
                     gradient_size += 1
@@ -847,7 +875,7 @@ class NeuralNetwork:
                 # print("\tdelta_az:", round(delta_az, 3))
                 # print("\tdelta_Ca:", round(delta_Ca, 3), "\n")
 
-                gradient.append(delta)
+                gradient_biases.append(delta)
                 
                 # Conteggio posizioni del gradiente per i bias della rete
                 gradient_size += 1
@@ -855,21 +883,14 @@ class NeuralNetwork:
             # end for j
         # end for l
 
-        # pprint.pprint(gradient)
+        # pprint.pprint(gradient_weights)
+        # pprint.pprint(gradient_biases)
         # print("weights:", len(self.weights))
         # print("biases:", len(self.biases))
         # print("all_weights:", len(np.concatenate((self.weights, self.biases))))
-        # print("gradient_size:", len(gradient))
+        # print("gradient_size:", gradient_size)
 
-        return np.array(
-            [
-                w - learning_rate * g
-                for w, g in zip(
-                    np.concatenate((self.weights, self.biases)),
-                    gradient
-                )
-            ]
-        )
+        return gradient_weights, gradient_biases
 
     def __resilient_back_propagation(self):
         """
@@ -883,8 +904,27 @@ class NeuralNetwork:
         """
         
         pass
+
     # end
 
+    def __compute_accuracy(predictions : np.ndarray, targets : np.ndarray) -> float:
+        """
+            Calcola l'accuratezza della rete neurale confrontando le previsioni con i target corrispondenti.
+
+            Parameters:
+            -   predictions : e' un'array contenente tutte le previsioni della rete.
+            -   targets : e' un'array contenente i target reali corrispondenti alle previsioni.
+
+            Returns:
+            -   float : il rapporto tra predizioni corrette e totale delle predizioni.
+        """
+
+        # if (not predictions.shape == targets.shape):
+        #     raise ValueError("...")
+
+        pass
+
+    # end
     
     # ####################################################################### #
     # METODI PUBBLICI
@@ -900,7 +940,7 @@ class NeuralNetwork:
         
         """
             Addestra la rete neurale tramite il training set ed il validation set dati in input.
-            Il processo di addestramento ripete le fasi di forward propagation, calcolo dell'errore, backpropagation e il conseguente aggiornamento dei pesi per un numero limitato di iterazioni (epochs).
+            Il processo di addestramento ripete le fasi di forward propagation, backpropagation (con calcolo della funzione di costo) e il conseguente aggiornamento dei pesi per un numero limitato di iterazioni (epochs).
             
             Parameters:
             -   training_data : una matrice numpy.ndarray contenente i dati di input per l'addestramento. Ogni riga rappresenta un esempio di addestramento.
@@ -936,7 +976,50 @@ class NeuralNetwork:
                 print(f"Esempio n.{n+1}\n")
                 print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
 
-                self.weights = self.__back_propagation(example[data], example[label])
+                # STEP 1: forward propagation
+                network_outputs, network_activations = self.__forward_propagation(
+                    example[data],
+                    train=True
+                )
+
+                # print("network_outputs\n")
+                # pprint.pprint(network_outputs)
+                # print("network_activations\n")
+                # pprint.pprint(network_activations)
+
+                # STEP 2: backpropagation
+                gradient_weights, gradient_biases = self.__back_propagation(
+                    network_outputs,
+                    network_activations,
+                    example[label]
+                )
+
+                # STEP 3: aggiornamento dei pesi
+                self.weights = np.array(
+                    [
+                        w - learning_rate * g
+                        for w, g in zip(
+                            self.weights,
+                            gradient_weights
+                        )
+                    ]
+                )
+                
+                self.biases = np.array(
+                    [
+                        b - learning_rate * g
+                        for b, g in zip(
+                            self.biases,
+                            gradient_biases
+                        )
+                    ]
+                )
+
+            # end for n, example
+
+            # TODO: compute_accuracy
+
+        # end for e
 
         end_time = time.time()
         tot_time = end_time - start_time
@@ -961,30 +1044,17 @@ class NeuralNetwork:
 
         print("\nPredizione della rete:")
         print(f'\t{constants.ETICHETTE_CLASSI[label]}')
+        print()
 
         # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
         probabilities = auxfunc.softmax(prediction)
         print("Probabilità delle predizioni:")
-        for i in range(len(probabilities)):
-            prob = probabilities[i]
-            print(f'\tClasse {i}: {prob}')
+        for p in [f'\tClasse {i}: {prob}' for i, prob in enumerate(probabilities)]:
+            print(p)
+        print()
 
         return label
         
-    # end
-
-    def compute_accuracy(self):
-        """
-            ...
-            
-            Parameters:
-            -   ... : ...
-
-            Returns:
-            -   ... : ...
-        """
-        
-        pass
     # end
 
     # ####################################################################### #
