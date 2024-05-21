@@ -81,7 +81,13 @@ DIMENSIONE_PIXEL = 255
 DIMENSIONE_IMMAGINE = 28
 """ ... """
 
+LEARNING_RATE = 0.01
+""" ... """
+
 LEAKY_RELU_ALPHA = 0.01
+""" ... """
+
+NUM_STAMPE_EPOCHE = 20
 """ ... """
 
 # ########################################################################### #

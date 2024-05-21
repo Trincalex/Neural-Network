@@ -4,413 +4,22 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti. In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
+    Questo file contiene l'implementazione di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
+    In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
 
 '''
 
 # ########################################################################### #
 # LIBRERIE
 
+from artificial_neuron import Neuron
+from artificial_layer import Layer
+
 import constants
 import auxfunc
 import numpy as np
 import pprint
 import time
-
-# ########################################################################### #
-# VARIABILI GLOBALI
-
-tot_neurons = 0
-
-# ########################################################################### #
-# IMPLEMENTAZIONE DELLA CLASSE NEURONE
-
-class Neuron:
-
-    # ####################################################################### #
-    # ATTRIBUTI DI CLASSE
-
-    @property
-    def id(self) -> int:
-        """È l'identificativo univoco del neurone."""
-        return self._id
-    # end
-
-    @id.setter
-    def id(self, value : int) -> None:
-        self._id = value
-    # end
-
-    @property
-    def neuron_size(self) -> int:
-        """È la dimensione del vettore di input e dei pesi del neurone."""
-        return self._neuron_size
-    # end
-
-    @neuron_size.setter
-    def neuron_size(self, value : int) -> None:
-        if (value <= 0):
-            raise ValueError("La dimensione del neurone deve essere maggiore di 0.")
-        
-        self._neuron_size = value
-    # end
-
-    @property
-    def inputs(self) -> np.ndarray:
-        """È l'array di valori in input al neurone."""
-        return self._inputs
-    # end
-
-    @inputs.setter
-    def inputs(self, value : np.ndarray) -> None:
-        if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore degli input deve essere di tipo 'numpy.ndarray'.")
-        
-        # print(self.id, len(value), self.neuron_size)
-        if (not len(value) == self.neuron_size):
-            raise ValueError("La dimensione del vettore degli input non corrisponde a quella del neurone.")
-        
-        self._inputs = value
-    # end
-
-    @property
-    def weights(self) -> np.ndarray:
-        """È l'array di pesi del neurone."""
-        return self._weights
-    # end
-
-    @weights.setter
-    def weights(self, value : np.ndarray) -> None:
-        if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
-        
-        # print(self.id, len(value), self.neuron_size)
-        if (not len(value) == self.neuron_size):
-            raise ValueError("La dimensione del vettore dei pesi non corrisponde a quella del neurone.")
-        
-        self._weights = value
-    # end
-
-    @property
-    def bias(self) -> float:
-        """È il bias del neurone che modifica la combinazione lineare di input e pesi."""
-        return self._bias
-    # end
-
-    @bias.setter
-    def bias(self, value : float) -> None:
-        self._bias = value
-    # end
-
-    @property
-    def out_val(self) -> float:
-        """È lo scalare dato dalla somma del bias e della combinazione lineare di input e pesi."""
-        return self._out_val
-    # end
-
-    @out_val.setter
-    def out_val(self, value : float) -> None:
-        self._out_val = value
-    # end
-
-    @property
-    def act_fun(self) -> constants.ActivationFunctionType:
-        """È la funzione di attivazione del neurone, con dominio e codominio a valori reali."""
-        return self._act_fun
-    # end
-
-    @act_fun.setter
-    def act_fun(self, fun : constants.ActivationFunctionType) -> None:
-        self._act_fun = fun
-    # end
-
-    @property
-    def act_val(self) -> float:
-        """È il risultato dell'applicazione della funzione di attivazione."""
-        return self._act_val
-    # end
-
-    @act_val.setter
-    def act_val(self, value : float) -> None:
-        self._act_val = value
-    # end
-
-    # ####################################################################### #
-    # COSTRUTTORE
-
-    def __init__(self, ns : int) -> None:
-        """
-            È il costruttore della classe Neuron.
-            Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
-
-            Parameters:
-            -   ns : è la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi
-
-            Returns:
-            -   None
-        """
-
-        global tot_neurons
-        tot_neurons = tot_neurons + 1
-        self.id = tot_neurons
-
-        self.neuron_size = ns
-        self.inputs = np.zeros(self.neuron_size)
-        self.weights = np.zeros(self.neuron_size)
-
-        self.bias = 0
-        self.out_val = 0.0
-
-        self.act_fun = auxfunc.identity
-        self.act_val = 0.0
-
-    # end
-
-    # ####################################################################### #
-    # METODI
-
-    def output(self) -> float:
-        """
-            Calcola la somma tra il bias e la combinazione lineare di input e pesi.
-
-            Returns:
-            -   float : il valore di output del neurone
-        """
-
-        self.out_val = np.dot(self.inputs, self.weights) + self.bias
-        return self.out_val
-    
-    # end
-
-    def activate(self, train : bool = False) -> float | tuple[float, float]:
-        """
-            Applica la funzione di attivazione all'output del neurone.
-
-            Parameters:
-            -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
-
-            Returns:
-            -   se train=False, restituisce il valore di attivazione del neurone.
-            -   se train=True, restituisce sia l'output intermedio prima dell'applicazione della funzione di attivazione sia il valore di attivazione del neurone.
-        """
-
-        out = self.output()
-        self.act_val = self.act_fun(out)
-
-        if train:
-            return out, self.act_val
-        
-        return self.act_val
-        # https://youtu.be/IHZwWFHWa-w
-        
-    # end
-
-    # ####################################################################### #
-
-    def __repr__(self) -> str:
-        """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Neuron.
-            
-            Returns:
-            -   una stringa contenente i dettagli dell'oggetto.
-        """
-        
-        return f'Neuron(\n\tid = {self.id},\n\tsize = {self.neuron_size},\n\tinputs = {pprint.pformat(self.inputs)},\n\tweights = {pprint.pformat(self.weights)},\n\tbias = {self.bias},\n\tact_fun = {self.act_fun}\n)'
-    
-    # end
-
-# end class Neuron
-
-# ########################################################################### #
-# IMPLEMENTAZIONE DELLA CLASSE LAYER
-
-class Layer:
-
-    # ####################################################################### #
-    # ATTRIBUTI DI CLASSE
-
-    @property
-    def units(self) -> list[Neuron]:
-        """È la lista di neuroni del layer."""
-        return self._units
-    # end
-
-    @units.setter
-    def units(self, value : list[Neuron]) -> None:
-        self._units = value
-    # end
-
-    @property
-    def layer_size(self) -> int:
-        """È la dimensione del layer, cioe' il numero di neuroni di cui e' composto."""
-        return self._layer_size
-    # end
-
-    @layer_size.setter
-    def layer_size(self, value : int) -> None:
-        if (value <= 0):
-            raise ValueError("La dimensione del layer deve essere maggiore di 0.")
-        self._layer_size = value
-    # end
-
-    @property
-    def weights(self) -> np.ndarray:
-        """
-            Restituisce i pesi del layer.
-            
-            Returns:
-            -   una matrice contenente i pesi di tutti i neuroni del layer, dove la la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione indica il numero di pesi all'interno del singolo neurone.
-        """
-        
-        return np.reshape([n.weights for n in self.units], (self.layer_size, self.units[0].neuron_size))
-    
-    # end
-
-    @weights.setter
-    def weights(self, value : np.ndarray) -> None:
-        # print("Layer:", len(value), self.weights.size)
-        if (len(value) <= 0 or len(value) > self.weights.size):
-            raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
-
-        start = 0
-        end = 0
-        for n in self.units:
-            end += len(n.weights)
-            n.weights = value[start:end]
-            start = end
-
-    # end
-
-    @property
-    def biases(self) -> np.ndarray:
-        """
-            Restituisce i bias del layer.
-            
-            Returns:
-            -   un vettore colonna contenente i bias di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione e' 1 perche' il bias e' uno scalare.
-        """
-        
-        # Si utilizza -1 per recuperare la dimensione della lista originale.
-        return np.reshape([n.bias for n in self.units], (-1,1))
-    
-    # end
-
-    @biases.setter
-    def biases(self, value : np.ndarray) -> None:
-        # print("Layer:", len(value), len(self.biases))
-        if (len(value) <= 0 or len(value) > len(self.biases)):
-            raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
-        
-        start = 0
-        end = 0
-        for n in self.units:
-            end += 1
-            n.bias = value[start]
-            start = end
-
-    # end
-
-    @property
-    def act_fun(self) -> constants.ActivationFunctionType:
-        """È la funzione di attivazione di tutti i neuroni del layer, con dominio e codominio a valori reali."""
-        return self._act_fun
-    # end
-
-    @act_fun.setter
-    def act_fun(self, fun : constants.ActivationFunctionType) -> None:
-        self._act_fun = fun
-        for i in range(len(self.units)):
-            self.units[i].act_fun = fun
-    # end
-
-    # ####################################################################### #
-    # COSTRUTTORE
-
-    def __init__(self, ls : int, ns : int, af : constants.ActivationFunctionType) -> None:
-        """
-            È il costruttore della classe Layer.
-            Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
-
-            Parameters:
-            -   ls : e' la dimensione del layer, cioe' il numero di neuroni di cui e' composto.
-            -   ns : e' la dimensione del neurone, cioe' la dimensione dei vettori di input e dei pesi.
-            -   af : e' la funzione di attivazione da associare a tutti i neuroni del layer.
-
-            Returns:
-            -   None
-        """
-
-        # Richiama il setter della property "layer_size"
-        self.layer_size = int(ls)
-
-        self.units = []
-        for i in range(ls):
-            self.units.append(Neuron(ns))
-        
-        self.act_fun = af
-
-    # end
-
-    # ####################################################################### #
-    # METODI
-
-    def output(self) -> np.ndarray:
-        """
-            Calcola gli output dei neuroni del layer corrente.
-            
-            Returns:
-            -   un numpy.ndarray contenente tutti gli output dei neuroni.
-        """
-
-        layer_outputs = [n.output() for n in self.units]
-        return np.array(layer_outputs)
-
-    # end
-
-    def activate(self, train : bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-        """
-            Calcola i valori di attivazione dei neuroni del layer corrente.
-
-            Parameters:
-            -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
-
-            Returns:
-            -   se train=False, un numpy.ndarray contenente tutti i valori di attivazione dei neuroni.
-            -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
-            
-        """
-
-        layer_outputs = []
-        layer_activations = []
-
-        if train:
-            for neuron in self.units:
-                out, act = neuron.activate(train=train)
-                layer_outputs.append(out)
-                layer_activations.append(act)
-
-            return np.array(layer_outputs), np.array(layer_activations)
-
-        layer_activations = [neuron.activate() for neuron in self.units]
-        return np.array(layer_activations)
-    
-    # end
-
-    # ####################################################################### #
-
-    def __repr__(self) -> str:
-        """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Layer.
-            
-            Returns:
-            -   una stringa contenente i dettagli dell'oggetto.
-        """
-
-        return f'Layer(\n\tsize = {self.layer_size}\n)'
-    
-    # end
-
-# end class Layer
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE NEURAL NETWORK
@@ -805,7 +414,7 @@ class NeuralNetwork:
             network_outputs : list[np.ndarray],
             network_activations : list[np.ndarray],
             target_label : list[float],
-            learning_rate : float = 0.00001
+            learning_rate : float = constants.LEARNING_RATE
     ) -> np.ndarray:
         
         """
@@ -935,7 +544,7 @@ class NeuralNetwork:
               validation_data : np.ndarray,
               validation_labels : np.ndarray,
               epochs : int = 35,
-              learning_rate : float = 0.00001
+              learning_rate : float = constants.LEARNING_RATE
     ):
         
         """
@@ -966,15 +575,14 @@ class NeuralNetwork:
         start_time = time.time()
 
         for e in range(epochs):
-            print(f"Epoca n.{e+1}")
 
             for n, example in enumerate(zip(training_data, training_labels)):
 
                 data = 0
                 label = 1
 
-                print(f"Esempio n.{n+1}\n")
-                print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
+                # print(f"Esempio n.{n+1}\n")
+                # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
 
                 # STEP 1: forward propagation
                 network_outputs, network_activations = self.__forward_propagation(
@@ -1019,12 +627,16 @@ class NeuralNetwork:
 
             # TODO: compute_accuracy
 
+            end_time = time.time()
+            tot_time = end_time - start_time
+            if (e == 0 or (e+1) % (epochs / constants.NUM_STAMPE_EPOCHE) == 0):
+                print(f"Epoca n.{e+1} terminata in {round(tot_time, 3)} secondi.")
+            print()
+
         # end for e
 
-        end_time = time.time()
-        tot_time = end_time - start_time
-
         print(f"L'addestramento ha impiegato {round(tot_time, 3)} secondi.")
+        print()
 
     # end
 
@@ -1042,7 +654,7 @@ class NeuralNetwork:
         prediction = self.__forward_propagation(x)
         label = np.argmax(prediction)
 
-        print("\nPredizione della rete:")
+        print("Predizione della rete:")
         print(f'\t{constants.ETICHETTE_CLASSI[label]}')
         print()
 

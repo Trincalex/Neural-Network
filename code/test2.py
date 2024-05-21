@@ -1,6 +1,6 @@
 import auxfunc
 import constants
-import artificial_neural_network as ann
+from artificial_neural_network import NeuralNetwork
 import dataset_function as df
 import numpy as np
 import pprint
@@ -34,8 +34,8 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
-# net = ann.NeuralNetwork(30, 5, 3)
-net = ann.NeuralNetwork(30, 3, 2)
+net = NeuralNetwork(30, 5, 3)
+# net = NeuralNetwork(30, 3, 2)
 # net = ann.NeuralNetwork(784, 32, 10) # una possibile configurazione per il problema della classificazione delle cifre MNIST
 # print("Totale neuroni:", ann.tot_neurons)
 
@@ -61,13 +61,13 @@ c = [0, 1, 1, 1, 1, 0,
      0, 1, 0, 0, 0, 0,
      0, 1, 1, 1, 1, 0]
 
-# dataset = np.array([a, b, c])
-dataset = np.array([a, b])
+dataset = np.array([a, b, c])
+# dataset = np.array([a, b])
 # dataset = np.array([[0], [1]])
  
 # Creating labels (one-hot)
-# labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-labels = np.array([[1, 0], [0, 1]])
+labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+# labels = np.array([[1, 0], [0, 1]])
 
 # pprint.pprint(dataset)
 # print(type(dataset), dataset.shape)
@@ -78,8 +78,15 @@ labels = np.array([[1, 0], [0, 1]])
 
 # net.back_propagation(a, y, learning_rate=0.01)
 
-net.train(dataset, labels, dataset, labels, epochs=1)
-# prediction = net.predict(dataset[0])
+prediction = net.predict(dataset[0])
+prediction = net.predict(dataset[1])
+prediction = net.predict(dataset[2])
+
+net.train(dataset, labels, dataset, labels, epochs=100000)
+
+prediction = net.predict(dataset[0])
+prediction = net.predict(dataset[1])
+prediction = net.predict(dataset[2])
 
 # for n in net.input_layer.units:
 #     print(repr(n))
