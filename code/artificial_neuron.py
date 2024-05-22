@@ -174,7 +174,7 @@ class Neuron:
             Calcola la somma tra il bias e la combinazione lineare di input e pesi.
 
             Returns:
-            -   float : il valore di output del neurone
+            -   float : l'input pesato del neurone.
         """
 
         self.out_val = np.dot(self.inputs, self.weights) + self.bias

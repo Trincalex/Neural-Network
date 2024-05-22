@@ -222,6 +222,8 @@ class NeuralNetwork:
         # Controllo sul numero di hidden layer e funzioni di attivazioni inserite
         if (len(l_sizes) != len(l_act_funs)):
             raise constants.HiddenLayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
+        
+        rng = np.random.default_rng(0)
 
         # Inizializzazione degli hidden layers
         self.layers = []
@@ -234,8 +236,14 @@ class NeuralNetwork:
             for j in range(len(hl.units)):
                 # print(f'Neuron n.{j}')
                 n = hl.units[j]
-                n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=prev_size))
-                n.bias = constants.STANDARD_DEVIATION * np.random.normal()
+                n.weights = rng.random(prev_size)
+
+            for j in range(len(hl.units)):
+                n = hl.units[j]
+                n.bias = rng.random()
+
+                # n.weights = np.random.normal(scale=constants.STANDARD_DEVIATION, size=prev_size)
+                # n.bias = np.random.normal(scale=constants.STANDARD_DEVIATION)
 
             self.layers.append(hl)
 
@@ -243,8 +251,14 @@ class NeuralNetwork:
         ol = Layer(output_size, l_sizes[-1], l_act_funs[-1])
         for j in range(len(ol.units)):
             n = ol.units[j]
-            n.weights = np.array(constants.STANDARD_DEVIATION * np.random.normal(size=l_sizes[-1]))
-            n.bias = constants.STANDARD_DEVIATION * np.random.normal()
+            n.weights = rng.random(l_sizes[-1])
+
+        for j in range(len(ol.units)):
+            n = ol.units[j]
+            n.bias = rng.random()
+
+            # n.weights = np.random.normal(scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
+            # n.bias = np.random.normal(scale=constants.STANDARD_DEVIATION)
 
         self.layers.append(ol)
 
@@ -286,7 +300,7 @@ class NeuralNetwork:
             
     # end
 
-    def __forward_propagation(
+    def forward_propagation(
             self,
             x : list[float],
             train : bool = False
@@ -301,7 +315,7 @@ class NeuralNetwork:
             
             Returns:
             -   se train=False, un numpy.ndarray contenente i valori di attivazione complessivi della rete, cioe' i valori di attivazione dell'output layer.
-            -   se train=True, una prima lista contenente i valori degli output intermedi di ogni layer della rete ed una seconda lista contenente i valori di attivazione di ogni layer della rete.
+            -   se train=True, una prima lista contenente gli input pesati di ogni layer della rete ed una seconda lista contenente i valori di attivazione di ogni layer della rete.
         """
 
         outputs = []
@@ -342,12 +356,12 @@ class NeuralNetwork:
     # end
 
     def __compute_delta_cost_activation(
-            self,
-            layer_index : int,
-            neuron_index : int,
-            network_outputs : list[np.ndarray],
-            network_activations : list[np.ndarray],
-            target : list[float]
+        self,
+        layer_index : int,
+        neuron_index : int,
+        network_outputs : list[np.ndarray],
+        network_activations : list[np.ndarray],
+        target : list[float]
     ) -> float:
 
         """
@@ -361,64 +375,20 @@ class NeuralNetwork:
         
         """
 
-        if layer_index < 0 or layer_index >= self.depth:
-            raise ValueError("L'indice inserito per il layer non e' valido.")
-        
-        if neuron_index < 0 or neuron_index >= self.layers[layer_index].layer_size:
-            raise ValueError("L'indice inserito per il neurone non e' valido.")
-        
-        if layer_index == self.depth-1:
 
-            out = self.err_fun(network_activations[layer_index], target, der=True)
-            # print("cost_gradient:", round(out[neuron_index], 3))
-            # print()
-            return out[neuron_index]
-        
-        else:
-
-            out = 0
-            next_size = self.layers[layer_index+1].layer_size
-
-            for j in range(next_size):
-                # print("layer_index+1:", layer_index+1, "layer_size:", next_size)
-                # print("next_neuron:", j, "prev_neuron:", neuron_index)
-
-                weights_size = self.layers[layer_index+1].weights.shape[1]
-                weight_index = (layer_index+1) * (next_size * weights_size) + j * weights_size + neuron_index
-                delta_za = self.weights[weight_index]
-
-                delta_az = self.layers[layer_index+1].act_fun(network_outputs[layer_index+1][j], der=True)
-
-                delta_Ca = self.__compute_delta_cost_activation(
-                    layer_index+1, j,
-                    network_outputs,
-                    network_activations,
-                    target
-                )
-
-                # print("delta_za:", round(delta_za, 3), "; delta_az:", round(delta_az, 3), "; delta_Ca:", round(delta_Ca, 3))
-
-                delta = delta_za * delta_az * delta_Ca
-                out += delta
-            
-            # end for j
-
-            # print("derivative_cost_activation:", round(out, 3))
-            # print()
-            return out
     
     # end
 
     def __back_propagation(
-            self,
-            network_outputs : list[np.ndarray],
-            network_activations : list[np.ndarray],
-            target_label : list[float],
-            learning_rate : float = constants.DEFAULT_LEARNING_RATE
+        self,
+        network_outputs : list[np.ndarray],
+        network_activations : list[np.ndarray],
+        target_label : list[float],
+        learning_rate : float = constants.DEFAULT_LEARNING_RATE
     ) -> np.ndarray:
         
         """
-            Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo rispetto all'esempio di training e la corrispondente etichetta in input. Calcola la derivata prima parziale (gradiente) del valore della funzione di costo rispetto a tutti i pesi della rete utilizzando iterativamente la regola della catena verso i layer precedenti (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
+            Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo rispetto all'esempio di training e la corrispondente etichetta in input. Calcola la derivata prima parziale (gradiente) della funzione di costo rispetto a tutti i pesi della rete utilizzando iterativamente la regola della catena verso i layer precedenti (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
             
             Parameters:
             -   network_outputs : la lista di output di ogni layer della rete.
@@ -431,75 +401,9 @@ class NeuralNetwork:
             -   np.ndarray : il gradiente della funzione di costo rispetto ai bias della rete neurale.
         """
 
-        gradient_weights = []
-        gradient_biases = []
-        gradient_size = 0
 
-        for l in reversed(range(self.depth)):
-            # print("Layer:", l)
-
-            curr_size = self.layers[l].layer_size
-            prev_size = self.input_size if l == 0 else self.layers[l-1].layer_size
-            # print("curr_size: ", curr_size, "prev_size: ", prev_size)
-
-            for j in range(curr_size):
-
-                delta_az = self.layers[l].act_fun(network_outputs[l][j], der=True)
-                delta_Ca = self.__compute_delta_cost_activation(
-                    l, j,
-                    network_outputs,
-                    network_activations,
-                    target_label
-                )
-
-                for k in range(prev_size):
-
-                    delta_zw = self.inputs[k] if l == 0 else network_activations[l-1][k]
-                    delta = delta_zw * delta_az * delta_Ca
-
-                    # print(f"Componente n.{gradient_size}")
-                    # print("\tdelta_zw:", round(delta_zw, 3))
-                    # print("\tdelta_az:", round(delta_az, 3))
-                    # print("\tdelta_Ca:", round(delta_Ca, 3), "\n")
-
-                    gradient_weights.append(delta)
-
-                    # Conteggio posizioni del gradiente per i pesi della rete
-                    gradient_size += 1
-
-                # end for k
-            # end for j
-        # end for l
-
-        for l in reversed(range(self.depth)):
-            curr_size = self.layers[l].layer_size
-
-            for j in range(curr_size):
-
-                delta_zb = 1
-                delta = delta_zb * delta_az * delta_Ca
-
-                # print(f"Componente n.{gradient_size}")
-                # print("\tdelta_zb:", round(delta_zb, 3))
-                # print("\tdelta_az:", round(delta_az, 3))
-                # print("\tdelta_Ca:", round(delta_Ca, 3), "\n")
-
-                gradient_biases.append(delta)
-                
-                # Conteggio posizioni del gradiente per i bias della rete
-                gradient_size += 1
-            
-            # end for j
-        # end for l
-
-        # pprint.pprint(gradient_weights)
-        # pprint.pprint(gradient_biases)
-        # print("weights:", len(self.weights))
-        # print("biases:", len(self.biases))
-        # print("all_weights:", len(np.concatenate((self.weights, self.biases))))
-        # print("gradient_size:", gradient_size)
-
-        return gradient_weights, gradient_biases
+        
+    # end
 
     def __resilient_back_propagation(self):
         """
@@ -522,7 +426,7 @@ class NeuralNetwork:
 
             Parameters:
             -   predictions : e' un'array contenente tutte le previsioni della rete.
-            -   targets : e' un'array contenente i target reali corrispondenti alle previsioni.
+            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
 
             Returns:
             -   float : il rapporto tra predizioni corrette e totale delle predizioni.
@@ -731,3 +635,4 @@ class NeuralNetwork:
 # https://stackoverflow.com/questions/37835179/how-can-i-specify-the-function-type-in-my-type-hints
 # https://docs.python.org/3/library/typing.html
 # https://towardsdatascience.com/understanding-backpropagation-algorithm-7bb3aa2f95fd
+# http://neuralnetworksanddeeplearning.com/chap2.html

@@ -50,9 +50,8 @@ for i in range(10):
 # print("\n")
 # print(rete.get_depth())
 
-'''
-Riferimenti
--   https://www.geeksforgeeks.org/python-output-formatting/
--   https://numpy.org/doc/1.25/reference/random/generated/numpy.random.shuffle.html
+# ########################################################################### #
+# RIFERIMENTI
 
-'''
+# https://www.geeksforgeeks.org/python-output-formatting/
+# https://numpy.org/doc/1.25/reference/random/generated/numpy.random.shuffle.html

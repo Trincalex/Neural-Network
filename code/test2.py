@@ -5,6 +5,8 @@ import dataset_function as df
 import numpy as np
 import pprint
 
+# ########################################################################### #
+
 # net = ann.NeuralNetwork(5, [30, 5, 8], 6)
 
 # # print("Totale neuroni:", ann.tot_neurons)
@@ -34,46 +36,7 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
-# net = NeuralNetwork(30, 5, 3)
-# net = NeuralNetwork(30, 3, 2)
-# print("Totale neuroni:", ann.tot_neurons)
-
-# Creating dataset
-# Letter A
-a = [0, 0, 1, 1, 0, 0,
-     0, 1, 0, 0, 1, 0,
-     1, 1, 1, 1, 1, 1,
-     1, 0, 0, 0, 0, 1,
-     1, 0, 0, 0, 0, 1]
-
-# Letter B
-b = [0, 1, 1, 1, 1, 0,
-     0, 1, 0, 0, 1, 0,
-     0, 1, 1, 1, 1, 0,
-     0, 1, 0, 0, 1, 0,
-     0, 1, 1, 1, 1, 0]
-
-# Letter C
-c = [0, 1, 1, 1, 1, 0,
-     0, 1, 0, 0, 0, 0,
-     0, 1, 0, 0, 0, 0,
-     0, 1, 0, 0, 0, 0,
-     0, 1, 1, 1, 1, 0]
-
-# dataset = np.array([a, b, c])
-# dataset = np.array([a, b])
-# dataset = np.array([[0], [1]])
- 
-# Creating labels (one-hot)
-# labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-# labels = np.array([[1, 0], [0, 1]])
-
-# pprint.pprint(dataset)
-# print(type(dataset), dataset.shape)
-# print(type(dataset[0]), dataset[0].shape)
-# pprint.pprint(y)
-# print(type(y), y.shape)
-# print(type(y[0]), y[0].shape)
+# ########################################################################### #
 
 # prediction = net.predict(dataset[0])
 # prediction = net.predict(dataset[1])
@@ -85,6 +48,8 @@ c = [0, 1, 1, 1, 1, 0,
 # prediction = net.predict(dataset[1])
 # prediction = net.predict(dataset[2])
 
+# ########################################################################### #
+
 Xtrain, Ytrain, Xtest, Ytest = df.loadDataset(constants.COPPIE_TRAINING, constants.COPPIE_TEST)
 Xtrain, Ytrain = df.split_dataset(Xtrain, Ytrain)
 
@@ -95,16 +60,16 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
      # Una possibile configurazione per il problema della classificazione delle cifre MNIST
      net = NeuralNetwork(784, 32, 10)
 
-     # for fold in Xtrain:
-     #      for example in fold:
-     #           print(example.shape)
-
      training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
      training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
      validation_fold = Xtrain[i]
      validation_labels = Ytrain[i]
 
      net.train(training_fold, training_labels, validation_fold, validation_labels, epochs=10)
+
+# end for i
+
+# ########################################################################### #
 
 # for n in net.input_layer.units:
 #     print(repr(n))

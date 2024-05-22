@@ -157,7 +157,7 @@ class Layer:
             Calcola gli output dei neuroni del layer corrente.
             
             Returns:
-            -   un numpy.ndarray contenente tutti gli output dei neuroni.
+            -   numpy.ndarray : un array contenente tutti gli input pesati dei neuroni del layer corrente.
         """
 
         layer_outputs = [n.output() for n in self.units]

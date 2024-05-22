@@ -118,8 +118,33 @@ def identity(input : float, der : bool = False) -> float:
 # ########################################################################### #
 # FUNZIONI DI ERRORE
 
+def cost_function(
+        err_fun : constants.ErrorFunctionType,
+        predictions : np.ndarray,
+        targets : np.ndarray
+) -> float:
+    
+    """
+
+        E' la definizione di una funzione di costo utilizzata per la backpropagation e per il calcolo dell'errore in una rete neurale. La funzione di costo deve rispettare due assunzioni:
+        1)  Deve poter essere scritta come la media dei valori dati dalla funzione di errore per ogni singolo esempio del training set.
+        2)  Deve poter essere scritta come funzione dei valori di attivazione dell'output layer di una rete neurale.
+
+        Parameters:
+        -   predictions: e' un'array contenente tutte le previsioni della rete.
+        -   targets: e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
+
+        Returns:
+        -   restituisce la media dei valori dati dalla funzione di errore per ogni coppia di predizione della rete ed etichetta del ground truth.
+    
+    """
+
+    return np.mean([err_fun(a, y) for a, y in zip(predictions, targets)])
+    
+# end
+
 def sum_of_squares(
-        prediction : np.ndarray, 
+        prediction : np.ndarray,
         target : np.ndarray,
         der : bool = False
 ) -> float | np.ndarray:
@@ -129,8 +154,8 @@ def sum_of_squares(
         E' una funzione di errore tipicamente utilizzata per i problemi di regressione.
 
         Parameters:
-        -   prediction: e l'output fornito dalla rete neurale su una determinata coppia del dataset.
-        -   target: e l'etichetta di classificazione di una determinata coppia del dataset.
+        -   prediction: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   target: e' l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
@@ -147,10 +172,10 @@ def sum_of_squares(
     # print(errors)
 
     """
-    Sia 'n' la lunghezza dei vettori in output.
-    Il valore da restituire in output dovrebbe essere diviso per 'n' per poterne calcolare la media ed ottenere dei risultati piu' consistenti che non dipendono da questa dimensione.
-    In realta', pero', si puo' dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
-    In particolare, scegliamo 2: in questo modo, nell'andare a calcolare la derivata prima, tale prodotto si cancella e rende i calcoli successivi piu' semplici e leggibili.
+        Sia 'n' la lunghezza dei vettori in output.
+        Il valore da restituire in output dovrebbe essere diviso per 'n' per poterne calcolare la media ed ottenere dei risultati piu' consistenti che non dipendono da questa dimensione.
+        In realta', pero', si puo' dividere per una qualsiasi costante, siccome questo non modifica la convessita' della funzione.
+        In particolare, scegliamo 2: in questo modo, nell'andare a calcolare la derivata prima, tale prodotto si cancella e rende i calcoli successivi piu' semplici e leggibili.
     """
 
     if der:
@@ -158,7 +183,8 @@ def sum_of_squares(
         # Per calcolare la matrice jacobiana, non restituiamo la somma ma l'intero vettore.
         return errors
     
-    return np.sum(errors ** 2) / 2
+    # return np.sum(errors ** 2) / 2
+    return (errors ** 2) / 2
 
 # end
 
@@ -227,6 +253,7 @@ def cross_entropy(
 # https://www.matematika.it/public/allegati/33/Grafici_domini_derivate_funzioni_iperboliche_1_1.pdf
 # https://www.matematika.it/public/allegati/33/11_44_Derivate_2_3.pdf
 # https://www.quora.com/Why-is-the-sum-of-squares-in-linear-regression-divided-by-2n-where-n-is-the-number-of-observations-instead-of-just-n
+# https://stats.stackexchange.com/questions/490355/why-are-there-different-formulas-for-the-quadratic-cost-function
 # https://www.youtube.com/watch?v=f50tlks5caI
 # https://www.digitalocean.com/community/tutorials/relu-function-in-python
 # https://stackoverflow.com/questions/4050907/python-overflowerror-math-range-error
