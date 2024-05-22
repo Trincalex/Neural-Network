@@ -36,9 +36,9 @@ def leaky_relu(input : float, der : bool = False) -> float:
     """
 
     if der:
-        return np.where(input >= 0, 1, constants.LEAKY_RELU_ALPHA)
+        return np.where(input >= 0, 1, constants.DEFAULT_LEAKY_RELU_ALPHA)
 
-    return np.where(input >= 0, input, constants.LEAKY_RELU_ALPHA * input)
+    return np.where(input >= 0, input, constants.DEFAULT_LEAKY_RELU_ALPHA * input)
 
 # end
 
@@ -57,10 +57,12 @@ def sigmoid(input : float, der : bool = False) -> float:
     
     """
     
-    fx = 1 + math.exp(-input)
+    fx = 1 + np.exp(-input)
 
     if der:
-        return (-math.exp(-input)) / (-math.pow(fx, 2))
+        num = np.exp(-input)
+        den = math.pow(fx, 2)
+        return num / den
     
     return 1 / fx
 
@@ -81,8 +83,8 @@ def tanh(input : float, der : bool = False) -> float:
     
     """
     
-    sinh = (math.exp(input) - math.exp(-input)) / 2
-    cosh = (math.exp(input) + math.exp(-input)) / 2
+    sinh = (np.exp(input) - np.exp(-input)) / 2
+    cosh = (np.exp(input) + np.exp(-input)) / 2
 
     if der:
         return 1 / (cosh ** 2)
@@ -173,7 +175,7 @@ def softmax(prediction : np.ndarray) -> np.ndarray:
         -   
     
     """
-    
+
     x_exp = np.exp(prediction - prediction.max(0))
     z = x_exp / np.sum(x_exp, 0)
     return z
@@ -210,26 +212,6 @@ def cross_entropy(
 
 # end
 
-def split_dataset(dataset : np.array ,labels : np.array ,k : int):
-    """
-        Divide il dataset e le label in k sottoinsiemi
-
-        Parameters:
-        -   dataset: il dataset da dividere
-        -   labels: i valori target del dataset
-        -   k: il numero di insiemi in cui dividere i dataset e le labels
-        
-        Returns:
-        -   k_fold_dataset: array che contiene i k array in cui e' stato suddiviso il dataset
-        -   k_fold: array che contiene i k array in cui sono state divise le labels
-    """
-
-    k_fold_dataset = np.array_split(dataset,k)
-    k_fold_labels = np.array_split(labels,k)
-    return k_fold_dataset, k_fold_labels
-
-# end
-
 # ########################################################################### #
 # ALTRE FUNZIONI
 
@@ -247,3 +229,4 @@ def split_dataset(dataset : np.array ,labels : np.array ,k : int):
 # https://www.quora.com/Why-is-the-sum-of-squares-in-linear-regression-divided-by-2n-where-n-is-the-number-of-observations-instead-of-just-n
 # https://www.youtube.com/watch?v=f50tlks5caI
 # https://www.digitalocean.com/community/tutorials/relu-function-in-python
+# https://stackoverflow.com/questions/4050907/python-overflowerror-math-range-error

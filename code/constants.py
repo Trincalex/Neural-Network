@@ -69,7 +69,10 @@ ETICHETTE_CLASSI = [
 COPPIE_TRAINING = 12500
 """ ... """
 
-K_FOLD_VALUE = 10
+COPPIE_TEST = 2500
+""" ... """
+
+DEFAULT_K_FOLD_VALUE = 10
 """ ... """
 
 DIMENSIONE_NEURONE_INPUT = 1
@@ -81,13 +84,13 @@ DIMENSIONE_PIXEL = 255
 DIMENSIONE_IMMAGINE = 28
 """ ... """
 
-LEARNING_RATE = 0.01
+DEFAULT_EPOCHS = 20
 """ ... """
 
-LEAKY_RELU_ALPHA = 0.01
+DEFAULT_LEARNING_RATE = 0.01
 """ ... """
 
-NUM_STAMPE_EPOCHE = 20
+DEFAULT_LEAKY_RELU_ALPHA = 0.01
 """ ... """
 
 # ########################################################################### #

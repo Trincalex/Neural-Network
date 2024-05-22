@@ -34,9 +34,8 @@ import pprint
 #     n = net.output_layer.units[i]
 #     print(repr(n))
 
-net = NeuralNetwork(30, 5, 3)
+# net = NeuralNetwork(30, 5, 3)
 # net = NeuralNetwork(30, 3, 2)
-# net = ann.NeuralNetwork(784, 32, 10) # una possibile configurazione per il problema della classificazione delle cifre MNIST
 # print("Totale neuroni:", ann.tot_neurons)
 
 # Creating dataset
@@ -61,12 +60,12 @@ c = [0, 1, 1, 1, 1, 0,
      0, 1, 0, 0, 0, 0,
      0, 1, 1, 1, 1, 0]
 
-dataset = np.array([a, b, c])
+# dataset = np.array([a, b, c])
 # dataset = np.array([a, b])
 # dataset = np.array([[0], [1]])
  
 # Creating labels (one-hot)
-labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+# labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # labels = np.array([[1, 0], [0, 1]])
 
 # pprint.pprint(dataset)
@@ -76,17 +75,36 @@ labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # print(type(y), y.shape)
 # print(type(y[0]), y[0].shape)
 
-# net.back_propagation(a, y, learning_rate=0.01)
+# prediction = net.predict(dataset[0])
+# prediction = net.predict(dataset[1])
+# prediction = net.predict(dataset[2])
 
-prediction = net.predict(dataset[0])
-prediction = net.predict(dataset[1])
-prediction = net.predict(dataset[2])
+# net.train(dataset, labels, dataset, labels, epochs=1)
 
-net.train(dataset, labels, dataset, labels, epochs=100000)
+# prediction = net.predict(dataset[0])
+# prediction = net.predict(dataset[1])
+# prediction = net.predict(dataset[2])
 
-prediction = net.predict(dataset[0])
-prediction = net.predict(dataset[1])
-prediction = net.predict(dataset[2])
+Xtrain, Ytrain, Xtest, Ytest = df.loadDataset(constants.COPPIE_TRAINING, constants.COPPIE_TEST)
+Xtrain, Ytrain = df.split_dataset(Xtrain, Ytrain)
+
+size = 0
+
+for i in range(constants.DEFAULT_K_FOLD_VALUE):
+
+     # Una possibile configurazione per il problema della classificazione delle cifre MNIST
+     net = NeuralNetwork(784, 32, 10)
+
+     # for fold in Xtrain:
+     #      for example in fold:
+     #           print(example.shape)
+
+     training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
+     training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
+     validation_fold = Xtrain[i]
+     validation_labels = Ytrain[i]
+
+     net.train(training_fold, training_labels, validation_fold, validation_labels, epochs=10)
 
 # for n in net.input_layer.units:
 #     print(repr(n))
