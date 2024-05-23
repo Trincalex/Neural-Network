@@ -52,12 +52,30 @@ class Layer:
     # end
 
     @property
+    def inputs(self) -> np.ndarray:
+        """È la matrice di valori in input al layer. Ha un numero di righe pari al numero di neuroni in questo layer e un numero di colonne pari al numero di neuroni del layer precedente."""
+
+        return np.reshape([n.inputs for n in self.units], (self.layer_size, self.units[0].neuron_size))
+    # end
+
+    @inputs.setter
+    def inputs(self, value : np.ndarray) -> None:
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore degli input deve essere di tipo 'numpy.ndarray'.")
+        
+        if (not value.size == self.input_size):
+            raise ValueError("La dimensione del vettore degli input non e' compatibile.")
+        
+        self._inputs = value
+    # end
+
+    @property
     def weights(self) -> np.ndarray:
         """
             Restituisce i pesi del layer.
             
             Returns:
-            -   una matrice contenente i pesi di tutti i neuroni del layer, dove la la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione indica il numero di pesi all'interno del singolo neurone.
+            -   una matrice contenente i pesi di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione indica il numero di pesi all'interno del singolo neurone.
         """
         
         return np.reshape([n.weights for n in self.units], (self.layer_size, self.units[0].neuron_size))
@@ -67,7 +85,10 @@ class Layer:
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
         # print("Layer:", len(value), self.weights.size)
-        if (len(value) <= 0 or len(value) > self.weights.size):
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
+        
+        if (not value.size == self.weights.size):
             raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
 
         start = 0
@@ -96,7 +117,10 @@ class Layer:
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
         # print("Layer:", len(value), len(self.biases))
-        if (len(value) <= 0 or len(value) > len(self.biases)):
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
+        
+        if (not value.size == self.biases.size):
             raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
         
         start = 0
@@ -178,19 +202,20 @@ class Layer:
             
         """
 
-        layer_outputs = []
-        layer_activations = []
-
         if train:
+            layer_outputs = []
+            layer_activations = []
+
             for neuron in self.units:
-                out, act = neuron.activate(train=train)
+                out, act = neuron.activate(train=True)
                 layer_outputs.append(out)
                 layer_activations.append(act)
 
             return np.array(layer_outputs), np.array(layer_activations)
+        
+        # end if
 
-        layer_activations = [neuron.activate() for neuron in self.units]
-        return np.array(layer_activations)
+        return np.array([neuron.activate() for neuron in self.units])
     
     # end
 

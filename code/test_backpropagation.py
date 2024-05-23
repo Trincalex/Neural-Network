@@ -59,17 +59,17 @@ labels = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
 rng = np.random.default_rng(0)
 
-hidden_weights = np.reshape(rng.random(150), (5, 30))
-hidden_biases = np.reshape(rng.random(5), (5, 1))
-output_weights = np.reshape(rng.random(15), (3, 5))
-output_biases = np.reshape(rng.random(3), (3, 1))
+hidden_weights = np.reshape(rng.normal(loc=0.0, scale=1.0, size=150), (5, 30))
+hidden_biases = np.reshape(rng.normal(loc=0.0, scale=1.0, size=5), (5, 1))
+output_weights = np.reshape(rng.normal(loc=0.0, scale=1.0, size=15), (3, 5))
+output_biases = np.reshape(rng.normal(loc=0.0, scale=1.0, size=3), (3, 1))
 
 input_activations = a
 
 print("--- NEURAL NETWORK ---\n")
 
-print(net.weights, "\n")
-print(net.biases, "\n")
+# print(net.weights, "\n")
+# print(net.biases, "\n")
 
 network_outputs, network_activations = net.forward_propagation(input_activations, train=True)
 
@@ -77,14 +77,28 @@ network_outputs, network_activations = net.forward_propagation(input_activations
 # print(network_outputs, "\n")
 # print(network_activations, "\n")
 
+w1, b1 = net.back_propagation0(network_outputs, network_activations, labels[0])
+
 print("-----\n")
 
 print("--- BACKPROPAGATION TEST ---\n")
 
-print(hidden_weights, "\n")
-print(output_weights, "\n")
-print(hidden_biases, "\n")
-print(output_biases, "\n")
+w2, b2 = net.back_propagation(labels[0])
+
+min_length = min(len(w1), len(w2))
+# Conta gli elementi uguali posizione per posizione
+count = sum(1 for i in range(min_length) if w1[i] == w2[i])
+print(f"Number of matching weights: {count} out of {len(w1)}")
+
+min_length = min(len(b1), len(b2))
+# Conta gli elementi uguali posizione per posizione
+count = sum(1 for i in range(min_length) if b1[i] == b2[i])
+print(f"Number of matching biases: {count} out of {len(b1)}")
+
+# print(hidden_weights, "\n")
+# print(output_weights, "\n")
+# print(hidden_biases, "\n")
+# print(output_biases, "\n")
 
 hidden_outputs = np.reshape(np.dot(hidden_weights, input_activations), (-1,1)) + hidden_biases
 hidden_activations = np.array([auxfunc.sigmoid(value) for value in hidden_outputs])

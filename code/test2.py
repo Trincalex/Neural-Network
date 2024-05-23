@@ -57,6 +57,8 @@ size = 0
 
 for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
+     print(f"Fold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
+
      # Una possibile configurazione per il problema della classificazione delle cifre MNIST
      net = NeuralNetwork(784, 32, 10)
 
@@ -65,9 +67,16 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
      validation_fold = Xtrain[i]
      validation_labels = Ytrain[i]
 
-     net.train(training_fold, training_labels, validation_fold, validation_labels, epochs=10)
+     net.train(training_fold, training_labels, validation_fold, validation_labels)
 
 # end for i
+
+# prendi la miglior rete di tutte ??
+
+for test_example in zip(Xtest, Ytest):
+     net.predict(test_example[0])
+     df.show_image(test_example[0])
+     print("\n\n", test_example[1])
 
 # ########################################################################### #
 

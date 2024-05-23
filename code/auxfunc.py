@@ -118,31 +118,6 @@ def identity(input : float, der : bool = False) -> float:
 # ########################################################################### #
 # FUNZIONI DI ERRORE
 
-def cost_function(
-        err_fun : constants.ErrorFunctionType,
-        predictions : np.ndarray,
-        targets : np.ndarray
-) -> float:
-    
-    """
-
-        E' la definizione di una funzione di costo utilizzata per la backpropagation e per il calcolo dell'errore in una rete neurale. La funzione di costo deve rispettare due assunzioni:
-        1)  Deve poter essere scritta come la media dei valori dati dalla funzione di errore per ogni singolo esempio del training set.
-        2)  Deve poter essere scritta come funzione dei valori di attivazione dell'output layer di una rete neurale.
-
-        Parameters:
-        -   predictions: e' un'array contenente tutte le previsioni della rete.
-        -   targets: e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
-
-        Returns:
-        -   restituisce la media dei valori dati dalla funzione di errore per ogni coppia di predizione della rete ed etichetta del ground truth.
-    
-    """
-
-    return np.mean([err_fun(a, y) for a, y in zip(predictions, targets)])
-    
-# end
-
 def sum_of_squares(
         prediction : np.ndarray,
         target : np.ndarray,

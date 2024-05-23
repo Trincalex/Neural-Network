@@ -46,7 +46,7 @@ class TrainError(Exception):
 # ########################################################################### #
 # COSTANTI
 
-STANDARD_DEVIATION = 0.1
+STANDARD_DEVIATION = 1.0
 """ ... """
 
 NUMERO_CLASSI = 10
@@ -91,6 +91,9 @@ DEFAULT_LEARNING_RATE = 0.01
 """ ... """
 
 DEFAULT_LEAKY_RELU_ALPHA = 0.01
+""" ... """
+
+DEFAULT_RANDOM_SEED = 0
 """ ... """
 
 # ########################################################################### #
