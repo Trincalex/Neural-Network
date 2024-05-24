@@ -238,12 +238,12 @@ class NeuralNetwork:
             for j in range(len(hl.units)):
                 # print(f'Neuron n.{j}')
                 n = hl.units[j]
-                n.weights = rng.normal(loc=0.0, scale=1.0, size=prev_size)
+                n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
                 # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
 
             for j in range(len(hl.units)):
                 n = hl.units[j]
-                n.bias = rng.normal(loc=0.0, scale=1.0)
+                n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
                 # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
             self.layers.append(hl)
@@ -252,12 +252,12 @@ class NeuralNetwork:
         ol = Layer(output_size, l_sizes[-1], l_act_funs[-1])
         for j in range(len(ol.units)):
             n = ol.units[j]
-            n.weights = rng.normal(loc=0.0, scale=1.0, size=l_sizes[-1])
+            n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
             # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
 
         for j in range(len(ol.units)):
             n = ol.units[j]
-            n.bias = rng.normal(loc=0.0, scale=1.0)
+            n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
             # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
         self.layers.append(ol)
@@ -437,8 +437,6 @@ class NeuralNetwork:
         layer = self.layers[layer_index]
         next_layer = self.layers[layer_index+1]
 
-        # next_layer_weights = next_layer.weights.T
-
         start = layer.layer_size * layer.units[0].neuron_size
         end = start + next_layer.layer_size * next_layer.units[0].neuron_size
         weights_shape = (next_layer.layer_size, layer.layer_size)
@@ -450,10 +448,7 @@ class NeuralNetwork:
             for out in network_outputs[layer_index]
         ])
 
-        """
-            Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
-        """
-
+        # Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
         return np.multiply(delta_Ca, delta_az)
 
     # end
@@ -554,7 +549,7 @@ class NeuralNetwork:
 
     # end
 
-    def __compute_accuracy(predictions : np.ndarray, targets : np.ndarray) -> float:
+    def __compute_accuracy(self, predictions : np.ndarray, targets : np.ndarray) -> float:
         """
             Calcola l'accuratezza della rete neurale confrontando le previsioni con i target corrispondenti.
 
@@ -566,10 +561,11 @@ class NeuralNetwork:
             -   float : il rapporto tra predizioni corrette e totale delle predizioni.
         """
 
-        # if (not predictions.shape == targets.shape):
-        #     raise ValueError("...")
+        if not predictions.shape == targets.shape:
+            raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
 
-        pass
+        results = [(np.argmax(x), np.argmax(y)) for x, y in zip(predictions, targets)]
+        return sum(int(x == y) for x, y in results)
 
     # end
     
@@ -611,6 +607,7 @@ class NeuralNetwork:
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
         training_weights = []
+        training_predictions = []
 
         training_errors = []; training_costs = []
         validation_errors = []; validation_costs = []
@@ -623,6 +620,8 @@ class NeuralNetwork:
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
             print(f"\tInizio fase di training...")
+
+            training_predictions.clear()
 
             # TRAINING
             for n, example in enumerate(zip(training_data, training_labels)):
@@ -637,6 +636,7 @@ class NeuralNetwork:
                     example[data],
                     train=True
                 )
+                training_predictions.append(training_activations[-1])
 
                 # print("training_outputs\n")
                 # pprint.pprint(training_outputs)
@@ -726,7 +726,8 @@ class NeuralNetwork:
                 print(f"\tTempo totale: {round(tot_time, 3)} secondi")
                 print(f"\tErrore di addestramento: {round(training_costs[-1], 5)}")
                 # print(f"\tErrore di validazione: {round(validation_costs[-1], 5)}")
-                print(f"\tAccuracy: ")
+                acc = self.__compute_accuracy(np.array(training_predictions), training_labels)
+                print(f"\tAccuracy: {acc} di {len(training_labels)}")
 
         # end for e
 

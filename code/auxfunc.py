@@ -56,21 +56,24 @@ def sigmoid(input : float, der : bool = False) -> float:
     try:
         fx = 1 + np.exp(-input)
     except OverflowError:
-        print(f"OverflowError: il valore 'fx' e' troppo grande.")
-        fx = float('inf')
+        return 0
+    except RuntimeWarning:
+        return 0
+        # RuntimeWarning: overflow encountered in exp
 
     if der:
         try:
             num = np.exp(-input)
         except OverflowError:
-            print(f"OverflowError: il valore 'num' e' troppo grande.")
-            num = float('inf')
+            return float('inf')
+        except RuntimeWarning:
+            # RuntimeWarning: overflow encountered in ex
+            return float('inf')
 
         try:
             den = math.pow(fx, 2)
         except OverflowError:
-            print(f"OverflowError: il valore 'den' e' troppo grande.")
-            den = float('inf')
+            return 0
 
         return num / den
     
@@ -94,14 +97,12 @@ def tanh(input : float, der : bool = False) -> float:
     try:
         sinh = (np.exp(input) - np.exp(-input)) / 2
     except OverflowError:
-        print(f"OverflowError: il valore 'sinh' e' troppo grande.")
-        sinh = float('inf')
+        return float('inf')
     
     try:
         cosh = (np.exp(input) + np.exp(-input)) / 2
     except OverflowError:
-        print(f"OverflowError: il valore 'cosh' e' troppo grande.")
-        cosh = float('inf')
+        return 0
 
     if der:
         return 1 / (cosh ** 2)
@@ -187,12 +188,12 @@ def softmax(prediction : np.ndarray) -> np.ndarray:
     """
 
     try:
-        x_exp = np.exp(prediction - prediction.max(0))
+        y_exp = np.exp(prediction - prediction.max(axis=0))
     except OverflowError:
-        print(f"OverflowError: il valore 'x_exp' e' troppo grande.")
-        x_exp = float('inf')
+        # La divisione per il denominatore che tende a 'inf' e' pari a 0.
+        return 0
 
-    return x_exp / np.sum(x_exp, 0)
+    return y_exp / np.sum(y_exp, axis=0)
 
 # end
 
@@ -215,12 +216,16 @@ def cross_entropy(
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
     """
     
-    z = softmax(prediction)
+    probabilities = np.clip(
+        softmax(prediction),
+        constants.DEFAULT_SOFTMAX_EPSILON,
+        1 - constants.DEFAULT_SOFTMAX_EPSILON
+    )
 
     if der:
-        return z - target
+        return prediction - target
     
-    return -np.sum(target * np.log(z))
+    return -np.sum(target * np.log(probabilities))
 
 # end
 
@@ -283,3 +288,4 @@ def print_progress_bar(
 # https://www.youtube.com/watch?v=f50tlks5caI
 # https://www.digitalocean.com/community/tutorials/relu-function-in-python
 # https://stackoverflow.com/questions/4050907/python-overflowerror-math-range-error
+# https://www.v7labs.com/blog/cross-entropy-loss-guide
