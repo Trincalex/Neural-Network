@@ -84,6 +84,7 @@ class Layer:
 
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
+
         # print("Layer:", len(value), self.weights.size)
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
@@ -94,7 +95,7 @@ class Layer:
         start = 0
         end = 0
         for n in self.units:
-            end += len(n.weights)
+            end += n.neuron_size
             n.weights = value[start:end]
             start = end
 
@@ -116,6 +117,7 @@ class Layer:
 
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
+        
         # print("Layer:", len(value), len(self.biases))
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")

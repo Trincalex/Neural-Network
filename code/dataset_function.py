@@ -14,15 +14,19 @@ def loadDataset(training_length : int, test_length : int):
         -   ...
     """
 
+    print("Loading del dataset in corso...")
+
     current_dir = os.path.dirname(__file__)
     dataset_dir = os.path.abspath(os.path.join(current_dir, '..', 'dataset'))
 
     # Caricamento del file contenenti gli esempi di training
     train_file = os.path.join(dataset_dir, 'mnist_train.csv')
 
-    # Parsing del file '.csv' ed estrazione del numero di esempi richiesti
-    train_set = np.loadtxt(train_file, delimiter=',', max_rows=training_length)
-    np.random.shuffle(train_set)
+    # Parsing del file '.csv' e shuffling
+    train_set = np.loadtxt(train_file, delimiter=','); np.random.shuffle(train_set)
+
+    # Estrazione del numero di esempi richiesti
+    train_set = train_set[:training_length]
 
     # Normalizzazione per valori da 0 a 1
     train_imgs = np.asfarray(train_set[:, 1:]) / constants.DIMENSIONE_PIXEL
@@ -32,10 +36,12 @@ def loadDataset(training_length : int, test_length : int):
 
     # Si ripetono gli stessi passaggi anche per il caricamento del test set
     test_file = os.path.join(dataset_dir, 'mnist_test.csv')
-    test_set = np.loadtxt(test_file, delimiter=',', max_rows=test_length)
-    np.random.shuffle(test_set)
+    test_set = np.loadtxt(test_file, delimiter=','); np.random.shuffle(test_set)
+    test_set = test_set[:test_length]
     test_imgs = np.asfarray(test_set[:, 1:]) / constants.DIMENSIONE_PIXEL
     test_labels = convert_to_one_hot(test_set[:, 0])
+
+    print("Loading del dataset completato.\n")
     
     return (
         train_imgs,

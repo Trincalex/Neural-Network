@@ -85,11 +85,13 @@ class NeuralNetwork:
     @property
     def weights(self) -> np.ndarray:
         """E' il vettore serializzato di tutti i pesi di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete."""
+
         return np.array([w_elem for l in self.layers for w_vet in l.weights for w_elem in w_vet])
     # end
 
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
+
         # print("Neural Network:", len(value), len(self.weights))
         if (len(value) <= 0 or len(value) > len(self.weights)):
             raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
@@ -97,7 +99,7 @@ class NeuralNetwork:
         start = 0
         end = 0
         for l in self.layers:
-            end += l.weights.size
+            end += l.layer_size * l.units[0].neuron_size
             l.weights = value[start:end]
             start = end
 
@@ -223,7 +225,7 @@ class NeuralNetwork:
         if (len(l_sizes) != len(l_act_funs)):
             raise constants.HiddenLayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
         
-        # rng = np.random.default_rng(constants.DEFAULT_RANDOM_SEED)
+        rng = np.random.default_rng(constants.DEFAULT_RANDOM_SEED)
 
         # Inizializzazione degli hidden layers
         self.layers = []
@@ -236,13 +238,13 @@ class NeuralNetwork:
             for j in range(len(hl.units)):
                 # print(f'Neuron n.{j}')
                 n = hl.units[j]
-                # n.weights = rng.normal(loc=0.0, scale=1.0, size=prev_size)
-                n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
+                n.weights = rng.normal(loc=0.0, scale=1.0, size=prev_size)
+                # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
 
             for j in range(len(hl.units)):
                 n = hl.units[j]
-                # n.bias = rng.normal(loc=0.0, scale=1.0)
-                n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+                n.bias = rng.normal(loc=0.0, scale=1.0)
+                # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
             self.layers.append(hl)
 
@@ -250,13 +252,13 @@ class NeuralNetwork:
         ol = Layer(output_size, l_sizes[-1], l_act_funs[-1])
         for j in range(len(ol.units)):
             n = ol.units[j]
-            # n.weights = rng.normal(loc=0.0, scale=1.0, size=l_sizes[-1])
-            n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
+            n.weights = rng.normal(loc=0.0, scale=1.0, size=l_sizes[-1])
+            # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
 
         for j in range(len(ol.units)):
             n = ol.units[j]
-            # n.bias = rng.normal(loc=0.0, scale=1.0)
-            n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+            n.bias = rng.normal(loc=0.0, scale=1.0)
+            # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
         self.layers.append(ol)
 
@@ -353,152 +355,116 @@ class NeuralNetwork:
     
     # end
 
-    def __delta_output_layer(self, target : np.ndarray) -> np.ndarray:
+    def __delta_output_layer(
+            self,
+            output_layer_outputs : np.ndarray,
+            output_layer_activations : np.ndarray,
+            target : np.ndarray
+    ) -> np.ndarray:
+        
         """
             Calcola il vettore le cui componenti sono le derivate prime parziali della funzione di costo della rete neurale rispetto agli input pesati dell'output layer.
             E' l'implementazione dell'equazione (BP1a) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
 
             Parameters:
+            -   output_layer_outputs : e' il vettore di input pesati dell'output layer.
+            -   output_layer_activations : e' il vettore di valori di attivazione dell'output layer.
             -   target : e' l'etichetta di una determinata coppia del dataset.
 
             Returns:
             -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer.
         """
 
-        output_layer = self.layers[-1]
-        # print("output_layer_activations:", output_layer.activate())
+        """
+            E' un vettore le cui componenti sono le singole derivate parziali della funzione di errore rispetto al singolo valore di attivazione dell'output layer.
+            Esprime quanto cambia la funzione di costo rispetto a questi valori di attivazione.
+        """
 
-        # E' un vettore le cui componenti sono le singole derivate parziali della funzione di errore rispetto al singolo valore di attivazione dell'output layer.
-        # Esprime quanto cambia la funzione di costo rispetto a questi valori di attivazione.
-        delta_Ca = self.err_fun(output_layer.activate(), target, der=True)
-        # print("\noutput_layer_delta_Ca:", delta_Ca)
+        delta_Ca = self.err_fun(output_layer_activations, target, der=True)
 
-        # print("\noutput_layer_outputs:", output_layer.output())
         """
             I pesi nell'output layer si addestrano lentamente se il valore di attivazione calcolato su 'out' e' molto basso o molto alto (per la sigmoide, ad esempio, vicino allo 0 o vicino a 1, rispettivamente).
             In questo caso, la derivata prima restituisce un valore molto vicino allo 0. Si dice che il neurone dell'output layer si e' saturato e, di conseguenza, il peso non si addestra piu' (o si addestra lentamente). Lo stesso vale anche per i bias della rete neurale.
             Una possibile soluzione per prevenire il rallentamento dell'apprendimento, ad esempio, potrebbe essere quella di scegliere una funzione di attivazione la cui derivata e' sempre positiva e che non si avvicina mai allo 0.
         """
-        delta_az = np.array([output_layer.act_fun(out, der=True) for out in output_layer.output()])
-        # print("\noutput_layer_delta_az:", delta_az)
+        
+        delta_az = np.array([
+            self.layers[-1].act_fun(out, der=True)
+            for out in output_layer_outputs
+        ])
 
         return np.multiply(delta_Ca, delta_az)
 
     # end
 
-    def __delta_layer(self, layer_index: int, target : np.ndarray) -> np.ndarray:
+    def __delta_layer(
+            self,
+            network_outputs : list[np.ndarray],
+            network_activations : list[np.ndarray],
+            network_weights : np.ndarray,
+            delta_output_layer : np.ndarray,
+            layer_index: int
+    )-> np.ndarray:
+        
         """
             Calcola il vettore le cui componenti sono le derivate prime parziali della funzione di costo della rete neurale rispetto agli input pesati di un layer.
             E' l'implementazione dell'equazione (BP2) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
 
             Parameters:
-            -   layer_index : e' l'indice del layer corrente che contiene il neurone indicato da 'neuron_index' (corrisponde a 'l' nell'equazione proposta di Nielsen).
-            -   target : e' l'etichetta di una determinata coppia del dataset.
+            -   network_outputs : la lista di output di ogni layer della rete.
+            -   network_activations : la lista di valori di attivazione di ogni layer della rete.
+            -   delta_output_layer : il gradiente della funzione di costo rispetto agli input pesati dell'output layer.
+            -   layer_index : e' l'indice del layer scelto che contiene il neurone indicato da 'neuron_index' (corrisponde a 'l' nell'equazione proposta da Nielsen).
 
             Returns:
-            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati di un layer della rete neurale.
+            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati del layer scelto nella rete neurale.
         """
-
-        # if layer_index < 0 or layer_index >= self.depth:
-        #     raise ValueError("L'indice inserito per il layer non e' valido.")
         
         if layer_index == self.depth-1:
-            return self.__delta_output_layer(target)
-        
-        layer = self.layers[layer_index]
-        next_layer = self.layers[layer_index+1]
+            return delta_output_layer
         
         if layer_index+1 == self.depth-1:
-            delta_tmp = self.__delta_output_layer(target)
+            delta_tmp = delta_output_layer
         else:
-            delta_tmp = self.delta_hidden_layer(layer_index+1, target)
+            delta_tmp = self.__delta_layer(
+                network_outputs,
+                network_activations,
+                network_weights,
+                delta_output_layer,
+                layer_index+1
+            )
 
-        # print("\noutput_layer_delta:", delta_tmp)
-        # print("\nnext_layer_weights:", next_layer.weights.T, next_layer.weights.T.shape)
+        layer = self.layers[layer_index]
+        next_layer = self.layers[layer_index+1]
 
-        # print("\nlayer_output:", layer.output())
+        # next_layer_weights = next_layer.weights.T
 
-        delta_Ca = np.dot(next_layer.weights.T, delta_tmp)
-        delta_az = np.array([layer.act_fun(out, der=True) for out in layer.output()])
+        start = layer.layer_size * layer.units[0].neuron_size
+        end = start + next_layer.layer_size * next_layer.units[0].neuron_size
+        weights_shape = (next_layer.layer_size, layer.layer_size)
+        next_layer_weights = np.reshape(network_weights[start:end], weights_shape).T
 
-        # print("\nhidden_layer_delta_Ca:", delta_Ca)
-        # print("\nhidden_layer_delta_az:", delta_az)
+        delta_Ca = np.dot(next_layer_weights, delta_tmp)
+        delta_az = np.array([
+            layer.act_fun(out, der=True)
+            for out in network_outputs[layer_index]
+        ])
 
-        # Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
+        """
+            Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
+        """
+
         return np.multiply(delta_Ca, delta_az)
-
-    # end
-
-    def __delta_cost_bias(self, layer_index : int, neuron_index : int, target : np.ndarray) -> float:
-        """
-            Calcola come cambia la funzione di costo rispetto al bias di uno specifico neurone della rete neurale.
-            E' l'implementazione dell'equazione (BP3) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
-
-            Parameters:
-            -   layer_index : e' l'indice del layer corrente che contiene il neurone indicato da 'neuron_index' (corrisponde a 'l' nell'equazione proposta di Nielsen).
-            -   neuron_index : e' l'indice del neurone nel layer indicato da 'layer_index' (corrisponde a 'j' nell'equazione proposta di Nielsen).
-            -   target : e' l'etichetta di una determinata coppia del dataset.
-
-            Returns:
-            -   float : un numero che esprime come cambia la funzione di costo rispetto al bias di uno specifico neurone della rete neurale. Esso e' dato proprio dalla componente 'neuron_index' del vettore restituito dalla funzione '__delta_layer()'.
-        """
-
-        if layer_index < 0 or layer_index >= self.depth:
-            raise ValueError("L'indice inserito per il layer non e' valido.")
-        
-        if neuron_index < 0 or neuron_index >= self.layers[layer_index].layer_size:
-            raise ValueError("L'indice inserito per il neurone non e' valido.")
-
-        return self.__delta_layer(layer_index, target)[neuron_index]
-
-    # end
-
-    def __delta_cost_weight(
-            self,
-            layer_index : int,
-            neuron_index : int,
-            prev_neuron_index : int,
-            target : np.ndarray
-    ) -> float:
-        
-        """
-            Calcola come cambia la funzione di costo rispetto al peso di uno specifica connessione tra due neuroni della rete neurale.
-            E' l'implementazione dell'equazione (BP4) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
-
-            Parameters:
-            -   layer_index : e' l'indice del layer corrente che contiene il neurone indicato da 'neuron_index' (corrisponde a 'l' nell'equazione proposta di Nielsen).
-            -   neuron_index : e' l'indice del neurone nel layer indicato da 'layer_index' (corrisponde a 'j' nell'equazione proposta di Nielsen).
-            -   prev_neuron_index : e' l'indice del neurone nel layer precedente a 'layer_index' (corrisponde a 'k' nell'equazione proposta di Nielsen).
-            -   target : e' l'etichetta di una determinata coppia del dataset.
-
-            Returns:
-            -   float : un numero che esprime come cambia la funzione di costo rispetto al peso di uno specifica connessione tra due neuroni della rete neurale. Esso e' dato dal prodotto del 'prev_neuron_index' valore di attivazione del layer precedente rispetto a 'layer_index' e la componente 'neuron_index' del vettore restituito dalla funzione '__delta_layer()'.
-        """
-
-        if layer_index < 0 or layer_index >= self.depth:
-            raise ValueError("L'indice inserito per il layer non e' valido.")
-        
-        if neuron_index < 0 or neuron_index >= self.layers[layer_index].layer_size:
-            raise ValueError("L'indice inserito per il neurone non e' valido.")
-        
-        if layer_index == 0:
-            if prev_neuron_index < 0 or prev_neuron_index >= self.inputs.size:
-                raise ValueError("L'indice inserito per il valore di attivazione non e' valido.")
-            prev_layer_activation = self.inputs[prev_neuron_index]
-        else:
-            if prev_neuron_index < 0 or prev_neuron_index >= self.layers[layer_index-1].layer_size:
-                raise ValueError("L'indice inserito per il valore di attivazione non e' valido.")
-            # prev_layer_activation = self.layers[layer_index-1].activate()[prev_neuron_index]
-            prev_layer_activation = self.layers[layer_index].inputs[neuron_index][prev_neuron_index]
-        
-        return prev_layer_activation * self.__delta_layer(layer_index, target)[neuron_index]
 
     # end
 
     def __back_propagation(
             self,
+            network_outputs : list[np.ndarray],
+            network_activations : list[np.ndarray],
+            network_weights : np.ndarray,
             target : np.ndarray,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray]:
         
         """
             Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo rispetto all'esempio di training e la corrispondente etichetta in input.
@@ -515,32 +481,61 @@ class NeuralNetwork:
             -   np.ndarray : il gradiente della funzione di costo rispetto ai bias della rete neurale.
         """
 
-        # STEP 1 : calcolo dell'errore sull'output layer
-        # delta_output_layer = self.__delta_output_layer(target)
+        gradient_weights = []
+        gradient_biases = []
 
-        # STEP 2 : retro-propagazione dell'errore ai layer precedenti
-        # delta_layer = []
-        # for i in range(self.depth):
-        #     delta_layer.append(self.__delta_layer(i, target))
-        # print("\ndelta:", delta_layer)
-
-        # STEP 3 : calcolo del gradiente della funzione di costo rispetto ai pesi
-        delta_weights = []
         for l in reversed(range(self.depth)):
+            # print("layer_index:", l)
+
+            """
+                STEP 1:
+                Calcolo dell'errore sull'output layer.
+            """
+
+            delta_output_layer = self.__delta_output_layer(
+                network_outputs[-1],
+                network_activations[-1],
+                target
+            )
+
+            """
+                STEP 2:
+                Retro-propagazione dell'errore ai layer precedenti.
+            """
+
+            delta_layer = self.__delta_layer(
+                network_outputs,
+                network_activations,
+                network_weights,
+                delta_output_layer,
+                l
+            )
+
+            """
+                STEP 3:
+                Calcolo del gradiente della funzione di costo rispetto ai bias della rete neurale, cioe' come cambia la funzione di costo rispetto ai bias di tutti i neuroni della rete neurale.
+                E' l'implementazione dell'equazione (BP3) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
+            """
+
             curr_size = self.layers[l].layer_size
+
+            for j in range(curr_size):
+                gradient_biases.append(delta_layer[j])
+
+            """
+                STEP 4:
+                Calcolo del gradiente della funzione di costo rispetto ai pesi della rete neurale, cioe' come cambia la funzione di costo rispetto al peso di tutte le connessioni tra due neuroni di due layer adiacenti della rete neurale.
+                E' l'implementazione dell'equazione (BP4) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
+            """
+
+            prev_layer_activations = self.inputs if l == 0 else network_activations[l-1]
             prev_size = self.input_size if l == 0 else self.layers[l-1].layer_size
+
             for j in range(curr_size):
                 for k in range(prev_size):
-                    delta_weights.append(self.__delta_cost_weight(l, j, k, target))
+                    gradient_weights.append(prev_layer_activations[k] * delta_layer[j])
 
-        # STEP 4 : calcolo del gradiente della funzione di costo rispetto ai bias
-        delta_biases = []
-        for l in reversed(range(self.depth)):
-            curr_size = self.layers[l].layer_size
-            for j in range(curr_size):
-                delta_biases.append(self.__delta_cost_bias(l, j, target))
-        
-        return delta_weights, delta_biases
+        return np.array(gradient_weights), np.array(gradient_biases)
         
     # end
 
@@ -581,14 +576,15 @@ class NeuralNetwork:
     # ####################################################################### #
     # METODI PUBBLICI
 
-    def train(self,
-              training_data : np.ndarray,
-              training_labels : np.ndarray,
-              validation_data : np.ndarray,
-              validation_labels : np.ndarray,
-              epochs : int = constants.DEFAULT_EPOCHS,
-              learning_rate : float = constants.DEFAULT_LEARNING_RATE
-    ):
+    def train(
+            self,
+            training_data : np.ndarray,
+            training_labels : np.ndarray,
+            validation_data : np.ndarray,
+            validation_labels : np.ndarray,
+            epochs : int = constants.DEFAULT_EPOCHS,
+            learning_rate : float = constants.DEFAULT_LEARNING_RATE
+    ) -> None:
         
         """
             Addestra la rete neurale tramite il training set ed il validation set dati in input.
@@ -603,7 +599,7 @@ class NeuralNetwork:
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   ... : ...
+            -   None.
         """
 
         # Controllo sulla compatibilita' di training_data e training_labels
@@ -631,7 +627,9 @@ class NeuralNetwork:
             # TRAINING
             for n, example in enumerate(zip(training_data, training_labels)):
 
-                print(f"\t\tEsempio n.{n+1}")
+                auxfunc.print_progress_bar(n+1, len(training_data), prefix='\t')
+
+                # print(f"\t\tEsempio n.{n+1}")
                 # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
 
                 # STEP 1: forward propagation
@@ -649,33 +647,56 @@ class NeuralNetwork:
                 training_errors.append(self.err_fun(training_activations[-1], example[label]))
 
                 # STEP 3: backpropagation
-                gradient_weights, gradient_biases = self.__back_propagation(example[label])
+                network_weights = self.weights
+                network_biases = self.biases
+                gradient_weights, gradient_biases = self.__back_propagation(
+                    training_outputs,
+                    training_activations,
+                    network_weights,
+                    example[label]
+                )
 
                 # STEP 4: aggiornamento dei pesi
-                training_weights.append({
-                    "Weights" : np.array([
-                        w - learning_rate * g
-                        for w, g in zip(
-                            self.weights,
-                            gradient_weights
-                        )
-                    ]),
-                    "Biases" : np.array([
-                        b - learning_rate * g
-                        for b, g in zip(
-                            self.biases,
-                            gradient_biases
-                        )
-                    ])
-                })
+                # training_weights.append({
+                #     "Weights" : np.array([
+                #         w - learning_rate * g
+                #         for w, g in zip(
+                #             self.weights,
+                #             gradient_weights
+                #         )
+                #     ]),
+                #     "Biases" : np.array([
+                #         b - learning_rate * g
+                #         for b, g in zip(
+                #             self.biases,
+                #             gradient_biases
+                #         )
+                #     ])
+                # })
 
                 # Perché fare append di queste configurazioni se la validation agisce solo sull'ultima registrata?
-                self.weights = training_weights[-1]["Weights"]
-                self.biases = training_weights[-1]["Biases"]
+                # self.weights = training_weights[-1]["Weights"]
+                # self.biases = training_weights[-1]["Biases"]
+
+                self.weights = np.array([
+                    w - learning_rate * g
+                    for w, g in zip(
+                        network_weights,
+                        gradient_weights
+                    )
+                ])
+
+                self.biases = np.array([
+                    b - learning_rate * g
+                    for b, g in zip(
+                        network_biases,
+                        gradient_biases
+                    )
+                ])
 
             # end for n, example
 
-            print(f"\tTerminata fase di training...")
+            print(f"\tTerminata fase di training.")
             # print(f"\tInizio fase di validation...")
 
             # # VALIDATION
@@ -692,8 +713,8 @@ class NeuralNetwork:
             
             # # end for n, example
 
-            # print(f"\tTerminata fase di validation")
-            print()
+            # print(f"\tTerminata fase di validation.")
+            # print()
 
             end_time = time.time()
             tot_time = end_time - start_time
@@ -711,6 +732,9 @@ class NeuralNetwork:
 
         print(f"L'addestramento ha impiegato {round(tot_time, 3)} secondi.")
         print()
+
+        # print(training_activations)
+        # print(self.weights)
 
         # # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
         # best_net = int(np.argmin(validation_costs, keepdims=False))

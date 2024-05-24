@@ -22,7 +22,6 @@ import constants
 
 def leaky_relu(input : float, der : bool = False) -> float:
     """
-
         Calcola il valore di attivazione di un neurone utilizzando un miglioramento della classica ReLU (Rectified Linear Unit), in quanto la sua derivata prima e' sempre un valore non negativo.
 
         Parameters:
@@ -32,7 +31,6 @@ def leaky_relu(input : float, der : bool = False) -> float:
         Returns:
         -   se der=False, restituisce l'attivazione della Leaky ReLU.
         -   se der=True, invece, ne restituisce il gradiente.
-    
     """
 
     if der:
@@ -44,7 +42,6 @@ def leaky_relu(input : float, der : bool = False) -> float:
 
 def sigmoid(input : float, der : bool = False) -> float:
     """
-
         Calcola il valore di attivazione di un neurone utilizzando la funzione logistica.
 
         Parameters:
@@ -54,14 +51,27 @@ def sigmoid(input : float, der : bool = False) -> float:
         Returns:
         -   se der=False, restituisce l'attivazione della sigmoide.
         -   se der=True, invece, ne restituisce il gradiente.
-    
     """
-    
-    fx = 1 + np.exp(-input)
+
+    try:
+        fx = 1 + np.exp(-input)
+    except OverflowError:
+        print(f"OverflowError: il valore 'fx' e' troppo grande.")
+        fx = float('inf')
 
     if der:
-        num = np.exp(-input)
-        den = math.pow(fx, 2)
+        try:
+            num = np.exp(-input)
+        except OverflowError:
+            print(f"OverflowError: il valore 'num' e' troppo grande.")
+            num = float('inf')
+
+        try:
+            den = math.pow(fx, 2)
+        except OverflowError:
+            print(f"OverflowError: il valore 'den' e' troppo grande.")
+            den = float('inf')
+
         return num / den
     
     return 1 / fx
@@ -70,7 +80,6 @@ def sigmoid(input : float, der : bool = False) -> float:
 
 def tanh(input : float, der : bool = False) -> float:
     """
-
         Calcola il valore di attivazione di un neurone utilizzando la tangente iperbolica.
 
         Parameters:
@@ -80,11 +89,19 @@ def tanh(input : float, der : bool = False) -> float:
         Returns:
         -   se der=False, restituisce l'attivazione della tangente iperbolica.
         -   se der=True, invece, ne restituisce il gradiente.
-    
     """
     
-    sinh = (np.exp(input) - np.exp(-input)) / 2
-    cosh = (np.exp(input) + np.exp(-input)) / 2
+    try:
+        sinh = (np.exp(input) - np.exp(-input)) / 2
+    except OverflowError:
+        print(f"OverflowError: il valore 'sinh' e' troppo grande.")
+        sinh = float('inf')
+    
+    try:
+        cosh = (np.exp(input) + np.exp(-input)) / 2
+    except OverflowError:
+        print(f"OverflowError: il valore 'cosh' e' troppo grande.")
+        cosh = float('inf')
 
     if der:
         return 1 / (cosh ** 2)
@@ -95,7 +112,6 @@ def tanh(input : float, der : bool = False) -> float:
     
 def identity(input : float, der : bool = False) -> float:
     """
-
         Calcola il valore di attivazione di un neurone utilizzando la funzione identita'.
 
         Parameters:
@@ -105,7 +121,6 @@ def identity(input : float, der : bool = False) -> float:
         Returns:
         -   se der=False, restituisce l'input.
         -   se der=True, invece, ne restituisce il gradiente, cioe' 1.
-    
     """
     
     if der:
@@ -125,7 +140,6 @@ def sum_of_squares(
 ) -> float | np.ndarray:
     
     """
-
         E' una funzione di errore tipicamente utilizzata per i problemi di regressione.
 
         Parameters:
@@ -136,7 +150,6 @@ def sum_of_squares(
         Returns:
         -   se der=False, restituisce la somma dei quadrati degli errori componente per componente.
         -   se der=True, invece, restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
-    
     """
 
     # print(prediction)
@@ -158,15 +171,12 @@ def sum_of_squares(
         # Per calcolare la matrice jacobiana, non restituiamo la somma ma l'intero vettore.
         return errors
     
-    # return np.sum(errors ** 2) / 2
-    return (errors ** 2) / 2
+    return (np.linalg.norm(errors) ** 2) / 2
 
 # end
 
 def softmax(prediction : np.ndarray) -> np.ndarray:
-
     """
-
         ...
 
         Parameters:
@@ -174,12 +184,15 @@ def softmax(prediction : np.ndarray) -> np.ndarray:
 
         Returns:
         -   
-    
     """
 
-    x_exp = np.exp(prediction - prediction.max(0))
-    z = x_exp / np.sum(x_exp, 0)
-    return z
+    try:
+        x_exp = np.exp(prediction - prediction.max(0))
+    except OverflowError:
+        print(f"OverflowError: il valore 'x_exp' e' troppo grande.")
+        x_exp = float('inf')
+
+    return x_exp / np.sum(x_exp, 0)
 
 # end
 
@@ -190,7 +203,6 @@ def cross_entropy(
 ) -> float | np.ndarray:
     
     """
-
         E' una funzione di errore tipicamente utilizzata per i problemi di classificazione.
 
         Parameters:
@@ -201,7 +213,6 @@ def cross_entropy(
         Returns:
         -   se der=False, restituisce la somma dei quadrati degli errori componente per componente.
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
-    
     """
     
     z = softmax(prediction)
@@ -221,6 +232,46 @@ def cross_entropy(
 #         for elemento in riga:
 #             print(int(elemento), end=" ")
 #         print()
+
+def print_progress_bar(
+        iteration : int,
+        total : int,
+        prefix : str = '',
+        suffix : str = '',
+        decimals : int = 1,
+        length : int = 50,
+        fill : str = '#',
+        print_end : str = "\r"
+) -> None:
+    
+    """
+        Genera una barra di caricamento che si aggiorna ad ogni chiamata di un loop mostrando la percentuale di caricamento attuale.
+
+        Parameters:
+        -   iteration: l'indice dell'iterazione corrente.
+        -   total: il numero totale di iterazioni.
+        -   prefix: una stringa da stampare prima della barra di caricamento.
+        -   suffix: una stringa da stampare dopo la barra di caricamento.
+        -   decimals: il numero di cifre decimali da stampare della percentuale di progresso.
+        -   length: la lunghezza della barra di caricamento.
+        -   fill: il carattere di riempimento della barra.
+        -   print_end: il carattere da stampare al termine delle iterazioni.
+
+        Returns:
+        -   None.
+    """
+
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=print_end)
+
+    # Stampa una nuova linea quando tutte le iterazioni sono terminate
+    if iteration == total:
+        print()
+
+# end
 
 # ########################################################################### #
 # RIFERIMENTI
