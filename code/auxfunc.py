@@ -60,24 +60,31 @@ def sigmoid(input : float, der : bool = False) -> float:
     except RuntimeWarning:
         return 0
         # RuntimeWarning: overflow encountered in exp
-
-    if der:
-        try:
-            num = np.exp(-input)
-        except OverflowError:
-            return float('inf')
-        except RuntimeWarning:
-            # RuntimeWarning: overflow encountered in ex
-            return float('inf')
-
-        try:
-            den = math.pow(fx, 2)
-        except OverflowError:
-            return 0
-
-        return num / den
     
-    return 1 / fx
+    sigma = 1 / fx
+
+    # if der:
+    #     try:
+    #         num = np.exp(-input)
+    #     except OverflowError:
+    #         return float('inf')
+    #     except RuntimeWarning:
+    #         # RuntimeWarning: overflow encountered in ex
+    #         return float('inf')
+
+    #     try:
+    #         den = math.pow(fx, 2)
+    #     except OverflowError:
+    #         return 0
+
+    #     return num / den
+
+    # Si puo' semplificare e utilizzare solo il valore di attivazione:
+    if der:
+        return sigma * (1 - sigma)
+        
+    # return 1 / fx
+    return sigma
 
 # end
 
@@ -158,6 +165,7 @@ def sum_of_squares(
 
     # Calcolo delle distanze tra predizioni e target (errori)
     errors = prediction - target
+    # errors = target - prediction
     # print(errors)
 
     """
@@ -168,11 +176,13 @@ def sum_of_squares(
     """
 
     if der:
-        # Nel calcolare la derivata prima, il prodotto (1/2) * 2 si cancella
-        # Per calcolare la matrice jacobiana, non restituiamo la somma ma l'intero vettore.
+        # Nel calcolare la derivata prima, il prodotto (1/2) * 2 si cancella.
+        # Per calcolare la matrice jacobiana, restituiamo l'intero vettore.
         return errors
+        # return 2 * errors
     
     return (np.linalg.norm(errors) ** 2) / 2
+    # return (np.linalg.norm(errors) ** 2)
 
 # end
 
@@ -243,38 +253,32 @@ def print_progress_bar(
         total : int,
         prefix : str = '',
         suffix : str = '',
-        decimals : int = 1,
         length : int = 50,
         fill : str = '#',
-        print_end : str = "\r"
 ) -> None:
     
     """
-        Genera una barra di caricamento che si aggiorna ad ogni chiamata di un loop mostrando la percentuale di caricamento attuale.
+        Genera una barra di caricamento che si aggiorna ad ogni chiamata di un loop mostrando il numero dell'iterazione corrente rispetto al totale delle iterazioni.
 
         Parameters:
         -   iteration: l'indice dell'iterazione corrente.
         -   total: il numero totale di iterazioni.
         -   prefix: una stringa da stampare prima della barra di caricamento.
         -   suffix: una stringa da stampare dopo la barra di caricamento.
-        -   decimals: il numero di cifre decimali da stampare della percentuale di progresso.
         -   length: la lunghezza della barra di caricamento.
         -   fill: il carattere di riempimento della barra.
-        -   print_end: il carattere da stampare al termine delle iterazioni.
 
         Returns:
         -   None.
     """
 
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = fill * filled_length + '-' * (length - filled_length)
 
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=print_end)
+    print(f'\r{prefix} |{bar}| {iteration} / {total} {suffix}', end='\r')
 
     # Stampa una nuova linea quando tutte le iterazioni sono terminate
-    if iteration == total:
-        print()
+    if iteration == total: print()
 
 # end
 

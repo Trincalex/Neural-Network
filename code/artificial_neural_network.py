@@ -170,6 +170,15 @@ class NeuralNetwork:
         self._network_accuracy = value
     # end
 
+    @property
+    def debug(self) -> bool:
+        """..."""
+        return self._debug
+
+    @debug.setter
+    def debug(self, value : bool) -> None:
+        self._debug = value
+
     # ####################################################################### #
     # COSTRUTTORE
 
@@ -178,9 +187,11 @@ class NeuralNetwork:
             i_size : int,
             hidden_sizes : list[int],
             output_size : int,
-            hidden_act_funs : list[constants.ActivationFunctionType] = [auxfunc.sigmoid],
+            hidden_act_funs : list[constants.ActivationFunctionType] = auxfunc.sigmoid,
             output_act_fun : constants.ActivationFunctionType = auxfunc.sigmoid,
-            e_fun : constants.ErrorFunctionType = auxfunc.sum_of_squares
+            e_fun : constants.ErrorFunctionType = auxfunc.sum_of_squares,
+            random_init : bool = True,
+            debug : bool = False
     ) -> None:
         
         """
@@ -194,10 +205,15 @@ class NeuralNetwork:
             -   hidden_act_funs : può essere una funzione o una lista contenente le funzioni di attivazione di uno o più hidden layer della rete neurale.
             -   output_act_fun : è la funzione di attivazione dei neuroni dell'output layer.
             -   e_fun : è la funzione di errore utilizzata per verificare la qualità della rete neurale.
+            -   random_init : indica se pesi e bias della rete neurale saranno inizializzati tramite un generatore di valori casuali con seed fissato o meno.
+            -   debug : consente di attivare la modalita' di debug per stampare in console i valori attuali delle strutture dati coinvolte nell'addestramento della rete neurale.
 
             Returns:
             -   None
         """
+
+        # Scelta della modalita' di esecuzione
+        self.debug = debug
         
         # Inizializzazione dell'input
         self.input_size = i_size
@@ -225,7 +241,8 @@ class NeuralNetwork:
         if (len(l_sizes) != len(l_act_funs)):
             raise constants.HiddenLayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
         
-        rng = np.random.default_rng(constants.DEFAULT_RANDOM_SEED)
+        if not random_init:
+            rng = np.random.default_rng(constants.DEFAULT_RANDOM_SEED)
 
         # Inizializzazione degli hidden layers
         self.layers = []
@@ -238,13 +255,17 @@ class NeuralNetwork:
             for j in range(len(hl.units)):
                 # print(f'Neuron n.{j}')
                 n = hl.units[j]
-                n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
-                # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
+                if random_init:
+                    n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
+                else:
+                    n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=prev_size)
 
             for j in range(len(hl.units)):
                 n = hl.units[j]
-                n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
-                # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+                if random_init:
+                    n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+                else:
+                    n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
             self.layers.append(hl)
 
@@ -252,13 +273,17 @@ class NeuralNetwork:
         ol = Layer(output_size, l_sizes[-1], l_act_funs[-1])
         for j in range(len(ol.units)):
             n = ol.units[j]
-            n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
-            # n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
+            if random_init:
+                n.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
+            else:
+                n.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=l_sizes[-1])
 
         for j in range(len(ol.units)):
             n = ol.units[j]
-            n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
-            # n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+            if random_init:
+                n.bias = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
+            else:
+                n.bias = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION)
 
         self.layers.append(ol)
 
@@ -468,8 +493,8 @@ class NeuralNetwork:
             Parameters:
             -   network_outputs : la lista di output di ogni layer della rete.
             -   network_activations : la lista di valori di attivazione di ogni layer della rete.
+            -   network_weights : ...
             -   target : e' l'etichetta di una determinata coppia del dataset.
-            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
             -   np.ndarray : il gradiente della funzione di costo rispetto ai pesi della rete neurale.
@@ -479,19 +504,25 @@ class NeuralNetwork:
         gradient_weights = []
         gradient_biases = []
 
-        for l in reversed(range(self.depth)):
+        """
+            STEP 1:
+            Calcolo dell'errore sull'output layer.
+        """
+
+        delta_output_layer = self.__delta_output_layer(
+            network_outputs[-1],
+            network_activations[-1],
+            target
+        )
+
+        if self.debug:
+            with np.printoptions(threshold=np.inf):
+                print("--- BACKPROPAGATION (delta_output_layer) ---\n")
+                pprint.pprint(delta_output_layer)
+                print("\n-----")
+
+        for l in range(self.depth):
             # print("layer_index:", l)
-
-            """
-                STEP 1:
-                Calcolo dell'errore sull'output layer.
-            """
-
-            delta_output_layer = self.__delta_output_layer(
-                network_outputs[-1],
-                network_activations[-1],
-                target
-            )
 
             """
                 STEP 2:
@@ -505,6 +536,12 @@ class NeuralNetwork:
                 delta_output_layer,
                 l
             )
+
+            if self.debug:
+                with np.printoptions(threshold=np.inf):
+                    print(f"--- BACKPROPAGATION (delta_layer_{l}) ---\n")
+                    pprint.pprint(delta_layer)
+                    print("\n-----")
 
             """
                 STEP 3:
@@ -530,8 +567,109 @@ class NeuralNetwork:
                 for k in range(prev_size):
                     gradient_weights.append(prev_layer_activations[k] * delta_layer[j])
 
+            if self.debug:
+                hIn = 0
+                oIn = 5
+                if l == 1:
+                    actual_delta_Ca = 2 * (target[oIn] - network_activations[-1][oIn])
+                    test_delta_Ca = self.err_fun(network_activations[-1], target, der=True)[oIn]
+                    print("delta_Ca:", actual_delta_Ca, test_delta_Ca)
+
+                    actual_delta_az = network_activations[-1][oIn]*(1-network_activations[-1][oIn])
+                    test_delta_az = self.layers[-1].act_fun(network_outputs[-1][oIn], der=True)
+                    print("delta_az:", actual_delta_az, test_delta_az)
+
+                    actual_delta_zw = network_activations[-2][hIn]
+                    print("delta_zw:", actual_delta_zw, prev_layer_activations[hIn])
+
+                    print(
+                        "\n\n",
+                        "actual_delta_layer:", actual_delta_Ca * actual_delta_az,
+                        "test_delta_layer:", delta_layer[oIn], delta_output_layer[oIn]
+                    )
+
+                    # for index, element in enumerate(gradient_weights[784*32:]):
+                    #     if element == (actual_delta_Ca * actual_delta_az * actual_delta_zw):
+                    #         print("gradient_weights:", index)
+
+                    print(
+                        "actual:", actual_delta_Ca * actual_delta_az * actual_delta_zw,
+                        "test:", gradient_weights[784*32+32*oIn+hIn]
+                    )
+
         return np.array(gradient_weights), np.array(gradient_biases)
         
+    # end
+
+    def __update_rule(
+            self,
+            training_data : np.ndarray,
+            network_weights : np.ndarray,
+            network_biases : np.ndarray,
+            training_weights : list[np.ndarray],
+            training_biases : list[np.ndarray],
+            learning_rate : float
+    ):
+        
+        """
+            ...
+            
+            Parameters:
+            -   ... : ...
+
+            Returns:
+            -   ... : ...
+            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
+        """
+
+        gradient_weights = np.mean(
+            np.reshape(
+                training_weights,
+                (len(training_data), len(network_weights))
+            ),
+            axis=0
+        )
+
+        gradient_biases = np.mean(
+            np.reshape(
+                training_biases,
+                (len(training_data), len(network_biases))
+            ),
+            axis=0
+        )
+
+        if self.debug:
+            with np.printoptions(threshold=np.inf):
+                print("--- GRADIENT_WEIGHTS (mean) ---\n")
+                pprint.pprint(gradient_weights)
+                print("\n-----")
+                print("--- GRADIENT_BIASES (mean) ---\n")
+                pprint.pprint(gradient_biases)
+                print("\n-----")
+                print("--- NETWORK WEIGHTS (end) ---\n")
+                pprint.pprint(network_weights)
+                print("\n-----")
+                print("--- NETWORK BIASES (end) ---\n")
+                pprint.pprint(network_biases)
+                print("\n-----")
+
+        return {
+            "Weights" : np.array([
+                w - learning_rate * g
+                for w, g in zip(
+                    network_weights,
+                    gradient_weights
+                )
+            ]),
+            "Biases" : np.array([
+                b - learning_rate * g
+                for b, g in zip(
+                    network_biases,
+                    gradient_biases
+                )
+            ])
+        }
+
     # end
 
     def __resilient_back_propagation(self):
@@ -606,11 +744,13 @@ class NeuralNetwork:
         if (not validation_data.shape[0] == validation_labels.shape[0]):
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
-        training_weights = []
+        training_weights = []; training_biases = []
         training_predictions = []
-
         training_errors = []; training_costs = []
+
         validation_errors = []; validation_costs = []
+
+        best_net = []
 
         data = 0; label = 1
 
@@ -619,14 +759,27 @@ class NeuralNetwork:
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
-            print(f"\tInizio fase di training...")
+
+            network_weights = self.weights
+            network_biases = self.biases
+
+            if self.debug:
+                with np.printoptions(threshold=np.inf):
+                    print("--- NETWORK WEIGHTS (start) ---\n")
+                    pprint.pprint(network_weights)
+                    print("\n-----")
+                    print("--- NETWORK BIASES (start) ---\n")
+                    pprint.pprint(network_biases)
+                    print("\n-----")
 
             training_predictions.clear()
+            training_weights.clear()
+            training_biases.clear()
 
             # TRAINING
             for n, example in enumerate(zip(training_data, training_labels)):
 
-                auxfunc.print_progress_bar(n+1, len(training_data), prefix='\t')
+                auxfunc.print_progress_bar(n+1, len(training_data), prefix='\tTraining:')
 
                 # print(f"\t\tEsempio n.{n+1}")
                 # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
@@ -636,6 +789,22 @@ class NeuralNetwork:
                     example[data],
                     train=True
                 )
+
+                if self.debug:
+                    with np.printoptions(threshold=np.inf):
+                        print("--- NETWORK INPUTS ---\n")
+                        pprint.pprint(self.inputs)
+                        print("\n-----")
+                        print("--- TRAINING OUTPUTS ---\n")
+                        pprint.pprint(training_outputs)
+                        print("\n-----")
+                        print("--- TRAINING ACTIVATIONS ---\n")
+                        pprint.pprint(training_activations)
+                        print("\n-----")
+                        print("--- TARGET ---\n")
+                        pprint.pprint(example[label])
+                        print("\n-----")
+
                 training_predictions.append(training_activations[-1])
 
                 # print("training_outputs\n")
@@ -643,60 +812,42 @@ class NeuralNetwork:
                 # print("training_activations\n")
                 # pprint.pprint(training_activations)
 
-                # STEP 2: calcolo dell'errore di training
-                training_errors.append(self.err_fun(training_activations[-1], example[label]))
+                # STEP 2: calcolo dell'errore per ogni esempio di training
+                training_errors.append(self.err_fun(training_predictions[-1], example[label]))
 
-                # STEP 3: backpropagation
-                network_weights = self.weights
-                network_biases = self.biases
-                gradient_weights, gradient_biases = self.__back_propagation(
+                # STEP 3: backpropagation per ogni esempio di training
+                gw, gb = self.__back_propagation(
                     training_outputs,
                     training_activations,
                     network_weights,
                     example[label]
                 )
 
-                # STEP 4: aggiornamento dei pesi
-                # training_weights.append({
-                #     "Weights" : np.array([
-                #         w - learning_rate * g
-                #         for w, g in zip(
-                #             self.weights,
-                #             gradient_weights
-                #         )
-                #     ]),
-                #     "Biases" : np.array([
-                #         b - learning_rate * g
-                #         for b, g in zip(
-                #             self.biases,
-                #             gradient_biases
-                #         )
-                #     ])
-                # })
+                if self.debug:
+                    with np.printoptions(threshold=np.inf):
+                        print("--- BACKPROPAGATION (gradient_weights) ---\n")
+                        pprint.pprint(gw)
+                        print("\n-----")
+                        print("--- BACKPROPAGATION (gradient_biases) ---\n")
+                        pprint.pprint(gb)
+                        print("\n-----")
 
-                # Perché fare append di queste configurazioni se la validation agisce solo sull'ultima registrata?
-                # self.weights = training_weights[-1]["Weights"]
-                # self.biases = training_weights[-1]["Biases"]
-
-                self.weights = np.array([
-                    w - learning_rate * g
-                    for w, g in zip(
-                        network_weights,
-                        gradient_weights
-                    )
-                ])
-
-                self.biases = np.array([
-                    b - learning_rate * g
-                    for b, g in zip(
-                        network_biases,
-                        gradient_biases
-                    )
-                ])
+                training_weights.append(gw)
+                training_biases.append(gb)
 
             # end for n, example
 
-            print(f"\tTerminata fase di training.")
+            # STEP 4: aggiornamento dei pesi
+            best_net.append(self.__update_rule(
+                training_data,
+                network_weights, network_biases,
+                training_weights, training_biases,
+                learning_rate
+            ))
+
+            self.weights = best_net[-1]["Weights"]
+            self.biases = best_net[-1]["Biases"]
+
             # print(f"\tInizio fase di validation...")
 
             # # VALIDATION
@@ -720,13 +871,13 @@ class NeuralNetwork:
             tot_time = end_time - start_time
 
             training_costs.append(np.mean(training_errors))
-            # validation_costs.append(np.mean(validation_errors))
+            acc = self.__compute_accuracy(np.array(training_predictions), training_labels)
+            # # validation_costs.append(np.mean(validation_errors))
 
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
                 print(f"\tTempo totale: {round(tot_time, 3)} secondi")
                 print(f"\tErrore di addestramento: {round(training_costs[-1], 5)}")
                 # print(f"\tErrore di validazione: {round(validation_costs[-1], 5)}")
-                acc = self.__compute_accuracy(np.array(training_predictions), training_labels)
                 print(f"\tAccuracy: {acc} di {len(training_labels)}")
 
         # end for e
@@ -808,3 +959,4 @@ class NeuralNetwork:
 # https://towardsdatascience.com/understanding-backpropagation-algorithm-7bb3aa2f95fd
 # http://neuralnetworksanddeeplearning.com/chap2.html
 # https://numpy.org/doc/stable/reference/generated/numpy.multiply.html
+# Backpropagation algorithm: https://youtu.be/sIX_9n-1UbM

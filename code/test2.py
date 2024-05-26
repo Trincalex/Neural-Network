@@ -53,14 +53,19 @@ import pprint
 Xtrain, Ytrain, Xtest, Ytest = df.loadDataset(constants.COPPIE_TRAINING, constants.COPPIE_TEST)
 Xtrain, Ytrain = df.split_dataset(Xtrain, Ytrain)
 
-size = 0
-
 for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
      print(f"Fold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
 
      # Una possibile configurazione per il problema della classificazione delle cifre MNIST
-     net = NeuralNetwork(784, 32, 10)
+     net = NeuralNetwork(
+          784, [16, 16], 10,
+          hidden_act_funs=[auxfunc.tanh, auxfunc.tanh],
+          output_act_fun=auxfunc.leaky_relu,
+          e_fun=auxfunc.cross_entropy,
+          random_init=False,
+          debug=False
+     )
 
      training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
      training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
@@ -68,6 +73,8 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
      validation_labels = Ytrain[i]
 
      net.train(training_fold, training_labels, validation_fold, validation_labels)
+
+     break # temporaneo, per bloccare l'esecuzione dopo la prima fold
 
 # end for i
 
