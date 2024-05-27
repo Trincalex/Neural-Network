@@ -66,8 +66,8 @@ class Neuron:
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore degli input deve essere di tipo 'numpy.ndarray'.")
         
-        # print(self.id, len(value), self.neuron_size)
-        if (not len(value) == self.neuron_size):
+        # print(self.id, value.size, self.neuron_size)
+        if (not value.size == self.neuron_size):
             raise ValueError("La dimensione del vettore degli input non corrisponde a quella del neurone.")
         
         self._inputs = value
@@ -84,9 +84,9 @@ class Neuron:
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
         
-        # print(self.id, len(value), self.neuron_size)
-        if (not len(value) == self.neuron_size):
-            raise ValueError("La dimensione del vettore dei pesi non corrisponde a quella del neurone.")
+        # print(self.id, value.size, self.neuron_size)
+        if (not value.size == self.neuron_size):
+            raise ValueError("Il vettore dei pesi non e' compatibile con questo neurone.")
         
         self._weights = value
     # end

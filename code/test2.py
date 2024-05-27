@@ -59,9 +59,9 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
      # Una possibile configurazione per il problema della classificazione delle cifre MNIST
      net = NeuralNetwork(
-          784, [16, 16], 10,
-          hidden_act_funs=[auxfunc.tanh, auxfunc.tanh],
-          output_act_fun=auxfunc.leaky_relu,
+          784, 32, 10,
+          hidden_act_funs=auxfunc.sigmoid,
+          output_act_fun=auxfunc.sigmoid,
           e_fun=auxfunc.cross_entropy,
           random_init=False,
           debug=False
@@ -81,9 +81,12 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
 # prendi la miglior rete di tutte ??
 
 for test_example in zip(Xtest, Ytest):
-     net.predict(test_example[0])
+     label = np.argmax(test_example[1])
+
      df.show_image(test_example[0])
-     print("\n\n", test_example[1])
+
+     print(f"Ground truth: {constants.ETICHETTE_CLASSI[label]}")
+     net.predict(test_example[0])
 
 # ########################################################################### #
 

@@ -55,11 +55,9 @@ def sigmoid(input : float, der : bool = False) -> float:
 
     try:
         fx = 1 + np.exp(-input)
-    except OverflowError:
-        return 0
-    except RuntimeWarning:
-        return 0
+    except (OverflowError, RuntimeWarning):
         # RuntimeWarning: overflow encountered in exp
+        return 0
     
     sigma = 1 / fx
 
@@ -69,7 +67,7 @@ def sigmoid(input : float, der : bool = False) -> float:
     #     except OverflowError:
     #         return float('inf')
     #     except RuntimeWarning:
-    #         # RuntimeWarning: overflow encountered in ex
+    #         # RuntimeWarning: overflow encountered in exp
     #         return float('inf')
 
     #     try:
@@ -100,21 +98,36 @@ def tanh(input : float, der : bool = False) -> float:
         -   se der=False, restituisce l'attivazione della tangente iperbolica.
         -   se der=True, invece, ne restituisce il gradiente.
     """
+
+    clipped_input = np.clip(input, -709, 709)  # Clipping per evitare overflow
     
     try:
-        sinh = (np.exp(input) - np.exp(-input)) / 2
+        sinh = (np.exp(clipped_input) - np.exp(-clipped_input)) / 2
     except OverflowError:
+        return float('inf')
+    except RuntimeWarning:
+        # RuntimeWarning: overflow encountered in exp
         return float('inf')
     
     try:
-        cosh = (np.exp(input) + np.exp(-input)) / 2
+        cosh = (np.exp(clipped_input) + np.exp(-clipped_input)) / 2
     except OverflowError:
+        return 0
+    except RuntimeWarning:
+        # RuntimeWarning: overflow encountered in exp
         return 0
 
     if der:
-        return 1 / (cosh ** 2)
+        try:
+            return 1 / (cosh ** 2)
+        except OverflowError:
+            return 0
+        except RuntimeWarning:
+            # RuntimeWarning: overflow encountered in scalar power
+            return 0
     
     return sinh / cosh
+    # RuntimeWarning: invalid value encountered in scalar divide
 
 # end
     
@@ -165,7 +178,6 @@ def sum_of_squares(
 
     # Calcolo delle distanze tra predizioni e target (errori)
     errors = prediction - target
-    # errors = target - prediction
     # print(errors)
 
     """
@@ -178,11 +190,9 @@ def sum_of_squares(
     if der:
         # Nel calcolare la derivata prima, il prodotto (1/2) * 2 si cancella.
         # Per calcolare la matrice jacobiana, restituiamo l'intero vettore.
-        return errors
-        # return 2 * errors
+        return np.linalg.norm(errors)
     
     return (np.linalg.norm(errors) ** 2) / 2
-    # return (np.linalg.norm(errors) ** 2)
 
 # end
 
@@ -201,7 +211,7 @@ def softmax(prediction : np.ndarray) -> np.ndarray:
         y_exp = np.exp(prediction - prediction.max(axis=0))
     except OverflowError:
         # La divisione per il denominatore che tende a 'inf' e' pari a 0.
-        return 0
+        return float('inf')
 
     return y_exp / np.sum(y_exp, axis=0)
 
@@ -226,16 +236,13 @@ def cross_entropy(
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
     """
     
-    probabilities = np.clip(
-        softmax(prediction),
-        constants.DEFAULT_SOFTMAX_EPSILON,
-        1 - constants.DEFAULT_SOFTMAX_EPSILON
-    )
+    probabilities = softmax(prediction)
 
     if der:
         return prediction - target
     
-    return -np.sum(target * np.log(probabilities))
+    # Applica il logaritmo solo alle componenti maggiori di 0.0.
+    return -np.sum(target * np.log(probabilities, where=probabilities > 0.0))
 
 # end
 

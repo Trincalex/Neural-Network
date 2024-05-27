@@ -85,19 +85,15 @@ class Layer:
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
 
-        # print("Layer:", len(value), self.weights.size)
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
         
-        if (not value.size == self.weights.size):
-            raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
+        # print("Layer:", value.shape, self.weights.shape)
+        if (not value.shape == self.weights.shape):
+            raise ValueError("La matrice dei pesi non e' compatibile con questo layer.")
 
-        start = 0
-        end = 0
-        for n in self.units:
-            end += n.neuron_size
-            n.weights = value[start:end]
-            start = end
+        for i, n in enumerate(self.units):
+            n.weights = value[i]
 
     # end
 
@@ -118,19 +114,15 @@ class Layer:
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
         
-        # print("Layer:", len(value), len(self.biases))
         if (not isinstance(value, np.ndarray)):
             raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
         
-        if (not value.size == self.biases.size):
-            raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
+        # print("Layer:", value.shape, self.biases.shape)
+        if (not value.shape == self.biases.shape):
+            raise ValueError("Il vettore dei bias non e' compatibile con questo layer.")
         
-        start = 0
-        end = 0
-        for n in self.units:
-            end += 1
-            n.bias = value[start]
-            start = end
+        for start, n in enumerate(self.units):
+            n.bias = float(value[start])
 
     # end
 

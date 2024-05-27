@@ -91,16 +91,19 @@ class NeuralNetwork:
 
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
-
-        # print("Neural Network:", len(value), len(self.weights))
-        if (len(value) <= 0 or len(value) > len(self.weights)):
-            raise ValueError("La dimensione del vettore dei pesi non e' compatibile.")
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
+        
+        # print("Neural Network:", value.size, self.weights.size
+        if (not value.size == self.weights.size):
+            raise ValueError("Il vettore dei pesi non e' compatibile con questa rete neurale.")
 
         start = 0
         end = 0
         for l in self.layers:
-            end += l.layer_size * l.units[0].neuron_size
-            l.weights = value[start:end]
+            end += l.weights.shape[0] * l.weights.shape[1]
+            # l.weights = value[start:end]
+            l.weights = np.reshape(value[start:end], l.weights.shape)
             start = end
 
     # end
@@ -121,7 +124,7 @@ class NeuralNetwork:
         end = 0
         for l in self.layers:
             end += l.layer_size
-            l.biases = value[start:end]
+            l.biases = np.reshape(value[start:end], l.biases.shape)
             start = end
 
     # end
@@ -568,8 +571,8 @@ class NeuralNetwork:
                     gradient_weights.append(prev_layer_activations[k] * delta_layer[j])
 
             if self.debug:
-                hIn = 0
-                oIn = 5
+                hIn = 1
+                oIn = 8
                 if l == 1:
                     actual_delta_Ca = 2 * (target[oIn] - network_activations[-1][oIn])
                     test_delta_Ca = self.err_fun(network_activations[-1], target, der=True)[oIn]
@@ -594,7 +597,7 @@ class NeuralNetwork:
 
                     print(
                         "actual:", actual_delta_Ca * actual_delta_az * actual_delta_zw,
-                        "test:", gradient_weights[784*32+32*oIn+hIn]
+                        "test:", gradient_weights[784*3+3*oIn+hIn]
                     )
 
         return np.array(gradient_weights), np.array(gradient_biases)
@@ -622,10 +625,15 @@ class NeuralNetwork:
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
         """
 
+        # Le righe sono il numero di esempi di addestramento.
+        rows_size = len(training_data)
+        # Le colonne sono il numero di pesi e/o bias della rete neurale.
+        cols_size = -1
+
         gradient_weights = np.mean(
             np.reshape(
                 training_weights,
-                (len(training_data), len(network_weights))
+                (rows_size, cols_size)
             ),
             axis=0
         )
@@ -633,7 +641,7 @@ class NeuralNetwork:
         gradient_biases = np.mean(
             np.reshape(
                 training_biases,
-                (len(training_data), len(network_biases))
+                (rows_size, cols_size)
             ),
             axis=0
         )
@@ -687,6 +695,27 @@ class NeuralNetwork:
 
     # end
 
+    def __compute_error(self, predictions : np.ndarray, targets : np.ndarray) -> float:
+        """
+            Calcola l'errore della rete neurale confrontando le previsioni con i target corrispondenti.
+
+            Parameters:
+            -   predictions : e' un'array contenente tutte le previsioni della rete.
+            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
+
+            Returns:
+            -   float : il rapporto tra predizioni corrette e totale delle predizioni.
+        """
+
+        # print(predictions.shape, targets.shape)
+        if not predictions.shape == targets.shape:
+            raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
+        
+        errors = [self.err_fun(x, y) for x, y in zip(predictions, targets)]
+        return np.mean(errors)
+
+    # end
+    
     def __compute_accuracy(self, predictions : np.ndarray, targets : np.ndarray) -> float:
         """
             Calcola l'accuratezza della rete neurale confrontando le previsioni con i target corrispondenti.
@@ -699,11 +728,12 @@ class NeuralNetwork:
             -   float : il rapporto tra predizioni corrette e totale delle predizioni.
         """
 
+        # print(predictions.shape, targets.shape)
         if not predictions.shape == targets.shape:
             raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
 
-        results = [(np.argmax(x), np.argmax(y)) for x, y in zip(predictions, targets)]
-        return sum(int(x == y) for x, y in results)
+        matches = [int(np.argmax(x) == np.argmax(y)) for x, y in zip(predictions, targets)]
+        return np.sum(matches), np.sum(matches) / len(predictions) * 100
 
     # end
     
@@ -745,10 +775,10 @@ class NeuralNetwork:
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
         training_weights = []; training_biases = []
-        training_predictions = []
-        training_errors = []; training_costs = []
-
-        validation_errors = []; validation_costs = []
+        training_predictions = []; validation_predictions = []
+        training_errors = []; validation_errors = []
+        training_costs = []; validation_costs = []
+        validation_weights = []; validation_biases = []
 
         best_net = []
 
@@ -760,6 +790,8 @@ class NeuralNetwork:
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
 
+            # TRAINING
+            
             network_weights = self.weights
             network_biases = self.biases
 
@@ -776,10 +808,10 @@ class NeuralNetwork:
             training_weights.clear()
             training_biases.clear()
 
-            # TRAINING
             for n, example in enumerate(zip(training_data, training_labels)):
 
-                auxfunc.print_progress_bar(n+1, len(training_data), prefix='\tTraining:')
+                if not self.debug:
+                    auxfunc.print_progress_bar(n+1, len(training_data), prefix='\tTraining:')
 
                 # print(f"\t\tEsempio n.{n+1}")
                 # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
@@ -812,10 +844,7 @@ class NeuralNetwork:
                 # print("training_activations\n")
                 # pprint.pprint(training_activations)
 
-                # STEP 2: calcolo dell'errore per ogni esempio di training
-                training_errors.append(self.err_fun(training_predictions[-1], example[label]))
-
-                # STEP 3: backpropagation per ogni esempio di training
+                # STEP 2: backpropagation per ogni esempio di training
                 gw, gb = self.__back_propagation(
                     training_outputs,
                     training_activations,
@@ -837,7 +866,8 @@ class NeuralNetwork:
 
             # end for n, example
 
-            # STEP 4: aggiornamento dei pesi
+            # STEP 3: aggiornamento dei pesi
+            print("\n\tAggiornamento dei pesi in corso...")
             best_net.append(self.__update_rule(
                 training_data,
                 network_weights, network_biases,
@@ -848,52 +878,96 @@ class NeuralNetwork:
             self.weights = best_net[-1]["Weights"]
             self.biases = best_net[-1]["Biases"]
 
-            # print(f"\tInizio fase di validation...")
-
-            # # VALIDATION
-            # for n, example in enumerate(zip(validation_data, validation_labels)):
-
-            #     print(f"\t\tEsempio n.{n+1}")
-            #     # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
-
-            #     # STEP 1: forward propagation
-            #     validation_prediction = self.__forward_propagation(example[data])
-
-            #     # STEP 2: calcolo dell'errore di validation
-            #     validation_errors.append(self.err_fun(validation_prediction, example[label]))
-            
-            # # end for n, example
-
-            # print(f"\tTerminata fase di validation.")
-            # print()
+            # STEP 4: calcolo dell'errore per ogni esempio di training
+            print("\tCalcolo dell'errore di addestramento in corso...")
+            training_costs.append(self.__compute_error(np.array(training_predictions), training_labels))
+            print("\tCalcolo dell'accuracy di addestramento in corso...")
+            training_acc, training_percent = self.__compute_accuracy(np.array(training_predictions), training_labels)
 
             end_time = time.time()
             tot_time = end_time - start_time
 
-            training_costs.append(np.mean(training_errors))
-            acc = self.__compute_accuracy(np.array(training_predictions), training_labels)
-            # # validation_costs.append(np.mean(validation_errors))
+            if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
+                print()
+                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+                print(f"\tErrore di addestramento: {training_costs[-1]:.5f}")
+                print(f"\tAccuracy di addestramento: {training_acc} di {len(training_labels)} ({training_percent:.2f}%)")
+
+            print()
+
+            # VALIDATION
+
+            network_weights = self.weights
+            network_biases = self.biases
+
+            validation_predictions.clear()
+
+            for n, example in enumerate(zip(validation_data, validation_labels)):
+
+                if not self.debug:
+                    auxfunc.print_progress_bar(n+1, len(validation_data), prefix='\tValidation:')
+
+                # print(f"\t\tEsempio n.{n+1}")
+                # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
+
+                # STEP 1: forward propagation
+                validation_outputs, validation_activations = self.__forward_propagation(
+                    example[data],
+                    train=True
+                )
+
+                validation_predictions.append(validation_activations[-1])
+
+                # STEP 2: backpropagation per ogni esempio di validation
+                gw, gb = self.__back_propagation(
+                    validation_outputs,
+                    validation_activations,
+                    network_weights,
+                    example[label]
+                )
+
+                validation_weights.append(gw)
+                validation_biases.append(gb)
+            
+            # end for n, example
+
+            # STEP 3: aggiornamento dei pesi
+            print("\n\tAggiornamento dei pesi in corso...")
+            best_net.append(self.__update_rule(
+                validation_data,
+                network_weights, network_biases,
+                validation_weights, validation_biases,
+                learning_rate
+            ))
+
+            self.weights = best_net[-1]["Weights"]
+            self.biases = best_net[-1]["Biases"]
+
+            # STEP 4: calcolo errore e accuracy per ogni esempio di training
+            print("\tCalcolo dell'errore di validazione in corso...")
+            validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
+            print("\tCalcolo dell'accuracy di validazione in corso...")
+            validation_acc, validation_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
+
+            end_time = time.time()
+            tot_time = end_time - start_time
 
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print(f"\tTempo totale: {round(tot_time, 3)} secondi")
-                print(f"\tErrore di addestramento: {round(training_costs[-1], 5)}")
-                # print(f"\tErrore di validazione: {round(validation_costs[-1], 5)}")
-                print(f"\tAccuracy: {acc} di {len(training_labels)}")
+                print()
+                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+                print(f"\tErrore di validazione: {validation_costs[-1]:.5f}")
+                print(f"\tAccuracy di validazione: {validation_acc} di {len(validation_labels)} ({validation_percent:.2f}%)")
 
         # end for e
 
-        print(f"L'addestramento ha impiegato {round(tot_time, 3)} secondi.")
+        print(f"L'addestramento ha impiegato {tot_time:.3f} secondi.")
         print()
 
-        # print(training_activations)
-        # print(self.weights)
-
-        # # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
-        # best_net = int(np.argmin(validation_costs, keepdims=False))
-        # print(best_net)
-        # # print(best_net, np.min(validation_errors))
-        # self.weights = training_weights[best_net]["Weights"]
-        # self.biases = training_weights[best_net]["Biases"]
+        # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
+        index = int(np.argmin(validation_costs, keepdims=False))
+        print(index, np.min(validation_costs))
+        self.weights = best_net[index]["Weights"]
+        self.biases = best_net[index]["Biases"]
 
     # end
 
@@ -911,16 +985,14 @@ class NeuralNetwork:
         prediction = self.__forward_propagation(x)
         label = np.argmax(prediction)
 
-        print(f"Predizione della rete: {constants.ETICHETTE_CLASSI[label]}")
-        # for i, pred in enumerate(prediction):
-        #     print(f'\tClasse {i}: {round(pred, 5)}')
-        # print()
-
         # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
         probabilities = auxfunc.softmax(prediction)
-        print("Probabilità della predizione:")
-        for i, prob in enumerate(probabilities):
-            print(f'\tClasse {i}: {round(prob * 100, 5)}')
+
+        i = 0
+        print(f"Predizione della rete: {constants.ETICHETTE_CLASSI[label]}")
+        for pred, prob in zip(prediction, probabilities):
+            print(f'\tClasse {i}:\t{pred:.5f},\t{(prob * 100):.2f}')
+            i += 1
         print()
 
         return label
