@@ -18,6 +18,7 @@ import constants
 import auxfunc
 import numpy as np
 import pprint
+import time
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE LAYER
@@ -53,9 +54,9 @@ class Layer:
 
     @property
     def inputs(self) -> np.ndarray:
-        """È la matrice di valori in input al layer. Ha un numero di righe pari al numero di neuroni in questo layer e un numero di colonne pari al numero di neuroni del layer precedente."""
+        """È la matrice di valori in input al layer. E' un vettore riga con un numero di colonne pari al numero di neuroni del layer precedente."""
 
-        return np.reshape([n.inputs for n in self.units], (self.layer_size, self.units[0].neuron_size))
+        return np.reshape(self.units[0].inputs, (1, self.units[0].neuron_size))
     # end
 
     @inputs.setter
@@ -135,6 +136,7 @@ class Layer:
     @act_fun.setter
     def act_fun(self, fun : constants.ActivationFunctionType) -> None:
         self._act_fun = fun
+        
         for i in range(len(self.units)):
             self.units[i].act_fun = fun
     # end
@@ -179,6 +181,20 @@ class Layer:
         """
 
         layer_outputs = [n.output() for n in self.units]
+        layer_outputs2 = np.dot(self.inputs, self.weights.T) + self.biases.T
+        # print("output_test:", np.sum(np.subtract(layer_outputs, layer_outputs2)))
+
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER PROPAGATION (outputs1) ---\n")
+                print(len(layer_outputs))
+                pprint.pprint(layer_outputs)
+                print("\n-----")
+                print("--- LAYER PROPAGATION (outputs2) ---\n")
+                print(layer_outputs2.shape)
+                pprint.pprint(layer_outputs2)
+                print("\n-----")
+        
         return np.array(layer_outputs)
 
     # end
@@ -193,23 +209,45 @@ class Layer:
             Returns:
             -   se train=False, un numpy.ndarray contenente tutti i valori di attivazione dei neuroni.
             -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
-            
         """
 
         if train:
-            layer_outputs = []
-            layer_activations = []
-
-            for neuron in self.units:
-                out, act = neuron.activate(train=True)
-                layer_outputs.append(out)
-                layer_activations.append(act)
-
-            return np.array(layer_outputs), np.array(layer_activations)
-        
+            tmp = [neuron.activate(train=True) for neuron in self.units]
+            return np.array([out for out, act in tmp]), np.array([act for out, act in tmp])
         # end if
 
         return np.array([neuron.activate() for neuron in self.units])
+
+        # start_time = time.time()
+
+        # layer_outputs = []
+        # layer_activations2 = []
+
+        # layer_outputs = np.dot(self.inputs, self.weights.T) + self.biases.T
+        # layer_activations2.append([self.act_fun(val) for val in layer_outputs])
+
+        # end_time = time.time()
+        # print("LAYER ACTIVATE TIME:", end_time - start_time)
+
+        # if train:
+        #     return np.array(layer_outputs), np.array(layer_activations2)
+
+        # return np.array(layer_activations2)
+
+        # if constants.DEBUG_MODE:
+        #     with np.printoptions(threshold=np.inf):
+        #         print("--- LAYER PROPAGATION (activations1) ---\n")
+        #         print(len(layer_activations))
+        #         pprint.pprint(layer_activations)
+        #         print("\n-----")
+        #         print("--- LAYER PROPAGATION (activations2) ---\n")
+        #         print(self.inputs.shape)
+        #         print(self.weights.T.shape)
+        #         print(np.dot(self.inputs, self.weights.T).shape)
+        #         print(self.biases.T.shape)
+        #         print(len(layer_activations2))
+        #         pprint.pprint(layer_activations2)
+        #         print("\n-----")
     
     # end
 

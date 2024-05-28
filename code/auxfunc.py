@@ -208,12 +208,15 @@ def softmax(prediction : np.ndarray) -> np.ndarray:
     """
 
     try:
-        y_exp = np.exp(prediction - prediction.max(axis=0))
+        # y_exp = np.exp(prediction - prediction.max(axis=0))
+        prediction -= np.max(prediction, axis=-1, keepdims=True)
+        y_exp = np.exp(prediction)
     except OverflowError:
         # La divisione per il denominatore che tende a 'inf' e' pari a 0.
         return float('inf')
 
-    return y_exp / np.sum(y_exp, axis=0)
+    # return y_exp / np.sum(y_exp, axis=0)
+    return y_exp / np.sum(y_exp, axis=-1, keepdims=True)
 
 # end
 
@@ -227,19 +230,50 @@ def cross_entropy(
         E' una funzione di errore tipicamente utilizzata per i problemi di classificazione.
 
         Parameters:
-        -   prediction: e l'output fornito dalla rete neurale su una determinata coppia del dataset.
-        -   target: e l'etichetta di classificazione di una determinata coppia del dataset.
+        -   prediction: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   target: e' l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
-        -   se der=False, restituisce la somma dei quadrati degli errori componente per componente.
-        -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
+        -   se der=False, ...
+        -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alla predizione.
     """
+
+    if der:
+        num = prediction - target
+        den = prediction * (1 - prediction)
+        return num / den
     
+    # Applica il logaritmo solo alle componenti maggiori di 0.0.
+    return -np.sum(target * np.log(prediction, where=prediction > 0.0))
+
+# end
+
+def cross_entropy_softmax(
+        prediction : np.ndarray,
+        target : np.ndarray,
+        der : bool = False
+) -> float | np.ndarray:
+    
+    """
+        E' una funzione di errore tipicamente utilizzata per i problemi di classificazione.
+
+        Parameters:
+        -   prediction: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   target: e' l'etichetta di classificazione di una determinata coppia del dataset.
+        -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto alla predizione.
+
+        Returns:
+        -   se der=False, ...
+        -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alla predizione.
+    """
+
     probabilities = softmax(prediction)
 
     if der:
-        return prediction - target
+        # Questo e' il risultato della derivata parziale della cross_entropy_softmax rispetto alla predizione in input
+        # return prediction - target
+        return probabilities - target
     
     # Applica il logaritmo solo alle componenti maggiori di 0.0.
     return -np.sum(target * np.log(probabilities, where=probabilities > 0.0))

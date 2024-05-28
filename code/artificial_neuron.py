@@ -178,6 +178,22 @@ class Neuron:
         """
 
         self.out_val = np.dot(self.inputs, self.weights) + self.bias
+
+        # if constants.DEBUG_MODE:
+        #     with np.printoptions(threshold=np.inf):
+        #         print("--- NEURON PROPAGATION (inputs) ---\n")
+        #         pprint.pprint(self.inputs)
+        #         print("\n-----")
+        #         print("--- NEURON PROPAGATION (weights) ---\n")
+        #         pprint.pprint(self.weights)
+        #         print("\n-----")
+        #         print("--- NEURON PROPAGATION (bias) ---\n")
+        #         pprint.pprint(self.bias)
+        #         print("\n-----")
+        #         print("--- NEURON PROPAGATION (output) ---\n")
+        #         pprint.pprint(self.out_val)
+        #         print("\n-----\n\n")
+
         return self.out_val
     
     # end
@@ -197,11 +213,16 @@ class Neuron:
         out = self.output()
         self.act_val = self.act_fun(out)
 
+        # if constants.DEBUG_MODE:
+        #     with np.printoptions(threshold=np.inf):
+        #         print("--- NEURON PROPAGATION (activation) ---\n")
+        #         pprint.pprint(self.act_val)
+        #         print("\n-----\n\n")
+
         if train:
             return out, self.act_val
         
         return self.act_val
-        # https://youtu.be/IHZwWFHWa-w
         
     # end
 
@@ -220,3 +241,8 @@ class Neuron:
     # end
 
 # end class Neuron
+
+# ########################################################################### #
+# RIFERIMENTI
+
+# Discesa del gradiente: https://youtu.be/IHZwWFHWa-w

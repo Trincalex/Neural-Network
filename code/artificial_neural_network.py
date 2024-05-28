@@ -20,6 +20,7 @@ import auxfunc
 import numpy as np
 import pprint
 import time
+from datetime import datetime
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE NEURAL NETWORK
@@ -173,15 +174,6 @@ class NeuralNetwork:
         self._network_accuracy = value
     # end
 
-    @property
-    def debug(self) -> bool:
-        """..."""
-        return self._debug
-
-    @debug.setter
-    def debug(self, value : bool) -> None:
-        self._debug = value
-
     # ####################################################################### #
     # COSTRUTTORE
 
@@ -214,9 +206,6 @@ class NeuralNetwork:
             Returns:
             -   None
         """
-
-        # Scelta della modalita' di esecuzione
-        self.debug = debug
         
         # Inizializzazione dell'input
         self.input_size = i_size
@@ -518,7 +507,7 @@ class NeuralNetwork:
             target
         )
 
-        if self.debug:
+        if constants.DEBUG_MODE:
             with np.printoptions(threshold=np.inf):
                 print("--- BACKPROPAGATION (delta_output_layer) ---\n")
                 pprint.pprint(delta_output_layer)
@@ -540,7 +529,7 @@ class NeuralNetwork:
                 l
             )
 
-            if self.debug:
+            if constants.DEBUG_MODE:
                 with np.printoptions(threshold=np.inf):
                     print(f"--- BACKPROPAGATION (delta_layer_{l}) ---\n")
                     pprint.pprint(delta_layer)
@@ -570,7 +559,7 @@ class NeuralNetwork:
                 for k in range(prev_size):
                     gradient_weights.append(prev_layer_activations[k] * delta_layer[j])
 
-            if self.debug:
+            if constants.DEBUG_MODE:
                 hIn = 1
                 oIn = 8
                 if l == 1:
@@ -612,7 +601,7 @@ class NeuralNetwork:
             training_weights : list[np.ndarray],
             training_biases : list[np.ndarray],
             learning_rate : float
-    ):
+    ) -> dict[np.ndarray, np.ndarray]:
         
         """
             ...
@@ -626,7 +615,7 @@ class NeuralNetwork:
         """
 
         # Le righe sono il numero di esempi di addestramento.
-        rows_size = len(training_data)
+        rows_size = len(training_data) if not constants.DEBUG_MODE else 1
         # Le colonne sono il numero di pesi e/o bias della rete neurale.
         cols_size = -1
 
@@ -646,7 +635,7 @@ class NeuralNetwork:
             axis=0
         )
 
-        if self.debug:
+        if constants.DEBUG_MODE:
             with np.printoptions(threshold=np.inf):
                 print("--- GRADIENT_WEIGHTS (mean) ---\n")
                 pprint.pprint(gradient_weights)
@@ -748,7 +737,7 @@ class NeuralNetwork:
             validation_labels : np.ndarray,
             epochs : int = constants.DEFAULT_EPOCHS,
             learning_rate : float = constants.DEFAULT_LEARNING_RATE
-    ) -> None:
+    ) -> dict[dict[np.ndarray, np.ndarray], float, float]:
         
         """
             Addestra la rete neurale tramite il training set ed il validation set dati in input.
@@ -763,7 +752,7 @@ class NeuralNetwork:
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   None.
+            -   ... : ...
         """
 
         # Controllo sulla compatibilita' di training_data e training_labels
@@ -775,17 +764,17 @@ class NeuralNetwork:
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
         training_weights = []; training_biases = []
-        training_predictions = []; validation_predictions = []
-        training_errors = []; validation_errors = []
-        training_costs = []; validation_costs = []
         validation_weights = []; validation_biases = []
+        training_predictions = []; validation_predictions = []
+        training_costs = []; validation_costs = []
+        validation_accuracies = []
 
         best_net = []
 
         data = 0; label = 1
 
         start_time = time.time()
-        print("Addestramento in corso...")
+        print(f"Addestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
@@ -795,7 +784,7 @@ class NeuralNetwork:
             network_weights = self.weights
             network_biases = self.biases
 
-            if self.debug:
+            if constants.DEBUG_MODE:
                 with np.printoptions(threshold=np.inf):
                     print("--- NETWORK WEIGHTS (start) ---\n")
                     pprint.pprint(network_weights)
@@ -810,7 +799,7 @@ class NeuralNetwork:
 
             for n, example in enumerate(zip(training_data, training_labels)):
 
-                if not self.debug:
+                if not constants.DEBUG_MODE:
                     auxfunc.print_progress_bar(n+1, len(training_data), prefix='\tTraining:')
 
                 # print(f"\t\tEsempio n.{n+1}")
@@ -822,7 +811,7 @@ class NeuralNetwork:
                     train=True
                 )
 
-                if self.debug:
+                if constants.DEBUG_MODE:
                     with np.printoptions(threshold=np.inf):
                         print("--- NETWORK INPUTS ---\n")
                         pprint.pprint(self.inputs)
@@ -852,7 +841,7 @@ class NeuralNetwork:
                     example[label]
                 )
 
-                if self.debug:
+                if constants.DEBUG_MODE:
                     with np.printoptions(threshold=np.inf):
                         print("--- BACKPROPAGATION (gradient_weights) ---\n")
                         pprint.pprint(gw)
@@ -863,6 +852,9 @@ class NeuralNetwork:
 
                 training_weights.append(gw)
                 training_biases.append(gb)
+
+                if constants.DEBUG_MODE:
+                    break
 
             # end for n, example
 
@@ -880,9 +872,19 @@ class NeuralNetwork:
 
             # STEP 4: calcolo dell'errore per ogni esempio di training
             print("\tCalcolo dell'errore di addestramento in corso...")
-            training_costs.append(self.__compute_error(np.array(training_predictions), training_labels))
+
+            if constants.DEBUG_MODE:
+                training_costs.append(self.__compute_error(np.array(training_predictions[0]), training_labels[0]))
+            else:
+                training_costs.append(self.__compute_error(np.array(training_predictions), training_labels))
+
+            t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
+
             print("\tCalcolo dell'accuracy di addestramento in corso...")
-            training_acc, training_percent = self.__compute_accuracy(np.array(training_predictions), training_labels)
+            if constants.DEBUG_MODE:
+                t_acc, t_acc_percent = self.__compute_accuracy(np.array(training_predictions[0]), training_labels[0])
+            else:
+                t_acc, t_acc_percent = self.__compute_accuracy(np.array(training_predictions), training_labels)
 
             end_time = time.time()
             tot_time = end_time - start_time
@@ -890,8 +892,8 @@ class NeuralNetwork:
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
                 print()
                 print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-                print(f"\tErrore di addestramento: {training_costs[-1]:.5f}")
-                print(f"\tAccuracy di addestramento: {training_acc} di {len(training_labels)} ({training_percent:.2f}%)")
+                print(f"\tErrore di addestramento: {training_costs[-1]:.5f} ({t_cost_percent:.2f}%)")
+                print(f"\tAccuracy di addestramento: {t_acc} di {len(training_labels)} ({t_acc_percent:.2f}%)")
 
             print()
 
@@ -904,7 +906,7 @@ class NeuralNetwork:
 
             for n, example in enumerate(zip(validation_data, validation_labels)):
 
-                if not self.debug:
+                if not constants.DEBUG_MODE:
                     auxfunc.print_progress_bar(n+1, len(validation_data), prefix='\tValidation:')
 
                 # print(f"\t\tEsempio n.{n+1}")
@@ -919,35 +921,50 @@ class NeuralNetwork:
                 validation_predictions.append(validation_activations[-1])
 
                 # STEP 2: backpropagation per ogni esempio di validation
-                gw, gb = self.__back_propagation(
-                    validation_outputs,
-                    validation_activations,
-                    network_weights,
-                    example[label]
-                )
+                # gw, gb = self.__back_propagation(
+                #     validation_outputs,
+                #     validation_activations,
+                #     network_weights,
+                #     example[label]
+                # )
 
-                validation_weights.append(gw)
-                validation_biases.append(gb)
+                # validation_weights.append(gw)
+                # validation_biases.append(gb)
+
+                if constants.DEBUG_MODE:
+                    break
             
             # end for n, example
 
             # STEP 3: aggiornamento dei pesi
-            print("\n\tAggiornamento dei pesi in corso...")
-            best_net.append(self.__update_rule(
-                validation_data,
-                network_weights, network_biases,
-                validation_weights, validation_biases,
-                learning_rate
-            ))
+            # print("\n\tAggiornamento dei pesi in corso...")
+            # best_net.append(self.__update_rule(
+            #     validation_data,
+            #     network_weights, network_biases,
+            #     validation_weights, validation_biases,
+            #     learning_rate
+            # ))
 
-            self.weights = best_net[-1]["Weights"]
-            self.biases = best_net[-1]["Biases"]
+            # self.weights = best_net[-1]["Weights"]
+            # self.biases = best_net[-1]["Biases"]
 
             # STEP 4: calcolo errore e accuracy per ogni esempio di training
             print("\tCalcolo dell'errore di validazione in corso...")
-            validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
+            if constants.DEBUG_MODE:
+                validation_costs.append(self.__compute_error(np.array(validation_predictions[0]), validation_labels[0]))
+            else:
+                validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
+
+            v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
+
             print("\tCalcolo dell'accuracy di validazione in corso...")
-            validation_acc, validation_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
+
+            if constants.DEBUG_MODE:
+                v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions[0]), validation_labels[0])
+            else:
+                v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
+
+            validation_accuracies.append(v_acc)
 
             end_time = time.time()
             tot_time = end_time - start_time
@@ -955,19 +972,32 @@ class NeuralNetwork:
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
                 print()
                 print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-                print(f"\tErrore di validazione: {validation_costs[-1]:.5f}")
-                print(f"\tAccuracy di validazione: {validation_acc} di {len(validation_labels)} ({validation_percent:.2f}%)")
+                print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
+                print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
+
+            if constants.DEBUG_MODE:
+                break
 
         # end for e
 
-        print(f"L'addestramento ha impiegato {tot_time:.3f} secondi.")
-        print()
+        print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
         # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
         index = int(np.argmin(validation_costs, keepdims=False))
-        print(index, np.min(validation_costs))
+        v_cost_percent = validation_costs[index] / constants.NUMERO_CLASSI * 100
+
+        print(f"\tTempo trascorso: {tot_time:.3f} secondi.")
+        print(f"\tMiglior rete (epoca): {index+1}")
+        print(f"\tMiglior rete (errore di validazione): {validation_costs[index]:.5f} ({v_cost_percent:.2f}%)")
+
         self.weights = best_net[index]["Weights"]
         self.biases = best_net[index]["Biases"]
+
+        return {
+            "Net" : best_net[index],
+            "Error" : validation_costs[index],
+            "Accuracy" : validation_accuracies[index]
+        }
 
     # end
 

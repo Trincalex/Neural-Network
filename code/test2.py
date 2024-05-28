@@ -4,6 +4,8 @@ from artificial_neural_network import NeuralNetwork
 import dataset_function as df
 import numpy as np
 import pprint
+import time
+from datetime import datetime
 
 # ########################################################################### #
 
@@ -38,33 +40,23 @@ import pprint
 
 # ########################################################################### #
 
-# prediction = net.predict(dataset[0])
-# prediction = net.predict(dataset[1])
-# prediction = net.predict(dataset[2])
-
-# net.train(dataset, labels, dataset, labels, epochs=1)
-
-# prediction = net.predict(dataset[0])
-# prediction = net.predict(dataset[1])
-# prediction = net.predict(dataset[2])
-
-# ########################################################################### #
-
 Xtrain, Ytrain, Xtest, Ytest = df.loadDataset(constants.COPPIE_TRAINING, constants.COPPIE_TEST)
 Xtrain, Ytrain = df.split_dataset(Xtrain, Ytrain)
 
+best_net = []
+
+print(f"\nK-fold cross-validation iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+start_time = time.time()
+
 for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
-     print(f"Fold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
+     print(f"\nFold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
 
-     # Una possibile configurazione per il problema della classificazione delle cifre MNIST
      net = NeuralNetwork(
           784, 32, 10,
-          hidden_act_funs=auxfunc.sigmoid,
+          hidden_act_funs=[auxfunc.leaky_relu],
           output_act_fun=auxfunc.sigmoid,
-          e_fun=auxfunc.cross_entropy,
-          random_init=False,
-          debug=False
+          e_fun=auxfunc.cross_entropy_softmax
      )
 
      training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
@@ -72,13 +64,33 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
      validation_fold = Xtrain[i]
      validation_labels = Ytrain[i]
 
-     net.train(training_fold, training_labels, validation_fold, validation_labels)
+     best_net.append(net.train(
+          training_fold,
+          training_labels,
+          validation_fold,
+          validation_labels
+     ))
 
-     break # temporaneo, per bloccare l'esecuzione dopo la prima fold
+     if constants.DEBUG_MODE:
+          break
 
 # end for i
 
-# prendi la miglior rete di tutte ??
+print(f"\nK-fold cross-validation completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+end_time = time.time()
+tot_time = end_time - start_time
+
+# prendi la miglior rete di tutte --> vedere bene come funziona la k-fold cross validation
+index = int(np.argmin([net["Error"] for net in best_net], keepdims=False))
+min_error = best_net[index]["Error"]
+min_error_percent = best_net[index]["Error"] / constants.NUMERO_CLASSI * 100
+
+print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+print(f"\tMiglior rete (fold): {index+1}")
+print(f"\tMiglior rete (errore di validazione): {min_error:.5f} ({min_error_percent:.2f}%)")
+
+net.weights = best_net[index]["Net"]["Weights"]
+net.biases = best_net[index]["Net"]["Biases"]
 
 for test_example in zip(Xtest, Ytest):
      label = np.argmax(test_example[1])
@@ -87,6 +99,20 @@ for test_example in zip(Xtest, Ytest):
 
      print(f"Ground truth: {constants.ETICHETTE_CLASSI[label]}")
      net.predict(test_example[0])
+
+# ########################################################################### #
+
+# net = NeuralNetwork(784, 32, 10, random_init=False)
+
+# prediction = net.predict(Xtrain[0])
+# prediction = net.predict(dataset[1])
+# prediction = net.predict(dataset[2])
+
+# net.train(dataset, labels, dataset, labels, epochs=1)
+
+# prediction = net.predict(dataset[0])
+# prediction = net.predict(dataset[1])
+# prediction = net.predict(dataset[2])
 
 # ########################################################################### #
 

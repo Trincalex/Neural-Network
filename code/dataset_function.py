@@ -41,7 +41,7 @@ def loadDataset(training_length : int, test_length : int):
     test_imgs = np.asfarray(test_set[:, 1:]) / constants.DIMENSIONE_PIXEL
     test_labels = convert_to_one_hot(test_set[:, 0])
 
-    print("Loading del dataset completato.\n")
+    print("Loading del dataset completato.")
     
     return (
         train_imgs,

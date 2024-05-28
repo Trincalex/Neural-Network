@@ -99,6 +99,12 @@ DEFAULT_SOFTMAX_EPSILON = 1e-15
 DEFAULT_RANDOM_SEED = 0
 """ ... """
 
+DEBUG_MODE = False
+""" ... """
+
+DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
+""" ... """
+
 # ########################################################################### #
 # COSTANTI
 
