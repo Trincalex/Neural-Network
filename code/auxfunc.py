@@ -190,9 +190,11 @@ def sum_of_squares(
     if der:
         # Nel calcolare la derivata prima, il prodotto (1/2) * 2 si cancella.
         # Per calcolare la matrice jacobiana, restituiamo l'intero vettore.
-        return np.linalg.norm(errors)
+        # return np.linalg.norm(errors)
+        return errors
     
-    return (np.linalg.norm(errors) ** 2) / 2
+    # return (np.linalg.norm(errors) ** 2) / 2
+    return (errors ** 2) / 2
 
 # end
 

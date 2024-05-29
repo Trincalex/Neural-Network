@@ -78,32 +78,32 @@ for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
 print(f"\nK-fold cross-validation completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
-# prendi la miglior rete di tutte --> vedere bene come funziona la k-fold cross validation
-index = int(np.argmin([net["Error"] for net in best_net], keepdims=False))
-min_error = best_net[index]["Error"]
-min_error_percent = best_net[index]["Error"] / constants.NUMERO_CLASSI * 100
+# # prendi la miglior rete di tutte --> vedere bene come funziona la k-fold cross validation
+# index = int(np.argmin([net["Error"] for net in best_net], keepdims=False))
+# min_error = best_net[index]["Error"]
+# min_error_percent = best_net[index]["Error"] / constants.NUMERO_CLASSI * 100
 
-end_time = time.time()
-tot_time = end_time - start_time
+# end_time = time.time()
+# tot_time = end_time - start_time
 
-print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-print(f"\tMiglior rete (fold): {index+1}")
-print(f"\tMiglior rete (errore di validazione): {min_error:.5f} ({min_error_percent:.2f}%)")
+# print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+# print(f"\tMiglior rete (fold): {index+1}")
+# print(f"\tMiglior rete (errore di validazione): {min_error:.5f} ({min_error_percent:.2f}%)")
 
-net.weights = best_net[index]["Net"]["Weights"]
-net.biases = best_net[index]["Net"]["Biases"]
+# net.weights = best_net[index]["Net"]["Weights"]
+# net.biases = best_net[index]["Net"]["Biases"]
 
-for test_example in zip(Xtest, Ytest):
-     label = np.argmax(test_example[1])
+# for test_example in zip(Xtest, Ytest):
+#      label = np.argmax(test_example[1])
 
-     df.show_image(test_example[0])
+#      df.show_image(test_example[0])
 
-     print(f"Ground truth: {constants.ETICHETTE_CLASSI[label]}")
-     net.predict(test_example[0])
+#      print(f"Ground truth: {constants.ETICHETTE_CLASSI[label]}")
+#      net.predict(test_example[0])
 
 # ########################################################################### #
 
-# net = NeuralNetwork(784, 3, 10, random_init=False)
+# net = NeuralNetwork(784, 32, 10, random_init=False)
 
 # start_time = time.time()
 

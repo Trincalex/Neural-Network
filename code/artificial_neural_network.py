@@ -35,24 +35,11 @@ class NeuralNetwork:
         return self._depth
     # end
 
-    # @depth.setter
-    # def depth(self, value : int) -> None:
-    #     self._depth = value
-    # # end
-
     @property
     def input_size(self) -> int:
         """E' la dimensione del vettore di caratteristiche di un singolo input della rete neurale."""
         return self._input_size
     # end
-
-    # @input_size.setter
-    # def input_size(self, value : int) -> None:
-    #     if (value <= 0):
-    #         raise constants.InputLayerError("La dimensione dell'input della rete neurale deve essere maggiore di 0.")
-        
-    #     self._input_size = value
-    # # end
 
     @property
     def inputs(self) -> np.ndarray:
@@ -83,16 +70,10 @@ class NeuralNetwork:
         return self._layers
     # end
 
-    # @layers.setter
-    # def layers(self, value : list[Layer]) -> None:
-    #     self._layers = value
-    # # end
-
     @property
     def weights(self) -> np.ndarray:
         """E' il vettore serializzato di tutti i pesi di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete."""
 
-        self._weights = np.array([w_elem for l in self.layers for w_vet in l.weights for w_elem in w_vet])
         return self._weights
     # end
 
@@ -104,14 +85,8 @@ class NeuralNetwork:
         # print("Neural Network:", value.size, self._weights.size)
         if (not value.size == self._weights.size):
             raise ValueError("Il vettore dei pesi non e' compatibile con questa rete neurale.")
-
-        start = 0
-        end = 0
-        for l in self.layers:
-            end += l.weights.shape[0] * l.weights.shape[1]
-            # l.weights = value[start:end]
-            l.weights = np.reshape(value[start:end], l.weights.shape)
-            start = end
+        
+        self._weights = value
 
     # end
 
@@ -119,22 +94,19 @@ class NeuralNetwork:
     def biases(self) -> np.ndarray:
         """E' il vettore serializzato di tutti i bias di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete."""
 
-        self._biases = np.array([b_elem for l in self.layers for b_vet in l.biases for b_elem in b_vet])
         return self._biases
     # end
 
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
+        if (not isinstance(value, np.ndarray)):
+            raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
+        
         # print("Neural Network:", value.size, self._biases.size)
         if (not value.size == self._biases.size):
             raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
         
-        start = 0
-        end = 0
-        for l in self.layers:
-            end += l.layer_size
-            l.biases = np.reshape(value[start:end], l.biases.shape)
-            start = end
+        self._biases = value
 
     # end
 
@@ -155,21 +127,11 @@ class NeuralNetwork:
         return self._training_error
     # end
 
-    # @training_error.setter
-    # def training_error(self, value) -> None:
-    #     self._training_error = value
-    # # end
-
     @property
     def validation_error(self):
         """..."""
         return self._validation_error
     # end
-
-    # @validation_error.setter
-    # def validation_error(self, value):
-    #     self._validation_error = value
-    # # end
 
     @property
     def network_error(self):
@@ -177,21 +139,11 @@ class NeuralNetwork:
         return self._network_error
     # end
 
-    # @network_error.setter
-    # def network_error(self, value):
-    #     self._network_error = value
-    # # end
-
     @property
     def training_accuracy(self):
         """..."""
         return self._training_accuracy
     # end
-
-    # @training_accuracy.setter
-    # def training_accuracy(self, value):
-    #     self._training_accuracy = value
-    # # end
 
     @property
     def validation_accuracy(self):
@@ -199,21 +151,11 @@ class NeuralNetwork:
         return self._validation_accuracy
     # end
 
-    # @validation_accuracy.setter
-    # def validation_accuracy(self, value):
-    #     self._validation_accuracy = value
-    # # end
-
     @property
     def network_accuracy(self):
         """..."""
         return self._network_accuracy
     # end
-
-    # @network_accuracy.setter
-    # def network_accuracy(self, value) -> None:
-    #     self._network_accuracy = value
-    # # end
 
     # ####################################################################### #
     # COSTRUTTORE
@@ -287,6 +229,20 @@ class NeuralNetwork:
         ol = Layer(output_size, l_sizes[-1], l_act_funs[-1], random_init)
         self.layers.append(ol)
 
+        # Inizializzazione del vettore serializzato di pesi / bias
+        weights_size = 0
+        biases_size = 0
+
+        for i in range(1, len(l_sizes)):
+            weights_size += l_sizes[i-1] * l_sizes[i]
+            biases_size += l_sizes[i]
+
+        weights_size += l_sizes[-1] * output_size
+        biases_size += output_size
+
+        self._weights = np.zeros(weights_size)
+        self._biases = np.zeros(biases_size)
+
         # Inizializzazione della profondita' della rete neurale
         # La profondita' della rete e' data dal numero di layer totali.
         self._depth = len(self.layers)
@@ -308,6 +264,37 @@ class NeuralNetwork:
     
     # ####################################################################### #
     # METODI PRIVATI
+
+    def __flatten_weights(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        
+            Serializza le matrici dei pesi e dei bias di tutti i layer della rete neurale in due vettori separati della giusta dimensione.
+
+            Returns:
+            -   w : e' il vettore serializzato di tutti i pesi della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete.
+            -   b : e' il vettore serializzato di tutti i bias della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete.
+        
+        """
+
+        w = np.zeros(self.weights.shape)
+        b = np.zeros(self.biases.shape)
+
+        start_w = 0; start_b = 0
+        end_w = 0; end_b = 0
+
+        for l in self.layers:
+            end_w = start_w + np.prod(l.weights.shape)
+            end_b = start_b + np.prod(l.biases.shape)
+
+            w[start_w:end_w] = l.weights.flatten()
+            b[start_b:end_b] = l.biases.flatten()
+
+            start_w = end_w
+            start_b = end_b
+        
+        return w, b
+    
+    # end
 
     def __forward_propagation(
             self,
@@ -347,12 +334,12 @@ class NeuralNetwork:
                 self.layers[i+1].inputs = act
             activations.append(act)
 
-        # if constants.DEBUG_MODE:
-        #     with np.printoptions(threshold=np.inf):
-        #         print("--- NETWORK PROPAGATION (activations) ---\n")
-        #         print(activations.shape)
-        #         pprint.pprint(activations)
-        #         print("\n-----")
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- NETWORK PROPAGATION (activations) ---\n")
+                print(activations.shape)
+                pprint.pprint(activations)
+                print("\n-----")
 
         if train:
             return outputs, activations
@@ -365,7 +352,7 @@ class NeuralNetwork:
             self,
             output_layer_outputs : np.ndarray,
             output_layer_activations : np.ndarray,
-            target : np.ndarray
+            targets : np.ndarray
     ) -> np.ndarray:
         
         """
@@ -375,7 +362,7 @@ class NeuralNetwork:
             Parameters:
             -   output_layer_outputs : e' il vettore di input pesati dell'output layer.
             -   output_layer_activations : e' il vettore di valori di attivazione dell'output layer.
-            -   target : e' l'etichetta di una determinata coppia del dataset.
+            -   targets : e' l'etichetta di una determinata coppia del dataset.
 
             Returns:
             -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer.
@@ -386,18 +373,21 @@ class NeuralNetwork:
             Esprime quanto cambia la funzione di costo rispetto a questi valori di attivazione.
         """
 
-        delta_Ca = self.err_fun(output_layer_activations, target, der=True)
+        delta_Ca = np.fromiter(
+            (self.err_fun(y, t, der=True) for y, t in zip(output_layer_activations, targets)),
+            dtype=np.dtype((float, output_layer_activations.shape[1]))
+        )
 
         """
             I pesi nell'output layer si addestrano lentamente se il valore di attivazione calcolato su 'out' e' molto basso o molto alto (per la sigmoide, ad esempio, vicino allo 0 o vicino a 1, rispettivamente).
             In questo caso, la derivata prima restituisce un valore molto vicino allo 0. Si dice che il neurone dell'output layer si e' saturato e, di conseguenza, il peso non si addestra piu' (o si addestra lentamente). Lo stesso vale anche per i bias della rete neurale.
             Una possibile soluzione per prevenire il rallentamento dell'apprendimento, ad esempio, potrebbe essere quella di scegliere una funzione di attivazione la cui derivata e' sempre positiva e che non si avvicina mai allo 0.
         """
-        
-        delta_az = np.array([
-            self.layers[-1].act_fun(out, der=True)
-            for out in output_layer_outputs
-        ])
+
+        delta_az = np.fromiter(
+            (self.layers[-1].act_fun(out, der=True) for out in output_layer_outputs),
+            dtype=np.dtype((float, output_layer_outputs.shape[1]))
+        )
 
         return np.multiply(delta_Ca, delta_az)
 
@@ -407,7 +397,6 @@ class NeuralNetwork:
             self,
             network_outputs : list[np.ndarray],
             network_activations : list[np.ndarray],
-            network_weights : np.ndarray,
             delta_output_layer : np.ndarray,
             layer_index: int
     ) -> np.ndarray:
@@ -435,7 +424,6 @@ class NeuralNetwork:
             delta_tmp = self.__delta_layer(
                 network_outputs,
                 network_activations,
-                network_weights,
                 delta_output_layer,
                 layer_index+1
             )
@@ -446,16 +434,17 @@ class NeuralNetwork:
         start = curr_layer.layer_size * curr_layer.neuron_size
         end = start + next_layer.layer_size * next_layer.neuron_size
         weights_shape = (next_layer.layer_size, curr_layer.layer_size)
-        next_layer_weights = np.reshape(network_weights[start:end], weights_shape).T
+        next_layer_weights = np.reshape(self.weights[start:end], weights_shape).T
 
-        delta_Ca = np.dot(next_layer_weights, delta_tmp)
-        delta_az = np.array([
-            curr_layer.act_fun(out, der=True)
-            for out in network_outputs[layer_index]
-        ])
+        delta_Ca = np.dot(next_layer_weights, delta_tmp.T)
+
+        delta_az = np.fromiter(
+            (curr_layer.act_fun(out, der=True) for out in network_outputs[layer_index]),
+            dtype=np.dtype((float, network_outputs[layer_index].shape[1]))
+        )
 
         # Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
-        return np.multiply(delta_Ca, delta_az)
+        return np.multiply(delta_Ca.T, delta_az)
 
     # end
 
@@ -463,19 +452,17 @@ class NeuralNetwork:
             self,
             network_outputs : list[np.ndarray],
             network_activations : list[np.ndarray],
-            network_weights : np.ndarray,
-            target : np.ndarray,
+            training_labels : np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
         
         """
-            Aggiusta i valori dei pesi ed i bias della rete per diminuire il valore della funzione di costo rispetto all'esempio di training e la corrispondente etichetta in input.
+            Aggiusta i valori dei pesi / bias della rete per diminuire il valore della funzione di costo rispetto agli esempi di training e le corrispondenti etichette in input.
             Calcola il gradiente della funzione di costo rispetto a tutti i pesi della rete utilizzando le quattro equazioni (BP1)-(BP4) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen. Tali equazioni sono una diretta conseguenza della regola della catena del calcolo multivariabile (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
             
             Parameters:
             -   network_outputs : la lista di output di ogni layer della rete.
             -   network_activations : la lista di valori di attivazione di ogni layer della rete.
-            -   network_weights : ...
-            -   target : e' l'etichetta di una determinata coppia del dataset.
+            -   training_labels : e' la matrice di tutte le etichette delle coppie del dataset.
 
             Returns:
             -   np.ndarray : il gradiente della funzione di costo rispetto ai pesi della rete neurale.
@@ -493,14 +480,15 @@ class NeuralNetwork:
         delta_output_layer = self.__delta_output_layer(
             network_outputs[-1],
             network_activations[-1],
-            target
+            training_labels
         )
 
-        # if constants.DEBUG_MODE:
-        #     with np.printoptions(threshold=np.inf):
-        #         print("--- BACKPROPAGATION (delta_output_layer) ---\n")
-        #         pprint.pprint(delta_output_layer)
-        #         print("\n-----")
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- BACKPROPAGATION (delta_output_layer) ---\n")
+                pprint.pprint(delta_output_layer.shape)
+                pprint.pprint(delta_output_layer)
+                print("\n-----")
 
         for l in range(self.depth):
             # print("layer_index:", l)
@@ -513,16 +501,16 @@ class NeuralNetwork:
             delta_layer = self.__delta_layer(
                 network_outputs,
                 network_activations,
-                network_weights,
                 delta_output_layer,
                 l
             )
 
-            # if constants.DEBUG_MODE:
-            #     with np.printoptions(threshold=np.inf):
-            #         print(f"--- BACKPROPAGATION (delta_layer_{l}) ---\n")
-            #         pprint.pprint(delta_layer)
-            #         print("\n-----")
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print(f"--- BACKPROPAGATION (delta_layer_{l}) ---\n")
+                    pprint.pprint(delta_layer.shape)
+                    pprint.pprint(delta_layer)
+                    print("\n-----")
 
             """
                 STEP 3:
@@ -530,10 +518,7 @@ class NeuralNetwork:
                 E' l'implementazione dell'equazione (BP3) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
             """
 
-            curr_size = self.layers[l].layer_size
-
-            for j in range(curr_size):
-                gradient_biases.append(delta_layer[j])
+            gradient_biases += [b for b in np.mean(delta_layer, axis=0)]
 
             """
                 STEP 4:
@@ -542,42 +527,25 @@ class NeuralNetwork:
             """
 
             prev_layer_activations = self.inputs if l == 0 else network_activations[l-1]
-            prev_size = self.input_size if l == 0 else self.layers[l-1].layer_size
+            
+            gradient_weights += [w for w in np.mean(
+                [
+                    np.outer(prev_layer_activations[e], delta_layer[e]).flatten()
+                    for e in range(delta_layer.shape[0])
+                ],
+                axis=0
+            )]
 
-            for j in range(curr_size):
-                for k in range(prev_size):
-                    gradient_weights.append(prev_layer_activations[k] * delta_layer[j])
-
-            # if constants.DEBUG_MODE:
-            #     hIn = 1
-            #     oIn = 8
-            #     if l == 1:
-            #         actual_delta_Ca = 2 * (target[oIn] - network_activations[-1][oIn])
-            #         test_delta_Ca = self.err_fun(network_activations[-1], target, der=True)[oIn]
-            #         print("delta_Ca:", actual_delta_Ca, test_delta_Ca)
-
-            #         actual_delta_az = network_activations[-1][oIn]*(1-network_activations[-1][oIn])
-            #         test_delta_az = self.layers[-1].act_fun(network_outputs[-1][oIn], der=True)
-            #         print("delta_az:", actual_delta_az, test_delta_az)
-
-            #         actual_delta_zw = network_activations[-2][hIn]
-            #         print("delta_zw:", actual_delta_zw, prev_layer_activations[hIn])
-
-            #         print(
-            #             "\n\n",
-            #             "actual_delta_layer:", actual_delta_Ca * actual_delta_az,
-            #             "test_delta_layer:", delta_layer[oIn], delta_output_layer[oIn]
-            #         )
-
-            #         # for index, element in enumerate(gradient_weights[784*32:]):
-            #         #     if element == (actual_delta_Ca * actual_delta_az * actual_delta_zw):
-            #         #         print("gradient_weights:", index)
-
-            #         print(
-            #             "actual:", actual_delta_Ca * actual_delta_az * actual_delta_zw,
-            #             "test:", gradient_weights[784*3+3*oIn+hIn]
-            #         )
-            # # end if
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- GRADIENT_WEIGHTS (mean) ---\n")
+                pprint.pprint(len(gradient_weights))
+                pprint.pprint(gradient_weights)
+                print("\n-----")
+                print("--- GRADIENT_BIASES (mean) ---\n")
+                pprint.pprint(len(gradient_biases))
+                pprint.pprint(gradient_biases)
+                print("\n-----")
 
         return np.array(gradient_weights), np.array(gradient_biases)
         
@@ -585,11 +553,8 @@ class NeuralNetwork:
 
     def __update_rule(
             self,
-            training_data : np.ndarray,
-            network_weights : np.ndarray,
-            network_biases : np.ndarray,
-            training_weights : list[np.ndarray],
-            training_biases : list[np.ndarray],
+            gradient_weights : np.ndarray,
+            gradient_biases : np.ndarray,
             learning_rate : float
     ) -> dict[np.ndarray, np.ndarray]:
         
@@ -598,64 +563,45 @@ class NeuralNetwork:
             
             Parameters:
             -   ... : ...
+            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
             -   ... : ...
-            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
         """
 
-        # Le righe sono il numero di esempi di addestramento.
-        rows_size = len(training_data) if not constants.DEBUG_MODE else 1
-        # Le colonne sono il numero di pesi e/o bias della rete neurale.
-        cols_size = -1
+        # Si applica la discesa del gradiente per l'aggiornamento dei pesi.
+        self.weights = np.array([
+            w - learning_rate * g
+            for w, g in zip(
+                self.weights,
+                gradient_weights
+            )
+        ])
 
-        gradient_weights = np.mean(
-            np.reshape(
-                training_weights,
-                (rows_size, cols_size)
-            ),
-            axis=0
-        )
+        # Si applica la discesa del gradiente per l'aggiornamento dei bias.
+        self.biases = np.array([
+            b - learning_rate * g
+            for b, g in zip(
+                self.biases,
+                gradient_biases
+            )
+        ])
 
-        gradient_biases = np.mean(
-            np.reshape(
-                training_biases,
-                (rows_size, cols_size)
-            ),
-            axis=0
-        )
+        # Si riporta l'aggiornamento dei pesi / bias iterativamente in tutta la rete neurale.
+        start_w = 0; start_b = 0
+        end_w = 0; end_b = 0
 
-        # if constants.DEBUG_MODE:
-        #     with np.printoptions(threshold=np.inf):
-        #         print("--- GRADIENT_WEIGHTS (mean) ---\n")
-        #         pprint.pprint(gradient_weights)
-        #         print("\n-----")
-        #         print("--- GRADIENT_BIASES (mean) ---\n")
-        #         pprint.pprint(gradient_biases)
-        #         print("\n-----")
-        #         print("--- NETWORK WEIGHTS (end) ---\n")
-        #         pprint.pprint(network_weights)
-        #         print("\n-----")
-        #         print("--- NETWORK BIASES (end) ---\n")
-        #         pprint.pprint(network_biases)
-        #         print("\n-----")
+        for l in self.layers:
+            end_w += np.prod(l.weights.shape)
+            end_b += np.prod(l.biases.shape)
 
-        return {
-            "Weights" : np.array([
-                w - learning_rate * g
-                for w, g in zip(
-                    network_weights,
-                    gradient_weights
-                )
-            ]),
-            "Biases" : np.array([
-                b - learning_rate * g
-                for b, g in zip(
-                    network_biases,
-                    gradient_biases
-                )
-            ])
-        }
+            l.weights = np.reshape(self.weights[start_w:end_w], l.weights.shape)
+            l.biases = np.reshape(self.biases[start_b:end_b], l.biases.shape)
+
+            start_w = end_w
+            start_b = end_b
+
+        return { "Weights" : self.weights, "Biases" : self.biases }
 
     # end
 
@@ -753,14 +699,11 @@ class NeuralNetwork:
         if (not validation_data.shape[0] == validation_labels.shape[0]):
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
-        training_weights = []; training_biases = []
         training_costs = []; validation_costs = []
         training_predictions = []; validation_predictions = []
         training_accuracies = []; validation_accuracies = []
 
         best_params = []
-
-        data = 0; label = 1
 
         start_time = time.time()
         print(f"Addestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
@@ -769,111 +712,66 @@ class NeuralNetwork:
             print(f"\nEpoca {e+1} di {epochs}")
 
             # TRAINING
-            
-            network_weights = self.weights
-            network_biases = self.biases
 
-            # if constants.DEBUG_MODE:
-            #     with np.printoptions(threshold=np.inf):
-            #         print("--- NETWORK WEIGHTS (start) ---\n")
-            #         pprint.pprint(network_weights)
-            #         print("\n-----")
-            #         print("--- NETWORK BIASES (start) ---\n")
-            #         pprint.pprint(network_biases)
-            #         print("\n-----")
+            self.weights, self.biases = self.__flatten_weights()
 
-            training_predictions.clear()
-            training_weights.clear()
-            training_biases.clear()
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print("--- NETWORK WEIGHTS (start) ---\n")
+                    pprint.pprint(self.weights)
+                    print("\n-----")
+                    print("--- NETWORK BIASES (start) ---\n")
+                    pprint.pprint(self.biases)
+                    print("\n-----")
 
-            for n, example in enumerate(zip(training_data, training_labels)):
+            # STEP 1: forward propagation su tutti gli esempi di addestramento
+            training_outputs, training_activations = self.__forward_propagation(
+                training_data,
+                train=True
+            )
 
-                if not constants.DEBUG_MODE:
-                    auxfunc.print_progress_bar(n+1, len(training_data), prefix='\tTraining:')
-
-                # print(f"\t\tEsempio n.{n+1}")
-                # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
-
-                # STEP 1: forward propagation
-                training_outputs, training_activations = self.__forward_propagation(
-                    example[data],
-                    train=True
-                )
-
-                # if constants.DEBUG_MODE:
-                #     with np.printoptions(threshold=np.inf):
-                #         print("--- NETWORK INPUTS ---\n")
-                #         pprint.pprint(self.inputs)
-                #         print("\n-----")
-                #         print("--- TRAINING OUTPUTS ---\n")
-                #         pprint.pprint(training_outputs)
-                #         print("\n-----")
-                #         print("--- TRAINING ACTIVATIONS ---\n")
-                #         pprint.pprint(training_activations)
-                #         print("\n-----")
-                #         print("--- TARGET ---\n")
-                #         pprint.pprint(example[label])
-                #         print("\n-----")
-
-                training_predictions.append(training_activations[-1])
-
-                # print("training_outputs\n")
-                # pprint.pprint(training_outputs)
-                # print("training_activations\n")
-                # pprint.pprint(training_activations)
-
-                # STEP 2: backpropagation per ogni esempio di training
-                gw, gb = self.__back_propagation(
-                    training_outputs,
-                    training_activations,
-                    network_weights,
-                    example[label]
-                )
-
-                # if constants.DEBUG_MODE:
-                #     with np.printoptions(threshold=np.inf):
-                #         print("--- BACKPROPAGATION (gradient_weights) ---\n")
-                #         pprint.pprint(gw)
-                #         print("\n-----")
-                #         print("--- BACKPROPAGATION (gradient_biases) ---\n")
-                #         pprint.pprint(gb)
-                #         print("\n-----")
-
-                training_weights.append(gw)
-                training_biases.append(gb)
-
-                if constants.DEBUG_MODE:
-                    break
-
-            # end for n, example
+            # STEP 2: backpropagation su tutti gli esempi di addestramento
+            gw, gb = self.__back_propagation(
+                training_outputs,
+                training_activations,
+                training_labels
+            )
 
             # STEP 3: aggiornamento dei pesi
             print("\n\tAggiornamento dei pesi in corso...")
-            best_params.append(self.__update_rule(
-                training_data,
-                network_weights, network_biases,
-                training_weights, training_biases,
-                learning_rate
-            ))
-
-            self.weights = best_params[-1]["Weights"]
-            self.biases = best_params[-1]["Biases"]
+            best_params.append(self.__update_rule(gw, gb, learning_rate))
 
             # STEP 4: calcolo dell'errore per ogni esempio di training
             print("\tCalcolo dell'errore di addestramento in corso...")
 
             if constants.DEBUG_MODE:
-                training_costs.append(self.__compute_error(np.array(training_predictions[0]), training_labels[0]))
+                training_costs.append(
+                    self.__compute_error(
+                        training_activations[-1][0],
+                        training_labels[0]
+                    )
+                )
             else:
-                training_costs.append(self.__compute_error(np.array(training_predictions), training_labels))
+                training_costs.append(
+                    self.__compute_error(
+                        training_activations[-1],
+                        training_labels
+                    )
+                )
 
             t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
 
             print("\tCalcolo dell'accuracy di addestramento in corso...")
             if constants.DEBUG_MODE:
-                t_acc, t_acc_percent = self.__compute_accuracy(np.array(training_predictions[0]), training_labels[0])
+                t_acc, t_acc_percent = self.__compute_accuracy(
+                    training_activations[-1][0],
+                    training_labels[0]
+                )
             else:
-                t_acc, t_acc_percent = self.__compute_accuracy(np.array(training_predictions), training_labels)
+                t_acc, t_acc_percent = self.__compute_accuracy(
+                    training_activations[-1],
+                    training_labels
+                )
             
             training_accuracies.append(t_acc)
 
@@ -890,65 +788,67 @@ class NeuralNetwork:
 
             # VALIDATION
 
-            network_weights = self.weights
-            network_biases = self.biases
+            # network_weights = self.weights
+            # network_biases = self.biases
 
-            validation_predictions.clear()
+            # validation_predictions.clear()
 
-            for n, example in enumerate(zip(validation_data, validation_labels)):
+            # for n, example in enumerate(zip(validation_data, validation_labels)):
 
-                if not constants.DEBUG_MODE:
-                    auxfunc.print_progress_bar(n+1, len(validation_data), prefix='\tValidation:')
+            #     if not constants.DEBUG_MODE:
+            #         auxfunc.print_progress_bar(n+1, len(validation_data), prefix='\tValidation:')
 
-                # print(f"\t\tEsempio n.{n+1}")
-                # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
+            #     # print(f"\t\tEsempio n.{n+1}")
+            #     # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
 
-                # STEP 1: forward propagation
-                validation_outputs, validation_activations = self.__forward_propagation(
-                    example[data],
-                    train=True
-                )
+            #     # STEP 1: forward propagation
+            #     validation_outputs, validation_activations = self.__forward_propagation(
+            #         example[data],
+            #         train=True
+            #     )
 
-                validation_predictions.append(validation_activations[-1])
+            #     validation_predictions.append(validation_activations[-1])
 
-                if constants.DEBUG_MODE:
-                    break
+            #     if constants.DEBUG_MODE:
+            #         break
             
-            # end for n, example
+            # # end for n, example
 
-            # STEP 4: calcolo errore e accuracy per ogni esempio di training
-            print("\tCalcolo dell'errore di validazione in corso...")
-            if constants.DEBUG_MODE:
-                validation_costs.append(self.__compute_error(np.array(validation_predictions[0]), validation_labels[0]))
-            else:
-                validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
+            # # STEP 4: calcolo errore e accuracy per ogni esempio di training
+            # print("\tCalcolo dell'errore di validazione in corso...")
+            # if constants.DEBUG_MODE:
+            #     validation_costs.append(self.__compute_error(np.array(validation_predictions[0]), validation_labels[0]))
+            # else:
+            #     validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
 
-            v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
+            # v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
 
-            print("\tCalcolo dell'accuracy di validazione in corso...")
+            # print("\tCalcolo dell'accuracy di validazione in corso...")
 
-            if constants.DEBUG_MODE:
-                v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions[0]), validation_labels[0])
-            else:
-                v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
+            # if constants.DEBUG_MODE:
+            #     v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions[0]), validation_labels[0])
+            # else:
+            #     v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
 
-            validation_accuracies.append(v_acc)
+            # validation_accuracies.append(v_acc)
 
-            end_time = time.time()
-            tot_time = end_time - start_time
+            # end_time = time.time()
+            # tot_time = end_time - start_time
 
-            if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print()
-                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-                print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
-                print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
+            # if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
+            #     print()
+            #     print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+            #     print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
+            #     print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
 
-            if constants.DEBUG_MODE:
-                break
+            # if constants.DEBUG_MODE:
+            #     break
 
         # end for e
 
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+
+        return # temporaneo
 
         # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
         index = int(np.argmin(validation_costs, keepdims=False))
@@ -981,7 +881,7 @@ class NeuralNetwork:
 
     # end
 
-    def predict(self, x : list[float]) -> int:
+    def predict(self, x : np.ndarray) -> int:
         """
             Calcola una predizione per l'input dato in base alla configurazione attuale di pesi e bias della rete neurale. Inoltre, visualizza nel terminale le probabilita' delle predizioni di tutto l'output layer utilizzando la funzione "auxfunc.softmax()".
             
@@ -992,20 +892,23 @@ class NeuralNetwork:
             -   label : l'indice del neurone nell'output layer che ottiene il valore di attivazione piu' alto.
         """
 
-        prediction = self.__forward_propagation(x)
-        label = np.argmax(prediction)
+        labels = []
+        predictions = self.__forward_propagation(x)
 
-        # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
-        probabilities = auxfunc.softmax(prediction)
+        for example_prediction in predictions:
+            labels.append(np.argmax(example_prediction))
 
-        i = 0
-        print(f"Predizione della rete: {constants.ETICHETTE_CLASSI[label]}")
-        for pred, prob in zip(prediction, probabilities):
-            print(f'\tClasse {i}:\t{pred:.5f},\t{(prob * 100):.2f}')
-            i += 1
-        print()
+            # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
+            probabilities = auxfunc.softmax(example_prediction)
 
-        return label
+            i = 0
+            print(f"Predizione della rete: {constants.ETICHETTE_CLASSI[labels[-1]]}")
+            for pred, prob in zip(example_prediction, probabilities):
+                print(f'\tClasse {i}:\t{pred:.5f},\t{(prob * 100):.2f}')
+                i += 1
+            print()
+
+        return labels
         
     # end
 
@@ -1042,3 +945,4 @@ class NeuralNetwork:
 # http://neuralnetworksanddeeplearning.com/chap2.html
 # https://numpy.org/doc/stable/reference/generated/numpy.multiply.html
 # Backpropagation algorithm: https://youtu.be/sIX_9n-1UbM
+# https://www.geeksforgeeks.org/how-to-convert-numpy-matrix-to-array/
