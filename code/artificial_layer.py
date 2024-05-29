@@ -12,13 +12,10 @@
 # ########################################################################### #
 # LIBRERIE
 
-from artificial_neuron import Neuron
-
 import constants
 import auxfunc
 import numpy as np
 import pprint
-import time
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE LAYER
@@ -29,43 +26,45 @@ class Layer:
     # ATTRIBUTI DI CLASSE
 
     @property
-    def units(self) -> list[Neuron]:
-        """È la lista di neuroni del layer."""
-        return self._units
-    # end
-
-    @units.setter
-    def units(self, value : list[Neuron]) -> None:
-        self._units = value
-    # end
-
-    @property
     def layer_size(self) -> int:
         """È la dimensione del layer, cioe' il numero di neuroni di cui e' composto."""
         return self._layer_size
     # end
 
-    @layer_size.setter
-    def layer_size(self, value : int) -> None:
-        if (value <= 0):
-            raise ValueError("La dimensione del layer deve essere maggiore di 0.")
-        self._layer_size = value
+    @property
+    def neuron_size(self) -> int:
+        """È la dimensione di un neurone del layer, cioe' il numero di connessioni dal livello precedente."""
+        return self._neuron_size
     # end
+
+    # @layer_size.setter
+    # def layer_size(self, value : int) -> None:
+    #     if (value <= 0):
+    #         raise ValueError("La dimensione del layer deve essere maggiore di 0.")
+    #     self._layer_size = value
+    # # end
 
     @property
     def inputs(self) -> np.ndarray:
-        """È la matrice di valori in input al layer. E' un vettore riga con un numero di colonne pari al numero di neuroni del layer precedente."""
+        """ È la matrice di valori in input al layer. Ha un numero di colonne pari al numero di neuroni del layer precedente ed un numero di righe pari al numero di esempi in input alla rete neurale. """
 
-        return np.reshape(self.units[0].inputs, (1, self.units[0].neuron_size))
+        return self._inputs
     # end
 
     @inputs.setter
     def inputs(self, value : np.ndarray) -> None:
         if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore degli input deve essere di tipo 'numpy.ndarray'.")
+            raise constants.LayerError("Il matrice degli input deve essere di tipo 'numpy.ndarray'.")
         
-        if (not value.size == self.input_size):
-            raise ValueError("La dimensione del vettore degli input non e' compatibile.")
+        # print(value.shape, self.neuron_size)
+        if len(value.shape) == 2:
+            if (not value.shape[1] == self.neuron_size):
+                raise constants.LayerError("La dimensione dei vettori delle caratteristiche degli input non e' compatibile con questo layer.")
+        elif len(value.shape) == 1:
+            if (not value.size == self.neuron_size):
+                raise constants.LayerError("La dimensione del vettore delle caratteristiche dell'input non e' compatibile con questo layer.")
+        else:
+            raise constants.LayerError("La matrice degli input non e' compatibile con questo layer.")
         
         self._inputs = value
     # end
@@ -73,13 +72,13 @@ class Layer:
     @property
     def weights(self) -> np.ndarray:
         """
-            Restituisce i pesi del layer.
+            E' la matrice dei pesi del layer.
             
             Returns:
             -   una matrice contenente i pesi di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione indica il numero di pesi all'interno del singolo neurone.
         """
         
-        return np.reshape([n.weights for n in self.units], (self.layer_size, self.units[0].neuron_size))
+        return self._weights
     
     # end
 
@@ -87,28 +86,26 @@ class Layer:
     def weights(self, value : np.ndarray) -> None:
 
         if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
+            raise constants.LayerError("La matrice dei pesi deve essere di tipo 'numpy.ndarray'.")
         
         # print("Layer:", value.shape, self.weights.shape)
-        if (not value.shape == self.weights.shape):
-            raise ValueError("La matrice dei pesi non e' compatibile con questo layer.")
+        if (not value.shape == self._weights.shape):
+            raise constants.LayerError("La matrice dei pesi non e' compatibile con questo layer.")
 
-        for i, n in enumerate(self.units):
-            n.weights = value[i]
+        self._weights = value
 
     # end
 
     @property
     def biases(self) -> np.ndarray:
         """
-            Restituisce i bias del layer.
+            E' il vettore dei bias del layer.
             
             Returns:
             -   un vettore colonna contenente i bias di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione e' 1 perche' il bias e' uno scalare.
         """
-        
-        # Si utilizza -1 per recuperare la dimensione della lista originale.
-        return np.reshape([n.bias for n in self.units], (-1,1))
+
+        return self._biases
     
     # end
 
@@ -116,14 +113,13 @@ class Layer:
     def biases(self, value : np.ndarray) -> None:
         
         if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
+            raise constants.LayerError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
         
         # print("Layer:", value.shape, self.biases.shape)
-        if (not value.shape == self.biases.shape):
-            raise ValueError("Il vettore dei bias non e' compatibile con questo layer.")
-        
-        for start, n in enumerate(self.units):
-            n.bias = float(value[start])
+        if (not value.shape == self._biases.shape):
+            raise constants.LayerError("Il vettore dei bias non e' compatibile con questo layer.")
+
+        self._biases = value
 
     # end
 
@@ -136,15 +132,19 @@ class Layer:
     @act_fun.setter
     def act_fun(self, fun : constants.ActivationFunctionType) -> None:
         self._act_fun = fun
-        
-        for i in range(len(self.units)):
-            self.units[i].act_fun = fun
     # end
 
     # ####################################################################### #
     # COSTRUTTORE
 
-    def __init__(self, ls : int, ns : int, af : constants.ActivationFunctionType) -> None:
+    def __init__(
+            self,
+            ls : int,
+            ns : int,
+            af : constants.ActivationFunctionType,
+            random_init : bool = True
+    ) -> None:
+        
         """
             È il costruttore della classe Layer.
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
@@ -158,12 +158,44 @@ class Layer:
             -   None
         """
 
-        # Richiama il setter della property "layer_size"
-        self.layer_size = int(ls)
+        # Inizializzazione delle dimensioni del layer
+        if (ls <= 0):
+            raise constants.LayerError("La dimensione del layer deve essere maggiore di 0.")
+        self._layer_size = int(ls)
+        
+        if (ns <= 0):
+            raise constants.LayerError("La dimensione del neurone deve essere maggiore di 0.")
+        self._neuron_size = int(ns)
 
-        self.units = []
-        for i in range(ls):
-            self.units.append(Neuron(ns))
+        # Inizializzazione dell'input del layer
+        self.inputs = np.zeros((1,ns))
+
+        # Inizializzazione dei pesi / bias del layer
+        if not random_init:
+            rng = np.random.default_rng(constants.DEFAULT_RANDOM_SEED)
+
+        self._weights = np.zeros((ls,ns))
+        if not random_init:
+            self.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,ns))
+        else:
+            self.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,ns))
+
+        self._biases = np.zeros((ls,1))
+        if not random_init:
+            self.biases = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,1))
+        else:
+            self.biases = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,1))
+        
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER INIT (weights) ---\n")
+                print(self.weights.shape)
+                pprint.pprint(self.weights)
+                print("\n-----")
+                print("--- LAYER INIT (biases) ---\n")
+                print(self.biases.shape)
+                pprint.pprint(self.biases)
+                print("\n-----")
         
         self.act_fun = af
 
@@ -180,22 +212,19 @@ class Layer:
             -   numpy.ndarray : un array contenente tutti gli input pesati dei neuroni del layer corrente.
         """
 
-        layer_outputs = [n.output() for n in self.units]
-        layer_outputs2 = np.dot(self.inputs, self.weights.T) + self.biases.T
-        # print("output_test:", np.sum(np.subtract(layer_outputs, layer_outputs2)))
+        layer_outputs = np.dot(self.inputs, self.weights.T) + self.biases.T
 
-        if constants.DEBUG_MODE:
-            with np.printoptions(threshold=np.inf):
-                print("--- LAYER PROPAGATION (outputs1) ---\n")
-                print(len(layer_outputs))
-                pprint.pprint(layer_outputs)
-                print("\n-----")
-                print("--- LAYER PROPAGATION (outputs2) ---\n")
-                print(layer_outputs2.shape)
-                pprint.pprint(layer_outputs2)
-                print("\n-----")
+        # if constants.DEBUG_MODE:
+        #     with np.printoptions(threshold=np.inf):
+        #         print("--- LAYER PROPAGATION (outputs2) ---\n")
+        #         # print(self.inputs.shape)
+        #         # print(self.weights.T.shape)
+        #         # print(self.biases.T.shape)
+        #         print(layer_outputs.shape)
+        #         pprint.pprint(layer_outputs)
+        #         print("\n-----")
         
-        return np.array(layer_outputs)
+        return layer_outputs
 
     # end
 
@@ -211,44 +240,27 @@ class Layer:
             -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
         """
 
-        if train:
-            tmp = [neuron.activate(train=True) for neuron in self.units]
-            return np.array([out for out, act in tmp]), np.array([act for out, act in tmp])
-        # end if
+        array_act_fun = np.vectorize(self.act_fun)
 
-        return np.array([neuron.activate() for neuron in self.units])
-
-        # start_time = time.time()
-
-        # layer_outputs = []
-        # layer_activations2 = []
-
-        # layer_outputs = np.dot(self.inputs, self.weights.T) + self.biases.T
-        # layer_activations2.append([self.act_fun(val) for val in layer_outputs])
-
-        # end_time = time.time()
-        # print("LAYER ACTIVATE TIME:", end_time - start_time)
-
-        # if train:
-        #     return np.array(layer_outputs), np.array(layer_activations2)
-
-        # return np.array(layer_activations2)
+        layer_outputs = self.output()
+        layer_activations = array_act_fun(layer_outputs)
 
         # if constants.DEBUG_MODE:
         #     with np.printoptions(threshold=np.inf):
-        #         print("--- LAYER PROPAGATION (activations1) ---\n")
-        #         print(len(layer_activations))
+        #         # print("--- LAYER PROPAGATION (activations1) ---\n")
+        #         # print(len(layer_activations))
+        #         # pprint.pprint(layer_activations)
+        #         # print("\n-----")
+        #         print("--- LAYER PROPAGATION (activations2) ---\n")
+        #         print(layer_activations.shape)
         #         pprint.pprint(layer_activations)
         #         print("\n-----")
-        #         print("--- LAYER PROPAGATION (activations2) ---\n")
-        #         print(self.inputs.shape)
-        #         print(self.weights.T.shape)
-        #         print(np.dot(self.inputs, self.weights.T).shape)
-        #         print(self.biases.T.shape)
-        #         print(len(layer_activations2))
-        #         pprint.pprint(layer_activations2)
-        #         print("\n-----")
-    
+                
+        if train:
+            return layer_outputs, layer_activations
+
+        return layer_activations
+
     # end
 
     # ####################################################################### #
@@ -261,8 +273,13 @@ class Layer:
             -   una stringa contenente i dettagli dell'oggetto.
         """
 
-        return f'Layer(\n\tsize = {self.layer_size}\n)'
+        return f'Layer(\n\tsize = {self.layer_size},\n\tact_fun = {self.act_fun},\n\tinputs_size = {self.inputs.shape}\n\tweights_shape = {self.weights.shape},\n\tbiases_shape = {self.biases.shape}\n)'
     
     # end
 
 # end class Layer
+
+# ########################################################################### #
+# RIFERIMENTI
+
+# https://saturncloud.io/blog/applying-a-function-along-a-numpy-array-a-comprehensive-guide-for-data-scientists/

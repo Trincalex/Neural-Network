@@ -19,6 +19,30 @@ from typing import Callable, Optional
 # ########################################################################### #
 # CODICI DI ERRORE e EXCEPTIONS
 
+class LayerError(Exception):
+ 
+    def __init__(self, value):
+        self.value = value
+    # end
+ 
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class LayerError
+
+class InputLayerError(Exception):
+ 
+    def __init__(self, value):
+        self.value = value
+    # end
+ 
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class InputLayerError
+
 class HiddenLayerError(Exception):
  
     def __init__(self, value):
@@ -99,8 +123,8 @@ DEFAULT_SOFTMAX_EPSILON = 1e-15
 DEFAULT_RANDOM_SEED = 0
 """ ... """
 
-DEBUG_MODE = False
-""" ... """
+DEBUG_MODE = True
+""" Consente di attivare la modalita' di debug per stampare in console i valori attuali delle strutture dati coinvolte nell'addestramento della rete neurale. """
 
 DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
 """ ... """
