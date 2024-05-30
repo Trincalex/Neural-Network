@@ -67,6 +67,30 @@ class TrainError(Exception):
 
 # end class TrainError
 
+class ActivationFunctionError(Exception):
+
+    def __init__(self, value):
+        self.value = value
+    # end
+
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class ActivationFunctionError
+
+class ErrorFunctionError(Exception):
+
+    def __init__(self, value):
+        self.value = value
+    # end
+
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class ErrorFunctionError
+
 # ########################################################################### #
 # COSTANTI
 
@@ -108,10 +132,10 @@ DIMENSIONE_PIXEL = 255
 DIMENSIONE_IMMAGINE = 28
 """ ... """
 
-DEFAULT_EPOCHS = 20
+DEFAULT_EPOCHS = 100
 """ ... """
 
-DEFAULT_LEARNING_RATE = 0.3
+DEFAULT_LEARNING_RATE = 0.7
 """ ... """
 
 DEFAULT_LEAKY_RELU_ALPHA = 0.01
@@ -132,7 +156,7 @@ DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
 # ########################################################################### #
 # COSTANTI
 
-ActivationFunctionType = Callable[[float, Optional[bool]], float]
+ActivationFunctionType = Callable[[float | np.ndarray, Optional[bool]], float | np.ndarray]
 """ ... """
 
 ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | np.ndarray]

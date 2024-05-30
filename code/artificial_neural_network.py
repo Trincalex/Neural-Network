@@ -61,6 +61,13 @@ class NeuralNetwork:
         else:
             raise constants.InputLayerError("La matrice degli input non e' compatibile con l'input layer.")
         
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- NETWORK (inputs) ---\n")
+                print(value.shape)
+                pprint.pprint(value)
+                print("\n-----\n\n")
+        
         self._inputs = value
     # end
 
@@ -86,6 +93,13 @@ class NeuralNetwork:
         if (not value.size == self._weights.size):
             raise ValueError("Il vettore dei pesi non e' compatibile con questa rete neurale.")
         
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- NETWORK (weights) ---\n")
+                print(value.shape)
+                pprint.pprint(value)
+                print("\n-----\n\n")
+        
         self._weights = value
 
     # end
@@ -105,6 +119,13 @@ class NeuralNetwork:
         # print("Neural Network:", value.size, self._biases.size)
         if (not value.size == self._biases.size):
             raise ValueError("La dimensione del vettore dei bias non e' compatibile.")
+        
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- NETWORK (biases) ---\n")
+                print(value.shape)
+                pprint.pprint(value)
+                print("\n-----\n\n")
         
         self._biases = value
 
@@ -337,7 +358,6 @@ class NeuralNetwork:
         if constants.DEBUG_MODE:
             with np.printoptions(threshold=np.inf):
                 print("--- NETWORK PROPAGATION (activations) ---\n")
-                print(activations.shape)
                 pprint.pprint(activations)
                 print("\n-----")
 
@@ -356,40 +376,54 @@ class NeuralNetwork:
     ) -> np.ndarray:
         
         """
-            Calcola il vettore le cui componenti sono le derivate prime parziali della funzione di costo della rete neurale rispetto agli input pesati dell'output layer.
+            Calcola la matrice le cui componenti sono le derivate prime parziali della funzione di costo della rete neurale rispetto agli input pesati dell'output layer.
             E' l'implementazione dell'equazione (BP1a) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
 
             Parameters:
-            -   output_layer_outputs : e' il vettore di input pesati dell'output layer.
-            -   output_layer_activations : e' il vettore di valori di attivazione dell'output layer.
-            -   targets : e' l'etichetta di una determinata coppia del dataset.
+            -   output_layer_outputs : e' la matrice di input pesati dell'output layer su tutti gli esempi di training.
+            -   output_layer_activations : e' la matrice di valori di attivazione dell'output layer su tutti gli esempi di training.
+            -   targets : e' la matrice di tutte le etichette delle coppie del dataset.
 
             Returns:
-            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer.
+            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer su tutti gli esempi di training. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde al numero di neuroni nell'output layer.
         """
 
         """
-            E' un vettore le cui componenti sono le singole derivate parziali della funzione di errore rispetto al singolo valore di attivazione dell'output layer.
+            GRADIENTE DELLA FUNZIONE DI COSTO RISPETTO ALLE ATTIVAZIONI.
+            E' una matrice le cui componenti sono le singole derivate parziali della funzione di costo rispetto ai valori di attivazione dell'output layer su tutti gli esempi di training.
             Esprime quanto cambia la funzione di costo rispetto a questi valori di attivazione.
         """
 
-        delta_Ca = np.fromiter(
-            (self.err_fun(y, t, der=True) for y, t in zip(output_layer_activations, targets)),
-            dtype=np.dtype((float, output_layer_activations.shape[1]))
-        )
+        delta_Ca = self.err_fun(output_layer_activations, targets, der=True)
 
         """
-            I pesi nell'output layer si addestrano lentamente se il valore di attivazione calcolato su 'out' e' molto basso o molto alto (per la sigmoide, ad esempio, vicino allo 0 o vicino a 1, rispettivamente).
-            In questo caso, la derivata prima restituisce un valore molto vicino allo 0. Si dice che il neurone dell'output layer si e' saturato e, di conseguenza, il peso non si addestra piu' (o si addestra lentamente). Lo stesso vale anche per i bias della rete neurale.
+            I pesi nell'output layer si addestrano lentamente se il valore di attivazione sono molto bassi o molto alti (per la sigmoide, ad esempio, vicino allo 0 o vicino a 1, rispettivamente).
+            In questo caso, la derivata prima restituisce un valore molto vicino allo 0.
+            Si dice che il neurone dell'output layer si e' saturato e, di conseguenza, il peso non si addestra piu' (o si addestra lentamente). Lo stesso vale anche per i bias della rete neurale.
             Una possibile soluzione per prevenire il rallentamento dell'apprendimento, ad esempio, potrebbe essere quella di scegliere una funzione di attivazione la cui derivata e' sempre positiva e che non si avvicina mai allo 0.
         """
 
-        delta_az = np.fromiter(
-            (self.layers[-1].act_fun(out, der=True) for out in output_layer_outputs),
-            dtype=np.dtype((float, output_layer_outputs.shape[1]))
-        )
+        """
+            DERIVATA PRIMA DEI VALORI DI ATTIVAZIONE RISPETTO AGLI INPUT PESATI.
+            E' una matrice le cui componenti sono il risultato della derivata prima della funzione di attivazione dell'output layer rispetto agli input pesati dell'output layer.
+        """
 
-        return np.multiply(delta_Ca, delta_az)
+        delta_az = self.layers[-1].act_fun(output_layer_outputs, der=True)
+
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- BACKPROPAGATION (delta_output_layer) ---\n")
+                pprint.pprint(delta_Ca.shape)
+                pprint.pprint(delta_Ca)
+                print("\n-----\n")
+                pprint.pprint(delta_az.shape)
+                pprint.pprint(delta_az)
+                print("\n-----\n\n")
+        
+        # Si calcola il prodotto elemento per elemento.
+        delta_Cz = np.multiply(delta_Ca, delta_az)
+
+        return delta_Cz
 
     # end
 
@@ -409,19 +443,19 @@ class NeuralNetwork:
             -   network_outputs : la lista di output di ogni layer della rete.
             -   network_activations : la lista di valori di attivazione di ogni layer della rete.
             -   delta_output_layer : il gradiente della funzione di costo rispetto agli input pesati dell'output layer.
-            -   layer_index : e' l'indice del layer scelto che contiene il neurone indicato da 'neuron_index' (corrisponde a 'l' nell'equazione proposta da Nielsen).
+            -   layer_index : e' l'indice del layer scelto (corrisponde a 'l' nell'equazione proposta da Nielsen).
 
             Returns:
-            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati del layer scelto nella rete neurale.
+            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati del layer scelto nella rete neurale. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde al numero di neuroni nel layer scelto.
         """
         
         if layer_index == self.depth-1:
             return delta_output_layer
         
         if layer_index+1 == self.depth-1:
-            delta_tmp = delta_output_layer
+            delta_Cz = delta_output_layer
         else:
-            delta_tmp = self.__delta_layer(
+            delta_Cz = self.__delta_layer(
                 network_outputs,
                 network_activations,
                 delta_output_layer,
@@ -431,20 +465,31 @@ class NeuralNetwork:
         curr_layer = self.layers[layer_index]
         next_layer = self.layers[layer_index+1]
 
-        start = curr_layer.layer_size * curr_layer.neuron_size
-        end = start + next_layer.layer_size * next_layer.neuron_size
-        weights_shape = (next_layer.layer_size, curr_layer.layer_size)
-        next_layer_weights = np.reshape(self.weights[start:end], weights_shape).T
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print(f"--- BACKPROPAGATION (delta_layer_{layer_index}) ---\n")
+                pprint.pprint(delta_Cz.shape)
+                pprint.pprint(delta_Cz)
+                print("\n-----\n")
+                pprint.pprint(next_layer.weights.shape)
+                pprint.pprint(next_layer.weights)
+                print("\n-----\n\n")
 
-        delta_Ca = np.dot(next_layer_weights, delta_tmp.T)
+        delta_Ca = np.dot(delta_Cz, next_layer.weights)
+        delta_az = curr_layer.act_fun(network_outputs[layer_index], der=True)
 
-        delta_az = np.fromiter(
-            (curr_layer.act_fun(out, der=True) for out in network_outputs[layer_index]),
-            dtype=np.dtype((float, network_outputs[layer_index].shape[1]))
-        )
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print(f"--- BACKPROPAGATION (delta_layer_{layer_index}) ---\n")
+                pprint.pprint(delta_Ca.shape)
+                pprint.pprint(delta_Ca)
+                print("\n-----\n")
+                pprint.pprint(delta_az.shape)
+                pprint.pprint(delta_az)
+                print("\n-----\n\n")
 
-        # Restituisce un vettore le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone pesato si addestra lentamente (tranne nei casi in cui il vettore dei pesi può compensare questi valori piccoli).
-        return np.multiply(delta_Ca.T, delta_az)
+        # Restituisce una matrice le cui componenti sono piccole se i corrispondenti neuroni sono vicini alla saturazione. In generale, qualsiasi input pesato di un neurone saturato si addestra lentamente (tranne nei casi in cui la matrice dei pesi può compensare questi valori piccoli).
+        return np.multiply(delta_Ca, delta_az)
 
     # end
 
@@ -488,7 +533,7 @@ class NeuralNetwork:
                 print("--- BACKPROPAGATION (delta_output_layer) ---\n")
                 pprint.pprint(delta_output_layer.shape)
                 pprint.pprint(delta_output_layer)
-                print("\n-----")
+                print("\n-----\n\n")
 
         for l in range(self.depth):
             # print("layer_index:", l)
@@ -510,7 +555,7 @@ class NeuralNetwork:
                     print(f"--- BACKPROPAGATION (delta_layer_{l}) ---\n")
                     pprint.pprint(delta_layer.shape)
                     pprint.pprint(delta_layer)
-                    print("\n-----")
+                    print("\n-----\n\n")
 
             """
                 STEP 3:
@@ -518,7 +563,16 @@ class NeuralNetwork:
                 E' l'implementazione dell'equazione (BP3) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen.
             """
 
-            gradient_biases += [b for b in np.mean(delta_layer, axis=0)]
+            gl_biases = np.mean(delta_layer, axis=0)
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print(f"--- BACKPROPAGATION (layer_{l}) ---\n")
+                    print("gl_biases")
+                    pprint.pprint(gl_biases.shape)
+                    pprint.pprint(gl_biases)
+                    print("\n-----\n\n")
+
+            gradient_biases += gl_biases.tolist()
 
             """
                 STEP 4:
@@ -527,25 +581,47 @@ class NeuralNetwork:
             """
 
             prev_layer_activations = self.inputs if l == 0 else network_activations[l-1]
-            
-            gradient_weights += [w for w in np.mean(
-                [
-                    np.outer(prev_layer_activations[e], delta_layer[e]).flatten()
-                    for e in range(delta_layer.shape[0])
-                ],
-                axis=0
-            )]
+
+            gl_weights = np.zeros((training_labels.shape[0], delta_layer.shape[1] * prev_layer_activations.shape[1]))
+
+            for e in range(training_labels.shape[0]):
+                if constants.DEBUG_MODE:
+                    with np.printoptions(threshold=np.inf):
+                        print(f"--- BACKPROPAGATION (example: {e}, layer: {l}) ---\n")
+                        print("delta_layer")
+                        pprint.pprint(delta_layer[e].shape)
+                        pprint.pprint(delta_layer[e])
+                        print("\n-----\n")
+                        print("prev_layer_activations")
+                        pprint.pprint(prev_layer_activations[e].shape)
+                        pprint.pprint(prev_layer_activations[e])
+                        print("\n-----\n\n")
+
+            for e in range(training_labels.shape[0]):
+                gl_weights[e] = np.outer(delta_layer[e], prev_layer_activations[e]).flatten()
+
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print(f"--- BACKPROPAGATION (layer: {l}) ---\n")
+                    print("gl_weights")
+                    pprint.pprint(gl_weights.shape)
+                    pprint.pprint(gl_weights)
+                    print("\n-----\n")
+
+            gradient_weights += np.mean(gl_weights, axis=0).tolist()
+        
+        # end for l
 
         if constants.DEBUG_MODE:
             with np.printoptions(threshold=np.inf):
-                print("--- GRADIENT_WEIGHTS (mean) ---\n")
-                pprint.pprint(len(gradient_weights))
-                pprint.pprint(gradient_weights)
-                print("\n-----")
                 print("--- GRADIENT_BIASES (mean) ---\n")
                 pprint.pprint(len(gradient_biases))
                 pprint.pprint(gradient_biases)
-                print("\n-----")
+                print("\n-----\n")
+                print("--- GRADIENT_WEIGHTS (mean) ---\n")
+                pprint.pprint(len(gradient_weights))
+                pprint.pprint(gradient_weights)
+                print("\n-----\n\n")
 
         return np.array(gradient_weights), np.array(gradient_biases)
         
@@ -570,22 +646,10 @@ class NeuralNetwork:
         """
 
         # Si applica la discesa del gradiente per l'aggiornamento dei pesi.
-        self.weights = np.array([
-            w - learning_rate * g
-            for w, g in zip(
-                self.weights,
-                gradient_weights
-            )
-        ])
+        self.weights -= learning_rate * gradient_weights
 
         # Si applica la discesa del gradiente per l'aggiornamento dei bias.
-        self.biases = np.array([
-            b - learning_rate * g
-            for b, g in zip(
-                self.biases,
-                gradient_biases
-            )
-        ])
+        self.biases -= learning_rate * gradient_biases
 
         # Si riporta l'aggiornamento dei pesi / bias iterativamente in tutta la rete neurale.
         start_w = 0; start_b = 0
@@ -700,35 +764,40 @@ class NeuralNetwork:
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
         training_costs = []; validation_costs = []
-        training_predictions = []; validation_predictions = []
         training_accuracies = []; validation_accuracies = []
 
         best_params = []
 
         start_time = time.time()
-        print(f"Addestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+        print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+
+        # Prima di iniziare l'addestramento, recuperiamo i pesi dai layer della rete.
+        self.weights, self.biases = self.__flatten_weights()
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
 
-            # TRAINING
-
-            self.weights, self.biases = self.__flatten_weights()
-
-            if constants.DEBUG_MODE:
-                with np.printoptions(threshold=np.inf):
-                    print("--- NETWORK WEIGHTS (start) ---\n")
-                    pprint.pprint(self.weights)
-                    print("\n-----")
-                    print("--- NETWORK BIASES (start) ---\n")
-                    pprint.pprint(self.biases)
-                    print("\n-----")
-
+            # FASE DI TRAINING
             # STEP 1: forward propagation su tutti gli esempi di addestramento
             training_outputs, training_activations = self.__forward_propagation(
                 training_data,
                 train=True
             )
+
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print("--- NETWORK TRAINING (targets) ---\n")
+                    print(training_labels.shape)
+                    pprint.pprint(training_labels)
+                    print("\n-----\n")
+                    print("--- NETWORK TRAINING (outputs) ---\n")
+                    print([out.shape for out in training_outputs])
+                    pprint.pprint(training_outputs)
+                    print("\n-----\n")
+                    print("--- NETWORK TRAINING (activations) ---\n")
+                    print([act.shape for act in training_activations])
+                    pprint.pprint(training_activations)
+                    print("\n-----\n\n")
 
             # STEP 2: backpropagation su tutti gli esempi di addestramento
             gw, gb = self.__back_propagation(
@@ -741,37 +810,23 @@ class NeuralNetwork:
             print("\n\tAggiornamento dei pesi in corso...")
             best_params.append(self.__update_rule(gw, gb, learning_rate))
 
-            # STEP 4: calcolo dell'errore per ogni esempio di training
+            # STEP 4: calcolo dell'errore per ogni esempio di addestramento
             print("\tCalcolo dell'errore di addestramento in corso...")
-
-            if constants.DEBUG_MODE:
-                training_costs.append(
-                    self.__compute_error(
-                        training_activations[-1][0],
-                        training_labels[0]
-                    )
-                )
-            else:
-                training_costs.append(
-                    self.__compute_error(
-                        training_activations[-1],
-                        training_labels
-                    )
-                )
-
-            t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
-
-            print("\tCalcolo dell'accuracy di addestramento in corso...")
-            if constants.DEBUG_MODE:
-                t_acc, t_acc_percent = self.__compute_accuracy(
-                    training_activations[-1][0],
-                    training_labels[0]
-                )
-            else:
-                t_acc, t_acc_percent = self.__compute_accuracy(
+            training_costs.append(
+                self.__compute_error(
                     training_activations[-1],
                     training_labels
                 )
+            )
+
+            t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
+
+            # STEP 5: calcolo dell'accuracy per ogni esempio di addestramento
+            print("\tCalcolo dell'accuracy di addestramento in corso...")
+            t_acc, t_acc_percent = self.__compute_accuracy(
+                training_activations[-1],
+                training_labels
+            )
             
             training_accuracies.append(t_acc)
 
@@ -786,69 +841,45 @@ class NeuralNetwork:
 
             print()
 
-            # VALIDATION
+            # FASE DI VALIDATION
+            # STEP 1: forward propagation su tutti gli esempi di validazione
+            validation_activations = self.__forward_propagation(validation_data)
 
-            # network_weights = self.weights
-            # network_biases = self.biases
+            # STEP 2: calcolo dell'errore per ogni esempio di validazione
+            print("\tCalcolo dell'errore di validazione in corso...")
+            validation_costs.append(
+                self.__compute_error(
+                    validation_activations,
+                    validation_labels
+                )
+            )
 
-            # validation_predictions.clear()
+            v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
 
-            # for n, example in enumerate(zip(validation_data, validation_labels)):
-
-            #     if not constants.DEBUG_MODE:
-            #         auxfunc.print_progress_bar(n+1, len(validation_data), prefix='\tValidation:')
-
-            #     # print(f"\t\tEsempio n.{n+1}")
-            #     # print(f"\tExample: {example[data]}\n\tLabel: {example[label]}\n")
-
-            #     # STEP 1: forward propagation
-            #     validation_outputs, validation_activations = self.__forward_propagation(
-            #         example[data],
-            #         train=True
-            #     )
-
-            #     validation_predictions.append(validation_activations[-1])
-
-            #     if constants.DEBUG_MODE:
-            #         break
+            # STEP 3: calcolo dell'accuracy per ogni esempio di validazione
+            print("\tCalcolo dell'accuracy di validazione in corso...")
+            v_acc, v_acc_percent = self.__compute_accuracy(
+                validation_activations,
+                validation_labels
+            )
             
-            # # end for n, example
+            validation_accuracies.append(v_acc)
 
-            # # STEP 4: calcolo errore e accuracy per ogni esempio di training
-            # print("\tCalcolo dell'errore di validazione in corso...")
-            # if constants.DEBUG_MODE:
-            #     validation_costs.append(self.__compute_error(np.array(validation_predictions[0]), validation_labels[0]))
-            # else:
-            #     validation_costs.append(self.__compute_error(np.array(validation_predictions), validation_labels))
+            end_time = time.time()
+            tot_time = end_time - start_time
 
-            # v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
+            if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
+                print()
+                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+                print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
+                print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
 
-            # print("\tCalcolo dell'accuracy di validazione in corso...")
-
-            # if constants.DEBUG_MODE:
-            #     v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions[0]), validation_labels[0])
-            # else:
-            #     v_acc, v_acc_percent = self.__compute_accuracy(np.array(validation_predictions), validation_labels)
-
-            # validation_accuracies.append(v_acc)
-
-            # end_time = time.time()
-            # tot_time = end_time - start_time
-
-            # if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-            #     print()
-            #     print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-            #     print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
-            #     print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
-
-            # if constants.DEBUG_MODE:
-            #     break
+            if constants.DEBUG_MODE:
+                break
 
         # end for e
 
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
-
-        return # temporaneo
 
         # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
         index = int(np.argmin(validation_costs, keepdims=False))

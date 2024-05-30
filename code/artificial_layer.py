@@ -91,6 +91,13 @@ class Layer:
         # print("Layer:", value.shape, self.weights.shape)
         if (not value.shape == self._weights.shape):
             raise constants.LayerError("La matrice dei pesi non e' compatibile con questo layer.")
+        
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER (weights) ---\n")
+                print(value.shape)
+                pprint.pprint(value)
+                print("\n-----\n\n")
 
         self._weights = value
 
@@ -118,6 +125,13 @@ class Layer:
         # print("Layer:", value.shape, self.biases.shape)
         if (not value.shape == self._biases.shape):
             raise constants.LayerError("Il vettore dei bias non e' compatibile con questo layer.")
+        
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER (biases) ---\n")
+                print(value.shape)
+                pprint.pprint(value)
+                print("\n-----\n\n")
 
         self._biases = value
 
@@ -186,17 +200,6 @@ class Layer:
         else:
             self.biases = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,1))
         
-        if constants.DEBUG_MODE:
-            with np.printoptions(threshold=np.inf):
-                print("--- LAYER INIT (weights) ---\n")
-                print(self.weights.shape)
-                pprint.pprint(self.weights)
-                print("\n-----")
-                print("--- LAYER INIT (biases) ---\n")
-                print(self.biases.shape)
-                pprint.pprint(self.biases)
-                print("\n-----")
-        
         self.act_fun = af
 
     # end
@@ -214,15 +217,15 @@ class Layer:
 
         layer_outputs = np.dot(self.inputs, self.weights.T) + self.biases.T
 
-        # if constants.DEBUG_MODE:
-        #     with np.printoptions(threshold=np.inf):
-        #         print("--- LAYER PROPAGATION (outputs2) ---\n")
-        #         # print(self.inputs.shape)
-        #         # print(self.weights.T.shape)
-        #         # print(self.biases.T.shape)
-        #         print(layer_outputs.shape)
-        #         pprint.pprint(layer_outputs)
-        #         print("\n-----")
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER PROPAGATION (outputs) ---\n")
+                # print(self.inputs.shape)
+                # print(self.weights.T.shape)
+                # print(self.biases.T.shape)
+                print(layer_outputs.shape)
+                pprint.pprint(layer_outputs)
+                print("\n-----\n\n")
         
         return layer_outputs
 
@@ -240,21 +243,15 @@ class Layer:
             -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
         """
 
-        array_act_fun = np.vectorize(self.act_fun)
-
         layer_outputs = self.output()
-        layer_activations = array_act_fun(layer_outputs)
+        layer_activations = self.act_fun(layer_outputs)
 
-        # if constants.DEBUG_MODE:
-        #     with np.printoptions(threshold=np.inf):
-        #         # print("--- LAYER PROPAGATION (activations1) ---\n")
-        #         # print(len(layer_activations))
-        #         # pprint.pprint(layer_activations)
-        #         # print("\n-----")
-        #         print("--- LAYER PROPAGATION (activations2) ---\n")
-        #         print(layer_activations.shape)
-        #         pprint.pprint(layer_activations)
-        #         print("\n-----")
+        if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- LAYER PROPAGATION (activations) ---\n")
+                print(layer_activations.shape)
+                pprint.pprint(layer_activations)
+                print("\n-----\n\n")
                 
         if train:
             return layer_outputs, layer_activations
