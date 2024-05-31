@@ -155,12 +155,6 @@ class NeuralNetwork:
     # end
 
     @property
-    def network_error(self):
-        """..."""
-        return self._network_error
-    # end
-
-    @property
     def training_accuracy(self):
         """..."""
         return self._training_accuracy
@@ -170,12 +164,6 @@ class NeuralNetwork:
     def validation_accuracy(self):
         """..."""
         return self._validation_accuracy
-    # end
-
-    @property
-    def network_accuracy(self):
-        """..."""
-        return self._network_accuracy
     # end
 
     # ####################################################################### #
@@ -274,27 +262,23 @@ class NeuralNetwork:
         # Inizializzazione delle metriche di errore
         self._training_error = 0.0
         self._validation_error = 0.0
-        self._network_error = 0.0
 
         # Inizializzazione delle metriche di accuracy
         self._training_accuracy = 0.0
         self._validation_accuracy = 0.0
-        self._network_accuracy = 0.0
 
     # end
     
     # ####################################################################### #
     # METODI PRIVATI
 
-    def __flatten_weights(self) -> tuple[np.ndarray, np.ndarray]:
+    def __pack_weights(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        
             Serializza le matrici dei pesi e dei bias di tutti i layer della rete neurale in due vettori separati della giusta dimensione.
 
             Returns:
             -   w : e' il vettore serializzato di tutti i pesi della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete.
             -   b : e' il vettore serializzato di tutti i bias della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete.
-        
         """
 
         w = np.zeros(self.weights.shape)
@@ -314,6 +298,29 @@ class NeuralNetwork:
             start_b = end_b
         
         return w, b
+    
+    # end
+
+    def __unpack_weights(self) -> None:
+        """
+            Distribuisce il vettore dei pesi e dei bias nei layer della rete neurale.
+
+            Returns:
+            -   None
+        """
+
+        start_w = 0; start_b = 0
+        end_w = 0; end_b = 0
+
+        for l in self.layers:
+            end_w += np.prod(l.weights.shape)
+            end_b += np.prod(l.biases.shape)
+
+            l.weights = np.reshape(self.weights[start_w:end_w], l.weights.shape)
+            l.biases = np.reshape(self.biases[start_b:end_b], l.biases.shape)
+
+            start_w = end_w
+            start_b = end_b
     
     # end
 
@@ -652,18 +659,7 @@ class NeuralNetwork:
         self.biases -= learning_rate * gradient_biases
 
         # Si riporta l'aggiornamento dei pesi / bias iterativamente in tutta la rete neurale.
-        start_w = 0; start_b = 0
-        end_w = 0; end_b = 0
-
-        for l in self.layers:
-            end_w += np.prod(l.weights.shape)
-            end_b += np.prod(l.biases.shape)
-
-            l.weights = np.reshape(self.weights[start_w:end_w], l.weights.shape)
-            l.biases = np.reshape(self.biases[start_b:end_b], l.biases.shape)
-
-            start_w = end_w
-            start_b = end_b
+        self.__unpack_weights()
 
         return { "Weights" : self.weights, "Biases" : self.biases }
 
@@ -722,7 +718,7 @@ class NeuralNetwork:
             raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
 
         matches = [int(np.argmax(x) == np.argmax(y)) for x, y in zip(predictions, targets)]
-        return np.sum(matches), np.sum(matches) / len(predictions) * 100
+        return np.sum(matches), np.sum(matches) / len(targets) * 100
 
     # end
     
@@ -772,13 +768,15 @@ class NeuralNetwork:
         print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
         # Prima di iniziare l'addestramento, recuperiamo i pesi dai layer della rete.
-        self.weights, self.biases = self.__flatten_weights()
+        self.weights, self.biases = self.__pack_weights()
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
 
             # FASE DI TRAINING
+
             # STEP 1: forward propagation su tutti gli esempi di addestramento
+            print("\r\tEsecuzione della forward propagation...              ", end='\r')
             training_outputs, training_activations = self.__forward_propagation(
                 training_data,
                 train=True
@@ -800,6 +798,7 @@ class NeuralNetwork:
                     print("\n-----\n\n")
 
             # STEP 2: backpropagation su tutti gli esempi di addestramento
+            print("\r\tEsecuzione della backpropagation...                  ", end='\r')
             gw, gb = self.__back_propagation(
                 training_outputs,
                 training_activations,
@@ -807,11 +806,11 @@ class NeuralNetwork:
             )
 
             # STEP 3: aggiornamento dei pesi
-            print("\n\tAggiornamento dei pesi in corso...")
+            print("\r\tAggiornamento dei pesi in corso...                   ", end='\r')
             best_params.append(self.__update_rule(gw, gb, learning_rate))
 
             # STEP 4: calcolo dell'errore per ogni esempio di addestramento
-            print("\tCalcolo dell'errore di addestramento in corso...")
+            print("\r\tCalcolo dell'errore di addestramento in corso...     ", end='\r')
             training_costs.append(
                 self.__compute_error(
                     training_activations[-1],
@@ -822,7 +821,7 @@ class NeuralNetwork:
             t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
 
             # STEP 5: calcolo dell'accuracy per ogni esempio di addestramento
-            print("\tCalcolo dell'accuracy di addestramento in corso...")
+            print("\r\tCalcolo dell'accuracy di addestramento in corso...   ", end='\r')
             t_acc, t_acc_percent = self.__compute_accuracy(
                 training_activations[-1],
                 training_labels
@@ -834,19 +833,20 @@ class NeuralNetwork:
             tot_time = end_time - start_time
 
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print()
-                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+                print(f"\r\tTempo trascorso: {tot_time:.3f} secondi                     ")
                 print(f"\tErrore di addestramento: {training_costs[-1]:.5f} ({t_cost_percent:.2f}%)")
                 print(f"\tAccuracy di addestramento: {t_acc} di {len(training_labels)} ({t_acc_percent:.2f}%)")
 
             print()
 
             # FASE DI VALIDATION
+
             # STEP 1: forward propagation su tutti gli esempi di validazione
+            print("\r\tEsecuzione della forward propagation...              ", end='\r')
             validation_activations = self.__forward_propagation(validation_data)
 
             # STEP 2: calcolo dell'errore per ogni esempio di validazione
-            print("\tCalcolo dell'errore di validazione in corso...")
+            print("\r\tCalcolo dell'errore di validazione in corso...       ", end='\r')
             validation_costs.append(
                 self.__compute_error(
                     validation_activations,
@@ -857,7 +857,7 @@ class NeuralNetwork:
             v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
 
             # STEP 3: calcolo dell'accuracy per ogni esempio di validazione
-            print("\tCalcolo dell'accuracy di validazione in corso...")
+            print("\r\tCalcolo dell'accuracy di validazione in corso...     ", end='\r')
             v_acc, v_acc_percent = self.__compute_accuracy(
                 validation_activations,
                 validation_labels
@@ -869,8 +869,7 @@ class NeuralNetwork:
             tot_time = end_time - start_time
 
             if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print()
-                print(f"\tTempo trascorso: {tot_time:.3f} secondi")
+                print(f"\r\tTempo trascorso: {tot_time:.3f} secondi                     ")
                 print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
                 print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
 
@@ -894,15 +893,15 @@ class NeuralNetwork:
 
         self._training_accuracy = training_accuracies[index]
         self._validation_accuracy = validation_accuracies[index]
-        t_acc_percent = self.training_accuracy / constants.NUMERO_CLASSI * 100
-        v_acc_percent = self.validation_accuracy / constants.NUMERO_CLASSI * 100
+        t_acc_percent = self.training_accuracy / len(training_labels) * 100
+        v_acc_percent = self.validation_accuracy / len(validation_labels) * 100
 
         print(f"\tTempo trascorso: {tot_time:.3f} secondi.")
         print(f"\tMiglior rete (epoca): {index+1}")
         print(f"\tMiglior rete (errore di addestramento): {self.training_error:.5f} ({t_cost_percent:.2f}%)")
-        print(f"\tMiglior rete (accuracy di addestramento): {self.training_accuracy:.5f} ({t_acc_percent:.2f}%)")
+        print(f"\tMiglior rete (accuracy di addestramento): {self.training_accuracy} di {len(training_labels)} ({t_acc_percent:.2f}%)")
         print(f"\tMiglior rete (errore di validazione): {self.validation_error:.5f} ({v_cost_percent:.2f}%)")
-        print(f"\tMiglior rete (accuracy di validazione): {self.validation_accuracy:.5f} ({v_acc_percent:.2f}%)")
+        print(f"\tMiglior rete (accuracy di validazione): {self.validation_accuracy:} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
 
         return {
             "Net" : best_params[index],
@@ -917,7 +916,7 @@ class NeuralNetwork:
             Calcola una predizione per l'input dato in base alla configurazione attuale di pesi e bias della rete neurale. Inoltre, visualizza nel terminale le probabilita' delle predizioni di tutto l'output layer utilizzando la funzione "auxfunc.softmax()".
             
             Parameters:
-            -   x : il vettore di dati in input.
+            -   x : la matrice di esempi da classificare.
 
             Returns:
             -   label : l'indice del neurone nell'output layer che ottiene il valore di attivazione piu' alto.
@@ -943,6 +942,46 @@ class NeuralNetwork:
         
     # end
 
+    def save_network_to_file(self, filename : str = "nn.pkl" ) -> None:
+        import dill, os
+
+        """
+            Salva tutti gli iperparametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
+
+            Parameters:
+            -   filename : il percorso del file dove memorizzare i parametri della rete neurale.
+
+            Returns:
+            -   None.
+        """
+
+        hidden_sizes = []
+        hidden_act_funs = []
+
+        for l in self.layers[:-1]:
+            hidden_sizes.append(l.layer_size)
+            hidden_act_funs.append(l.act_fun)
+        
+        if not os.path.exists(constants.OUTPUT_DIRECTORY):
+            os.makedirs(constants.OUTPUT_DIRECTORY)
+    
+        # Si apre il file in modalita' di scrittura per file binari.
+        with open(constants.OUTPUT_DIRECTORY+filename, 'wb') as file:
+            store_dict = {
+                "input_size"        : self.input_size,
+                "hidden_sizes"      : hidden_sizes,
+                "output_size"       : self.layers[-1].layer_size,
+                "hidden_act_funs"   : hidden_act_funs,
+                "output_act_fun"       : self.layers[-1].act_fun,
+                "err_fun"           : self.err_fun,
+                "weights"           : self.weights,
+                "biases"            : self.biases
+            }
+
+            dill.dump(store_dict, file, dill.HIGHEST_PROTOCOL)
+
+    # end
+
     # ####################################################################### #
 
     def __repr__(self) -> str:
@@ -953,7 +992,55 @@ class NeuralNetwork:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tinputs = {pprint.pformat(self.inputs)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_error = {self.training_error},\n\tvalidation_error = {self.validation_error},\n\tnetwork_accuracy = {self.network_accuracy}\n)'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_error = {self.training_error},\n\ttraining_accuracy = {self.training_accuracy},\n\tvalidation_error = {self.validation_error}\n),\n\tvalidation_accuracy = {self.validation_accuracy}'
+    
+    # end
+
+    # ####################################################################### #
+    # METODI STATICI
+
+    @staticmethod
+    def load_network_from_file(filename : str = constants.OUTPUT_DIRECTORY+"nn.pkl"):
+        import dill, os
+
+        """
+            Carica la configurazione completa di iperparametri e parametri della rete neurale direttamente da un file.
+
+            Parameters:
+            -   filename : il percorso del file dove sono memorizzati gli iperparametri e parametri della rete neurale.
+            -   random_init : indica se pesi e bias della rete neurale saranno inizializzati tramite un generatore di valori casuali con seed fissato o meno.
+
+            Returns:
+            -   net : la rete neurale con tutti gli iperparametri e parametri recuperati dal file.
+        """
+
+        print(filename)
+        with open(filename, 'rb') as file:
+            store_dict = dill.load(file)
+            
+            input_size = store_dict["input_size"]
+            hidden_sizes = store_dict["hidden_sizes"]
+            output_size = store_dict["output_size"]
+            hidden_act_funs = store_dict["hidden_act_funs"]
+            output_act_fun = store_dict["output_act_fun"]
+            err_fun = store_dict["err_fun"]
+            weights = store_dict["weights"]
+            biases = store_dict["biases"]
+        
+        net = NeuralNetwork(
+            input_size,
+            hidden_sizes,
+            output_size,
+            hidden_act_funs,
+            output_act_fun,
+            err_fun
+        )
+
+        net.weights = weights
+        net.biases = biases
+        net.__unpack_weights()
+    
+        return net
     
     # end
 
@@ -977,3 +1064,4 @@ class NeuralNetwork:
 # https://numpy.org/doc/stable/reference/generated/numpy.multiply.html
 # Backpropagation algorithm: https://youtu.be/sIX_9n-1UbM
 # https://www.geeksforgeeks.org/how-to-convert-numpy-matrix-to-array/
+# https://medium.com/@greyboi/serialising-all-the-functions-in-python-cd880a63b591
