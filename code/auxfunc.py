@@ -146,13 +146,15 @@ def identity(input : float | np.ndarray, der : bool = False) -> float | np.ndarr
 
 def softmax(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        ...
+        Calcola la funzione softmax, una funzione di errore tipica dei problemi di classificazione multi-classe.
 
         Parameters:
-        -   ... : ...
+        -   input : il valore di cui applicare la funzione di attivazione.
+        -   der : indica se si vuole calcolare la derivata prima o meno
 
         Returns:
-        -   ... : ...
+        -   se der=False restituisce il risultato della softmax
+        -   se der=True restituisce l'eccezione poichè non è possibile calcolare la derivata della softmax
     """
     
     if der:
