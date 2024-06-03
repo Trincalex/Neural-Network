@@ -153,6 +153,9 @@ DEBUG_MODE = False
 DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
 """ ... """
 
+OUTPUT_DIRECTORY = "../output/"
+""" ... """
+
 # ########################################################################### #
 # COSTANTI
 

@@ -50,29 +50,29 @@ start_time = time.time()
 
 for i in range(constants.DEFAULT_K_FOLD_VALUE):
 
-     print(f"\nFold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
+    print(f"\nFold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
 
-     net = NeuralNetwork(
-          784, 32, 10,
-          hidden_act_funs=auxfunc.sigmoid,
-          output_act_fun=auxfunc.sigmoid,
-          e_fun=auxfunc.cross_entropy_softmax
-     )
+    net = NeuralNetwork(
+        784, 32, 10,
+        hidden_act_funs=auxfunc.sigmoid,
+        output_act_fun=auxfunc.sigmoid,
+        e_fun=auxfunc.cross_entropy_softmax
+    )
 
-     training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
-     training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
-     validation_fold = Xtrain[i]
-     validation_labels = Ytrain[i]
+    training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
+    training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
+    validation_fold = Xtrain[i]
+    validation_labels = Ytrain[i]
 
-     best_params.append(net.train(
-          training_fold,
-          training_labels,
-          validation_fold,
-          validation_labels
-     ))
+    best_params.append(net.train(
+        training_fold,
+        training_labels,
+        validation_fold,
+        validation_labels
+    ))
 
-     if constants.DEBUG_MODE:
-          break
+    if constants.DEBUG_MODE:
+        break
 
 # end for i
 
@@ -92,6 +92,7 @@ print(f"\tMiglior rete (errore di validazione): {min_error:.5f} ({min_error_perc
 
 net.weights = best_params[index]["Net"]["Weights"]
 net.biases = best_params[index]["Net"]["Biases"]
+net.save_network_to_file()
 
 for test_example in zip(Xtest, Ytest):
      label = np.argmax(test_example[1])
