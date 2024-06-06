@@ -665,18 +665,98 @@ class NeuralNetwork:
 
     # end
 
-    def __resilient_back_propagation(self):
+    def __resilient_back_propagation(self,
+            X_train : np.array,
+            Y_train : np.array,
+            X_val : np.array,
+            Y_val : np.array,
+            err_fun : function,
+            num_epoche : int = 0,
+            eta_minus : float = 0.5,
+            eta_plus : float = 1.2,
+            delta_zero : float = 0.0125,
+            delta_min : float = 0.00001,
+            delta_max : float = 1) -> list:
         """
-            ...
-            
+            Esegue la Resilient Propagation (Rprop) per l'addestramento di una rete neurale
+
             Parameters:
-            -   ... : ...
+            -   X_train: Il dataset di addestramento.
+            -   Y_train: I valori target corrispondenti al dataset di addestramento.
+            -   X_val: Il dataset di validazione.
+            -   Y_val: I valori target corrispondenti al dataset di validazione.
+            -   err_fun (function): La funzione di errore utilizzata per calcolare la perdita.
+            -   num_epoche: Il numero di epoche per l'addestramento. Default è 0.
+            -   eta_minus: Il fattore di decremento per l'aggiornamento dei pesi. Default è 0.5.
+            -   eta_plus: Il fattore di incremento per l'aggiornamento dei pesi. Default è 1.2.
+            -   delta_zero: Il valore iniziale per gli incrementi dei pesi. Default è 0.0125.
+            -   delta_min: Il valore minimo per gli incrementi dei pesi. Default è 0.00001.
+            -   delta_max: Il valore massimo per gli incrementi dei pesi. Default è 1.
 
             Returns:
-            -   ... : ...
+            -   evaluation_parameters: Una lista contenente tuple con i seguenti valori per ogni epoca:
+            -   Errore di addestramento
+            -   Accuratezza di addestramento
+            -   Errore di validazione
+            -   Accuratezza di validazione
         """
         
-        pass
+        epoca = 0
+        d = self.depth()
+        Z_train = self.__forward_propagation(X_train)
+        train_err = self.err_fun(Z_train,Y_train)
+        train_accuracy = self.__compute_accuracy(Z_train,Y_train)
+
+        Z_val = self.__forward_propagation(X_val)
+        val_err = self.err_fun(Z_val,Y_val)
+        val_accuracy = self.__compute_accuracy(Z_val,Y_val)
+        evaluation_parameters = []
+        if constants.DEBUG_MODE:
+            print("Epoca: ",-1,
+            "Training Error: ",train_err,
+            "Training Accuracy: ",train_accuracy,
+            "Validation Error: ",val_err,
+            "Validation Accuracy: ",val_accuracy)
+
+        evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
+
+        der_list = []
+        delta_ij = []
+
+        for i in range(num_epoche):
+            delta_ij.append([delta_zero]*d)
+
+        while epoca < num_epoche:
+            cur_out, cur_act = self.__forward_propagation(X_train,True)
+            gradient_weight, gradient_bias = self.__back_propagation(cur_out,cur_act,Y_train)
+
+            for layer in range(d):
+                prev_der = der_list[epoca-1][layer]
+                actual_der = der_list[epoca][layer]
+                der_prod = prev_der * actual_der
+
+                delta_ij[epoca][layer] = np.where(der_prod > 0, np.minimum(delta_ij[epoca-1][layer] * eta_plus, delta_max), np.where(der_prod < 0, np.maximum(delta_ij[epoca-1][layer] * delta_min), delta_ij[epoca-1][layer]))
+
+                self.weights[layer] = self._weights[layer] - (np.sign(der_list[epoca][layer]) * delta_ij[epoca][layer])
+
+            Z_train = self.__forward_propagation(X_train)
+            train_err = self.err_fun(Z_train,Y_train)
+            train_accuracy = self.__compute_accuracy(Z_train,Y_train)
+
+            Z_val = self.__forward_propagation(X_val)
+            val_err = self.err_fun(Z_val,Y_val)
+            val_accuracy = self.__compute_accuracy(Z_val,Y_val)
+            if constants.DEBUG_MODE:
+                 print("Epoca: ",-1,
+                    "Training Error: ",train_err,
+                    "Training Accuracy: ",train_accuracy,
+                    "Validation Error: ",val_err,
+                    "Validation Accuracy: ",val_accuracy)
+                 
+            evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
+            epoca += 1
+            
+        return evaluation_parameters
 
     # end
 
