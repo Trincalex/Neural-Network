@@ -4,8 +4,8 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
-    In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer) che, a loro volta, possono essere composti di uno o più neuroni (Neuron).
+    Questo file contiene l'implementazione di una rete neurale feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
+    In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer).
 
 '''
 
@@ -13,6 +13,7 @@
 # LIBRERIE
 
 from artificial_layer import Layer
+from training_report import TrainingReport
 
 import constants
 import auxfunc
@@ -22,7 +23,7 @@ import time
 from datetime import datetime
 
 # ########################################################################### #
-# IMPLEMENTAZIONE DELLA CLASSE NEURAL NETWORK
+# IMPLEMENTAZIONE DELLA CLASSE NEURALNETWORK
 
 class NeuralNetwork:
 
@@ -87,7 +88,7 @@ class NeuralNetwork:
     @weights.setter
     def weights(self, value : np.ndarray) -> None:
         if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
+            raise TypeError("Il vettore dei pesi deve essere di tipo 'numpy.ndarray'.")
         
         # print("Neural Network:", value.size, self._weights.size)
         if (not value.size == self._weights.size):
@@ -114,7 +115,7 @@ class NeuralNetwork:
     @biases.setter
     def biases(self, value : np.ndarray) -> None:
         if (not isinstance(value, np.ndarray)):
-            raise ValueError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
+            raise TypeError("Il vettore dei bias deve essere di tipo 'numpy.ndarray'.")
         
         # print("Neural Network:", value.size, self._biases.size)
         if (not value.size == self._biases.size):
@@ -143,27 +144,9 @@ class NeuralNetwork:
     # end
 
     @property
-    def training_error(self):
+    def training_report(self):
         """..."""
-        return self._training_error
-    # end
-
-    @property
-    def validation_error(self):
-        """..."""
-        return self._validation_error
-    # end
-
-    @property
-    def training_accuracy(self):
-        """..."""
-        return self._training_accuracy
-    # end
-
-    @property
-    def validation_accuracy(self):
-        """..."""
-        return self._validation_accuracy
+        return self._training_report
     # end
 
     # ####################################################################### #
@@ -194,7 +177,7 @@ class NeuralNetwork:
             -   random_init : indica se pesi e bias della rete neurale saranno inizializzati tramite un generatore di valori casuali con seed fissato o meno.
 
             Returns:
-            -   None
+            -   None.
         """
         
         # Inizializzazione dell'input
@@ -257,24 +240,18 @@ class NeuralNetwork:
         self._depth = len(self.layers)
 
         # Inizializzazione della funzione di errore della rete
-        self.err_fun = e_fun
+        self._err_fun = e_fun
         
-        # Inizializzazione delle metriche di errore
-        self._training_error = 0.0
-        self._validation_error = 0.0
-
-        # Inizializzazione delle metriche di accuracy
-        self._training_accuracy = 0.0
-        self._validation_accuracy = 0.0
+        self._training_report = TrainingReport()
 
     # end
     
     # ####################################################################### #
     # METODI PRIVATI
 
-    def __pack_weights(self) -> tuple[np.ndarray, np.ndarray]:
+    def __gather_weights(self) -> tuple[np.ndarray, np.ndarray]:
         """
-            Serializza le matrici dei pesi e dei bias di tutti i layer della rete neurale in due vettori separati della giusta dimensione.
+            Serializza le matrici dei pesi e dei bias di tutti i layer della rete neurale in due vettori separati della giusta dimensione. In altre parole, aggiorna le property self.weights e self.biases di questo oggetto della classe NeuralNetwork.
 
             Returns:
             -   w : e' il vettore serializzato di tutti i pesi della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete.
@@ -301,12 +278,12 @@ class NeuralNetwork:
     
     # end
 
-    def __unpack_weights(self) -> None:
+    def __scatter_weights(self) -> None:
         """
-            Distribuisce il vettore dei pesi e dei bias nei layer della rete neurale.
+            Distribuisce i vettori dei pesi (self.weights) e dei bias (self.biases) di questo oggetto della classe NeuralNetwork nei layer della rete neurale.
 
             Returns:
-            -   None
+            -   None.
         """
 
         start_w = 0; start_b = 0
@@ -639,7 +616,7 @@ class NeuralNetwork:
             gradient_weights : np.ndarray,
             gradient_biases : np.ndarray,
             learning_rate : float
-    ) -> dict[np.ndarray, np.ndarray]:
+    ) -> None:
         
         """
             ...
@@ -649,7 +626,7 @@ class NeuralNetwork:
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   ... : ...
+            -   None.
         """
 
         # Si applica la discesa del gradiente per l'aggiornamento dei pesi.
@@ -659,148 +636,104 @@ class NeuralNetwork:
         self.biases -= learning_rate * gradient_biases
 
         # Si riporta l'aggiornamento dei pesi / bias iterativamente in tutta la rete neurale.
-        self.__unpack_weights()
-
-        return { "Weights" : self.weights, "Biases" : self.biases }
+        self.__scatter_weights()
 
     # end
 
-    def __resilient_back_propagation(self,
-            X_train : np.array,
-            Y_train : np.array,
-            X_val : np.array,
-            Y_val : np.array,
-            err_fun : function,
-            num_epoche : int = 0,
-            eta_minus : float = 0.5,
-            eta_plus : float = 1.2,
-            delta_zero : float = 0.0125,
-            delta_min : float = 0.00001,
-            delta_max : float = 1) -> list:
-        """
-            Esegue la Resilient Propagation (Rprop) per l'addestramento di una rete neurale
+    # def __resilient_back_propagation(self,
+    #         X_train : np.array,
+    #         Y_train : np.array,
+    #         X_val : np.array,
+    #         Y_val : np.array,
+    #         err_fun : function,
+    #         num_epoche : int = 0,
+    #         eta_minus : float = 0.5,
+    #         eta_plus : float = 1.2,
+    #         delta_zero : float = 0.0125,
+    #         delta_min : float = 0.00001,
+    #         delta_max : float = 1) -> list:
+    #     """
+    #         Esegue la Resilient Propagation (Rprop) per l'addestramento di una rete neurale
 
-            Parameters:
-            -   X_train: Il dataset di addestramento.
-            -   Y_train: I valori target corrispondenti al dataset di addestramento.
-            -   X_val: Il dataset di validazione.
-            -   Y_val: I valori target corrispondenti al dataset di validazione.
-            -   err_fun (function): La funzione di errore utilizzata per calcolare la perdita.
-            -   num_epoche: Il numero di epoche per l'addestramento. Default è 0.
-            -   eta_minus: Il fattore di decremento per l'aggiornamento dei pesi. Default è 0.5.
-            -   eta_plus: Il fattore di incremento per l'aggiornamento dei pesi. Default è 1.2.
-            -   delta_zero: Il valore iniziale per gli incrementi dei pesi. Default è 0.0125.
-            -   delta_min: Il valore minimo per gli incrementi dei pesi. Default è 0.00001.
-            -   delta_max: Il valore massimo per gli incrementi dei pesi. Default è 1.
+    #         Parameters:
+    #         -   X_train: Il dataset di addestramento.
+    #         -   Y_train: I valori target corrispondenti al dataset di addestramento.
+    #         -   X_val: Il dataset di validazione.
+    #         -   Y_val: I valori target corrispondenti al dataset di validazione.
+    #         -   err_fun (function): La funzione di errore utilizzata per calcolare la perdita.
+    #         -   num_epoche: Il numero di epoche per l'addestramento. Default è 0.
+    #         -   eta_minus: Il fattore di decremento per l'aggiornamento dei pesi. Default è 0.5.
+    #         -   eta_plus: Il fattore di incremento per l'aggiornamento dei pesi. Default è 1.2.
+    #         -   delta_zero: Il valore iniziale per gli incrementi dei pesi. Default è 0.0125.
+    #         -   delta_min: Il valore minimo per gli incrementi dei pesi. Default è 0.00001.
+    #         -   delta_max: Il valore massimo per gli incrementi dei pesi. Default è 1.
 
-            Returns:
-            -   evaluation_parameters: Una lista contenente tuple con i seguenti valori per ogni epoca:
-            -   Errore di addestramento
-            -   Accuratezza di addestramento
-            -   Errore di validazione
-            -   Accuratezza di validazione
-        """
+    #         Returns:
+    #         -   evaluation_parameters: Una lista contenente tuple con i seguenti valori per ogni epoca:
+    #         -   Errore di addestramento
+    #         -   Accuratezza di addestramento
+    #         -   Errore di validazione
+    #         -   Accuratezza di validazione
+    #     """
         
-        epoca = 0
-        d = self.depth()
-        Z_train = self.__forward_propagation(X_train)
-        train_err = self.err_fun(Z_train,Y_train)
-        train_accuracy = self.__compute_accuracy(Z_train,Y_train)
+    #     epoca = 0
+    #     d = self.depth()
+    #     Z_train = self.__forward_propagation(X_train)
+    #     train_err = self.err_fun(Z_train,Y_train)
+    #     train_accuracy = self.training_report.compute_accuracy(Z_train,Y_train)
 
-        Z_val = self.__forward_propagation(X_val)
-        val_err = self.err_fun(Z_val,Y_val)
-        val_accuracy = self.__compute_accuracy(Z_val,Y_val)
-        evaluation_parameters = []
-        if constants.DEBUG_MODE:
-            print("Epoca: ",-1,
-            "Training Error: ",train_err,
-            "Training Accuracy: ",train_accuracy,
-            "Validation Error: ",val_err,
-            "Validation Accuracy: ",val_accuracy)
+    #     Z_val = self.__forward_propagation(X_val)
+    #     val_err = self.err_fun(Z_val,Y_val)
+    #     val_accuracy = self.training_report.compute_accuracy(Z_val,Y_val)
+    #     evaluation_parameters = []
+    #     if constants.DEBUG_MODE:
+    #         print("Epoca: ",-1,
+    #         "Training Error: ",train_err,
+    #         "Training Accuracy: ",train_accuracy,
+    #         "Validation Error: ",val_err,
+    #         "Validation Accuracy: ",val_accuracy)
 
-        evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
+    #     evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
 
-        der_list = []
-        delta_ij = []
+    #     der_list = []
+    #     delta_ij = []
 
-        for i in range(num_epoche):
-            delta_ij.append([delta_zero]*d)
+    #     for i in range(num_epoche):
+    #         delta_ij.append([delta_zero]*d)
 
-        while epoca < num_epoche:
-            cur_out, cur_act = self.__forward_propagation(X_train,True)
-            gradient_weight, gradient_bias = self.__back_propagation(cur_out,cur_act,Y_train)
+    #     while epoca < num_epoche:
+    #         cur_out, cur_act = self.__forward_propagation(X_train,True)
+    #         gradient_weight, gradient_bias = self.__back_propagation(cur_out,cur_act,Y_train)
 
-            for layer in range(d):
-                prev_der = der_list[epoca-1][layer]
-                actual_der = der_list[epoca][layer]
-                der_prod = prev_der * actual_der
+    #         for layer in range(d):
+    #             prev_der = der_list[epoca-1][layer]
+    #             actual_der = der_list[epoca][layer]
+    #             der_prod = prev_der * actual_der
 
-                delta_ij[epoca][layer] = np.where(der_prod > 0, np.minimum(delta_ij[epoca-1][layer] * eta_plus, delta_max), np.where(der_prod < 0, np.maximum(delta_ij[epoca-1][layer] * delta_min), delta_ij[epoca-1][layer]))
+    #             delta_ij[epoca][layer] = np.where(der_prod > 0, np.minimum(delta_ij[epoca-1][layer] * eta_plus, delta_max), np.where(der_prod < 0, np.maximum(delta_ij[epoca-1][layer] * delta_min), delta_ij[epoca-1][layer]))
 
-                self.weights[layer] = self._weights[layer] - (np.sign(der_list[epoca][layer]) * delta_ij[epoca][layer])
+    #             self.weights[layer] = self._weights[layer] - (np.sign(der_list[epoca][layer]) * delta_ij[epoca][layer])
 
-            Z_train = self.__forward_propagation(X_train)
-            train_err = self.err_fun(Z_train,Y_train)
-            train_accuracy = self.__compute_accuracy(Z_train,Y_train)
+    #         Z_train = self.__forward_propagation(X_train)
+    #         train_err = self.err_fun(Z_train,Y_train)
+    #         train_accuracy = self.training_report.compute_accuracy(Z_train,Y_train)
 
-            Z_val = self.__forward_propagation(X_val)
-            val_err = self.err_fun(Z_val,Y_val)
-            val_accuracy = self.__compute_accuracy(Z_val,Y_val)
-            if constants.DEBUG_MODE:
-                 print("Epoca: ",-1,
-                    "Training Error: ",train_err,
-                    "Training Accuracy: ",train_accuracy,
-                    "Validation Error: ",val_err,
-                    "Validation Accuracy: ",val_accuracy)
+    #         Z_val = self.__forward_propagation(X_val)
+    #         val_err = self.err_fun(Z_val,Y_val)
+    #         val_accuracy = self.training_report.compute_accuracy(Z_val,Y_val)
+    #         if constants.DEBUG_MODE:
+    #              print("Epoca: ",-1,
+    #                 "Training Error: ",train_err,
+    #                 "Training Accuracy: ",train_accuracy,
+    #                 "Validation Error: ",val_err,
+    #                 "Validation Accuracy: ",val_accuracy)
                  
-            evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
-            epoca += 1
+    #         evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
+    #         epoca += 1
             
-        return evaluation_parameters
+    #     return evaluation_parameters
 
-    # end
-
-    def __compute_error(self, predictions : np.ndarray, targets : np.ndarray) -> float:
-        """
-            Calcola l'errore della rete neurale confrontando le previsioni con i target corrispondenti.
-
-            Parameters:
-            -   predictions : e' un'array contenente tutte le previsioni della rete.
-            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
-
-            Returns:
-            -   float : il rapporto tra predizioni corrette e totale delle predizioni.
-        """
-
-        # print(predictions.shape, targets.shape)
-        if not predictions.shape == targets.shape:
-            raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
-        
-        errors = [self.err_fun(x, y) for x, y in zip(predictions, targets)]
-        return np.mean(errors)
-
-    # end
-    
-    def __compute_accuracy(self, predictions : np.ndarray, targets : np.ndarray) -> float:
-        """
-            Calcola l'accuratezza della rete neurale confrontando le previsioni con i target corrispondenti.
-
-            Parameters:
-            -   predictions : e' un'array contenente tutte le previsioni della rete.
-            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
-
-            Returns:
-            -   float : il rapporto tra predizioni corrette e totale delle predizioni.
-        """
-
-        # print(predictions.shape, targets.shape)
-        if not predictions.shape == targets.shape:
-            raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
-
-        matches = [int(np.argmax(x) == np.argmax(y)) for x, y in zip(predictions, targets)]
-        return np.sum(matches), np.sum(matches) / len(targets) * 100
-
-    # end
+    # # end
     
     # ####################################################################### #
     # METODI PUBBLICI
@@ -813,7 +746,7 @@ class NeuralNetwork:
             validation_labels : np.ndarray,
             epochs : int = constants.DEFAULT_EPOCHS,
             learning_rate : float = constants.DEFAULT_LEARNING_RATE
-    ) -> dict[dict[np.ndarray, np.ndarray], float, float]:
+    ) -> None:
         
         """
             Addestra la rete neurale tramite il training set ed il validation set dati in input.
@@ -839,16 +772,13 @@ class NeuralNetwork:
         if (not validation_data.shape[0] == validation_labels.shape[0]):
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
 
-        training_costs = []; validation_costs = []
-        training_accuracies = []; validation_accuracies = []
-
-        best_params = []
+        net_params = []
 
         start_time = time.time()
         print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
         # Prima di iniziare l'addestramento, recuperiamo i pesi dai layer della rete.
-        self.weights, self.biases = self.__pack_weights()
+        self.weights, self.biases = self.__gather_weights()
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
@@ -887,37 +817,25 @@ class NeuralNetwork:
 
             # STEP 3: aggiornamento dei pesi
             print("\r\tAggiornamento dei pesi in corso...                   ", end='\r')
-            best_params.append(self.__update_rule(gw, gb, learning_rate))
+            self.__update_rule(gw, gb, learning_rate)
 
             # STEP 4: calcolo dell'errore per ogni esempio di addestramento
             print("\r\tCalcolo dell'errore di addestramento in corso...     ", end='\r')
-            training_costs.append(
-                self.__compute_error(
-                    training_activations[-1],
-                    training_labels
-                )
+            t_cost = self.training_report.compute_error(
+                training_activations[-1],
+                training_labels,
+                self.err_fun
             )
-
-            t_cost_percent = training_costs[-1] / constants.NUMERO_CLASSI * 100
 
             # STEP 5: calcolo dell'accuracy per ogni esempio di addestramento
             print("\r\tCalcolo dell'accuracy di addestramento in corso...   ", end='\r')
-            t_acc, t_acc_percent = self.__compute_accuracy(
+            t_acc = self.training_report.compute_accuracy(
                 training_activations[-1],
                 training_labels
             )
-            
-            training_accuracies.append(t_acc)
 
             end_time = time.time()
             tot_time = end_time - start_time
-
-            if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print(f"\r\tTempo trascorso: {tot_time:.3f} secondi                     ")
-                print(f"\tErrore di addestramento: {training_costs[-1]:.5f} ({t_cost_percent:.2f}%)")
-                print(f"\tAccuracy di addestramento: {t_acc} di {len(training_labels)} ({t_acc_percent:.2f}%)")
-
-            print()
 
             # FASE DI VALIDATION
 
@@ -927,31 +845,34 @@ class NeuralNetwork:
 
             # STEP 2: calcolo dell'errore per ogni esempio di validazione
             print("\r\tCalcolo dell'errore di validazione in corso...       ", end='\r')
-            validation_costs.append(
-                self.__compute_error(
-                    validation_activations,
-                    validation_labels
-                )
+            v_cost = self.training_report.compute_error(
+                validation_activations,
+                validation_labels,
+                self.err_fun
             )
-
-            v_cost_percent = validation_costs[-1] / constants.NUMERO_CLASSI * 100
 
             # STEP 3: calcolo dell'accuracy per ogni esempio di validazione
             print("\r\tCalcolo dell'accuracy di validazione in corso...     ", end='\r')
-            v_acc, v_acc_percent = self.__compute_accuracy(
+            v_acc = self.training_report.compute_accuracy(
                 validation_activations,
                 validation_labels
             )
-            
-            validation_accuracies.append(v_acc)
 
             end_time = time.time()
             tot_time = end_time - start_time
 
-            if (e == 0 or (e+1) % (epochs / constants.DEFAULT_EPOCHS) == 0):
-                print(f"\r\tTempo trascorso: {tot_time:.3f} secondi                     ")
-                print(f"\tErrore di validazione: {validation_costs[-1]:.5f} ({v_cost_percent:.2f}%)")
-                print(f"\tAccuracy di validazione: {v_acc} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
+            net_report = TrainingReport(tot_time, t_cost, v_cost, t_acc, v_acc)
+            self.training_report.update(net_report)
+
+            print("\r\t                                                     ")
+            print(repr(self.training_report))
+
+            # TODO: verificare che si copiano weights e biases
+            net_params.append({
+                "Weights" : self.weights,
+                "Biases" : self.biases,
+                "Report" : net_report
+            })
 
             if constants.DEBUG_MODE:
                 break
@@ -961,33 +882,15 @@ class NeuralNetwork:
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
         # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
-        index = int(np.argmin(validation_costs, keepdims=False))
+        index = int(np.argmin([n["Report"].validation_error for n in net_params], keepdims=False))
+        print(f"\nMiglior rete (epoca): {index+1}")
 
-        self.weights = best_params[index]["Weights"]
-        self.biases = best_params[index]["Biases"]
+        # TODO: verificare che si copiano weights e biases
+        self.weights = net_params[index]["Weights"]
+        self.biases = net_params[index]["Biases"]
 
-        self._training_error = training_costs[index]
-        self._validation_error = validation_costs[index]
-        t_cost_percent = self.training_error / constants.NUMERO_CLASSI * 100
-        v_cost_percent = self.validation_error / constants.NUMERO_CLASSI * 100
-
-        self._training_accuracy = training_accuracies[index]
-        self._validation_accuracy = validation_accuracies[index]
-        t_acc_percent = self.training_accuracy / len(training_labels) * 100
-        v_acc_percent = self.validation_accuracy / len(validation_labels) * 100
-
-        print(f"\tTempo trascorso: {tot_time:.3f} secondi.")
-        print(f"\tMiglior rete (epoca): {index+1}")
-        print(f"\tMiglior rete (errore di addestramento): {self.training_error:.5f} ({t_cost_percent:.2f}%)")
-        print(f"\tMiglior rete (accuracy di addestramento): {self.training_accuracy} di {len(training_labels)} ({t_acc_percent:.2f}%)")
-        print(f"\tMiglior rete (errore di validazione): {self.validation_error:.5f} ({v_cost_percent:.2f}%)")
-        print(f"\tMiglior rete (accuracy di validazione): {self.validation_accuracy:} di {len(validation_labels)} ({v_acc_percent:.2f}%)")
-
-        return {
-            "Net" : best_params[index],
-            "Error" : self.validation_error,
-            "Accuracy" : self._validation_accuracy
-        }
+        self.training_report.update(net_params[index]["Report"])
+        print(repr(self.training_report))
 
     # end
 
@@ -1052,13 +955,14 @@ class NeuralNetwork:
                 "hidden_sizes"      : hidden_sizes,
                 "output_size"       : self.layers[-1].layer_size,
                 "hidden_act_funs"   : hidden_act_funs,
-                "output_act_fun"       : self.layers[-1].act_fun,
+                "output_act_fun"    : self.layers[-1].act_fun,
                 "err_fun"           : self.err_fun,
                 "weights"           : self.weights,
                 "biases"            : self.biases
             }
 
             dill.dump(store_dict, file, dill.HIGHEST_PROTOCOL)
+        # end open
 
     # end
 
@@ -1072,7 +976,7 @@ class NeuralNetwork:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_error = {self.training_error},\n\ttraining_accuracy = {self.training_accuracy},\n\tvalidation_error = {self.validation_error}\n),\n\tvalidation_accuracy = {self.validation_accuracy}'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_params = {pprint.pformat(self.training_report)}\n)'
     
     # end
 
@@ -1098,14 +1002,16 @@ class NeuralNetwork:
         with open(filename, 'rb') as file:
             store_dict = dill.load(file)
             
-            input_size = store_dict["input_size"]
-            hidden_sizes = store_dict["hidden_sizes"]
-            output_size = store_dict["output_size"]
+            input_size      = store_dict["input_size"]
+            hidden_sizes    = store_dict["hidden_sizes"]
+            output_size     = store_dict["output_size"]
             hidden_act_funs = store_dict["hidden_act_funs"]
-            output_act_fun = store_dict["output_act_fun"]
-            err_fun = store_dict["err_fun"]
-            weights = store_dict["weights"]
-            biases = store_dict["biases"]
+            output_act_fun  = store_dict["output_act_fun"]
+            err_fun         = store_dict["err_fun"]
+            weights         = store_dict["weights"]
+            biases          = store_dict["biases"]
+        
+        # end open
         
         net = NeuralNetwork(
             input_size,
@@ -1118,7 +1024,7 @@ class NeuralNetwork:
 
         net.weights = weights
         net.biases = biases
-        net.__unpack_weights()
+        net.__scatter_weights()
     
         return net
     
