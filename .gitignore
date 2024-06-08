@@ -5,3 +5,4 @@
 /dataset/mnist_test.csv
 /code/test.py
 extra/extra.py
+/code/.ipynb_checkpoints

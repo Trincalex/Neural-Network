@@ -40,68 +40,6 @@ from datetime import datetime
 
 # ########################################################################### #
 
-Xtrain, Ytrain, Xtest, Ytest = df.loadDataset(constants.COPPIE_TRAINING, constants.COPPIE_TEST)
-Xtrain, Ytrain = df.split_dataset(Xtrain, Ytrain)
-
-best_params = []
-
-print(f"\nK-fold cross-validation iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
-start_time = time.time()
-
-for i in range(constants.DEFAULT_K_FOLD_VALUE):
-
-    print(f"\nFold {i+1} di {constants.DEFAULT_K_FOLD_VALUE}")
-
-    net = NeuralNetwork(
-        784, 32, 10,
-        hidden_act_funs=auxfunc.sigmoid,
-        output_act_fun=auxfunc.sigmoid,
-        e_fun=auxfunc.cross_entropy_softmax
-    )
-
-    training_fold = np.concatenate([fold for j, fold in enumerate(Xtrain) if j != i])
-    training_labels = np.concatenate([fold for j, fold in enumerate(Ytrain) if j != i])
-    validation_fold = Xtrain[i]
-    validation_labels = Ytrain[i]
-
-    best_params.append(net.train(
-        training_fold,
-        training_labels,
-        validation_fold,
-        validation_labels
-    ))
-
-    if constants.DEBUG_MODE:
-        break
-
-# end for i
-
-print(f"\nK-fold cross-validation completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
-
-# prendi la miglior rete di tutte --> vedere bene come funziona la k-fold cross validation
-index = int(np.argmin([net["Error"] for net in best_params], keepdims=False))
-min_error = best_params[index]["Error"]
-min_error_percent = best_params[index]["Error"] / constants.NUMERO_CLASSI * 100
-
-end_time = time.time()
-tot_time = end_time - start_time
-
-print(f"\tTempo trascorso: {tot_time:.3f} secondi")
-print(f"\tMiglior rete (fold): {index+1}")
-print(f"\tMiglior rete (errore di validazione): {min_error:.5f} ({min_error_percent:.2f}%)")
-
-net.weights = best_params[index]["Net"]["Weights"]
-net.biases = best_params[index]["Net"]["Biases"]
-net.save_network_to_file()
-
-for test_example in zip(Xtest, Ytest):
-     label = np.argmax(test_example[1])
-     print(f"Ground truth: {constants.ETICHETTE_CLASSI[label]}")
-     net.predict(test_example[0])
-     df.show_image(test_example[0])
-
-# ########################################################################### #
-
 # net = NeuralNetwork(5, 3, 2, random_init=False)
 # print(repr(net))
 
