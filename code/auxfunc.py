@@ -21,6 +21,7 @@ import math
 import os
 import matplotlib.pyplot as plot
 from datetime import datetime
+import copy
 
 # ########################################################################### #
 # FUNZIONI DI ATTIVAZIONE
@@ -301,12 +302,6 @@ def cross_entropy_softmax(
 # ########################################################################### #
 # ALTRE FUNZIONI
 
-# def stampa_matrice(matrice):
-#     for riga in matrice:
-#         for elemento in riga:
-#             print(int(elemento), end=" ")
-#         print()
-
 def print_progress_bar(
         iteration : int,
         total : int,
@@ -342,38 +337,40 @@ def print_progress_bar(
 # end
 
 def plot_data(
+        title : constants.ReportTitle,
         history_training : list[float],
         history_validation : list[float],
-        title : constants.ReportTitle
 ) -> None:
     
     """
         Disegna un grafico che confronta le misure calcolate in fase di training e in fase di validazione.
 
         Parameters:
+        -   title : il titolo del grafico.
         -   history_training : la lista di misure calcolate sui dati di addestramento.
         -   history_validation : la lista di misure calcolate sui dati di validazione.
-        -   title : il titolo del grafico.
 
         Returns:
         -   None.
     """
 
-    # print(len(history_training), len(history_validation))
-    if not len(history_training) == len(history_validation):
-        raise IndexError("Le misure calcolate in fase training e validation non coincidono.")
+
+    if history_validation is not None:
+        # print(len(history_training), len(history_validation))
+        if not len(history_training) == len(history_validation):
+            raise IndexError("Le misure calcolate in fase training e validation non coincidono.")
     
     if not isinstance(title, constants.ReportTitle):
         raise TypeError("Il titolo deve essere uno dei valori dell'enumerazione ReportTitle.")
 
-    max_value = max(history_training + history_validation)
+    h_val = [] if history_validation is None else history_validation 
+
+    max_value = max(history_training + h_val)
     x_min = 0; x_max = len(history_training)
     y_min = 0; y_max = max_value + max_value * 0.1
 
     out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H:%M") + "/"
 
-    os.makedirs(out_directory, exist_ok=True)
-    
     plot.figure(num=int(title))
     plot.title(str(title))
     plot.xlim(x_min, x_max)
@@ -381,18 +378,23 @@ def plot_data(
     plot.ylim(y_min, y_max)
     plot.ylabel(title.name)
 
-    plot.plot(range(x_max), history_training, 'b', label='Training ' + title.name)
-    plot.plot(range(x_max), history_validation, 'r', label='Validation ' + title.name)
+    plot.plot(range(x_min, x_max), history_training, 'b', label='Training ' + title.name)
+    
+    if history_validation is not None:
+        plot.plot(range(x_min, x_max), h_val, 'r', label='Validation ' + title.name)
 
     plot.legend()
+
+    os.makedirs(out_directory, exist_ok=True)
     plot.savefig(out_directory + str(title) + ".pdf", bbox_inches='tight')
+
     plot.show()
 
 # end
 
 def plot_error(
-        history_training_costs,
-        history_validation_costs
+        history_training_costs : list[float],
+        history_validation_costs : list[float] = None
 ) -> None:
     
     """
@@ -407,16 +409,16 @@ def plot_error(
     """
 
     plot_data(
+        constants.ReportTitle.Error,
         history_training_costs,
-        history_validation_costs,
-        constants.ReportTitle.Error
+        history_validation_costs
     )
 
 # end
 
 def plot_accuracy(
-        history_training_accuracy,
-        history_validation_accuracy
+        history_training_accuracy : list[float],
+        history_validation_accuracy : list[float] = None
 ) -> None:
     
     """
@@ -431,10 +433,11 @@ def plot_accuracy(
     """
 
     plot_data(
+        constants.ReportTitle.Accuracy,
         history_training_accuracy,
-        history_validation_accuracy,
-        constants.ReportTitle.Accuracy
+        history_validation_accuracy
     )
+
 
 # end
 
