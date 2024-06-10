@@ -15,6 +15,7 @@
 
 import numpy as np
 from typing import Callable, Optional
+from enum import Enum
 
 # ########################################################################### #
 # CODICI DI ERRORE e EXCEPTIONS
@@ -92,7 +93,7 @@ class ErrorFunctionError(Exception):
 # end class ErrorFunctionError
 
 # ########################################################################### #
-# COSTANTI
+# COSTANTI e ENUMERAZIONI
 
 STANDARD_DEVIATION = 1.0
 """ ... """
@@ -153,6 +154,20 @@ DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
 OUTPUT_DIRECTORY = "../output/"
 """ ... """
 
+class ReportTitle(Enum):
+    """ ... """
+
+    Error = 1, "Error report"
+    Accuracy = 2, "Accuracy report"
+
+    def __int__(self):
+        return self.value[0]
+
+    def __str__(self):
+        return self.value[1]
+
+# end class ReportTitle
+
 # ########################################################################### #
 # COSTANTI
 
@@ -166,3 +181,4 @@ ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | n
 # RIFERIMENTI
 
 # https://www.geeksforgeeks.org/user-defined-exceptions-python-examples/
+# https://stackoverflow.com/questions/6060635/convert-enum-to-int-in-python

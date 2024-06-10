@@ -21,6 +21,8 @@ import numpy as np
 import pprint
 import time
 from datetime import datetime
+import copy
+import matplotlib.pyplot as plot
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE NEURALNETWORK
@@ -611,7 +613,7 @@ class NeuralNetwork:
         
     # end
 
-    def __update_rule(
+    def __gradient_descent(
             self,
             gradient_weights : np.ndarray,
             gradient_biases : np.ndarray,
@@ -761,8 +763,10 @@ class NeuralNetwork:
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
-            -   ... : ...
+            -   None.
         """
+
+        history_report : list[TrainingReport] = []
 
         # Controllo sulla compatibilita' di training_data e training_labels
         if (not training_data.shape[0] == training_labels.shape[0]):
@@ -771,8 +775,6 @@ class NeuralNetwork:
         # Controllo sulla compatibilita' di validation_data e validation_labels
         if (not validation_data.shape[0] == validation_labels.shape[0]):
             raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
-
-        net_params = []
 
         start_time = time.time()
         print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
@@ -784,6 +786,12 @@ class NeuralNetwork:
             print(f"\nEpoca {e+1} di {epochs}")
 
             # FASE DI TRAINING
+
+            best_net_params = {
+                "Weights" : copy.deepcopy(self.weights),
+                "Biases" : copy.deepcopy(self.biases),
+                "Report" : copy.deepcopy(self.training_report)
+            }
 
             # STEP 1: forward propagation su tutti gli esempi di addestramento
             print("\r\tEsecuzione della forward propagation...              ", end='\r')
@@ -815,11 +823,11 @@ class NeuralNetwork:
                 training_labels
             )
 
-            # STEP 3: aggiornamento dei pesi
-            print("\r\tAggiornamento dei pesi in corso...                   ", end='\r')
-            self.__update_rule(gw, gb, learning_rate)
+            # STEP 3: aggiornamento dei parametri
+            print("\r\tAggiornamento dei parametri in corso...                   ", end='\r')
+            self.__gradient_descent(gw, gb, learning_rate)
 
-            # STEP 4: calcolo dell'errore per ogni esempio di addestramento
+            # STEP 4: calcolo dell'errore di addestramento
             print("\r\tCalcolo dell'errore di addestramento in corso...     ", end='\r')
             t_cost = self.training_report.compute_error(
                 training_activations[-1],
@@ -827,7 +835,7 @@ class NeuralNetwork:
                 self.err_fun
             )
 
-            # STEP 5: calcolo dell'accuracy per ogni esempio di addestramento
+            # STEP 5: calcolo dell'accuracy di addestramento
             print("\r\tCalcolo dell'accuracy di addestramento in corso...   ", end='\r')
             t_acc = self.training_report.compute_accuracy(
                 training_activations[-1],
@@ -843,7 +851,7 @@ class NeuralNetwork:
             print("\r\tEsecuzione della forward propagation...              ", end='\r')
             validation_activations = self.__forward_propagation(validation_data)
 
-            # STEP 2: calcolo dell'errore per ogni esempio di validazione
+            # STEP 2: calcolo dell'errore di validazione
             print("\r\tCalcolo dell'errore di validazione in corso...       ", end='\r')
             v_cost = self.training_report.compute_error(
                 validation_activations,
@@ -851,7 +859,7 @@ class NeuralNetwork:
                 self.err_fun
             )
 
-            # STEP 3: calcolo dell'accuracy per ogni esempio di validazione
+            # STEP 3: calcolo dell'accuracy di validazione
             print("\r\tCalcolo dell'accuracy di validazione in corso...     ", end='\r')
             v_acc = self.training_report.compute_accuracy(
                 validation_activations,
@@ -861,18 +869,23 @@ class NeuralNetwork:
             end_time = time.time()
             tot_time = end_time - start_time
 
-            net_report = TrainingReport(tot_time, t_cost, v_cost, t_acc, v_acc)
-            self.training_report.update(net_report)
+            # STEP 4: aggiornamento del report (e, se necessario, dei parametri)
+            print("\r\tAggiornamento del report in corso...                 ", end='\r')
+            curr_net_report = TrainingReport(e+1, tot_time, t_cost, v_cost, t_acc, v_acc)
 
+            """
+                Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo).
+            """
+            if e == 0 or curr_net_report.validation_error < best_net_params["Report"].validation_error:
+                self.training_report.update(curr_net_report)
+            else:
+                self.weights = copy.deepcopy(best_net_params["Weights"])
+                self.biases = copy.deepcopy(best_net_params["Biases"])
+
+            # STEP 5: stampa del report dell'epoca migliore
             print("\r\t                                                     ")
             print(repr(self.training_report))
-
-            # TODO: verificare che si copiano weights e biases
-            net_params.append({
-                "Weights" : self.weights,
-                "Biases" : self.biases,
-                "Report" : net_report
-            })
+            history_report.append(copy.deepcopy(self.training_report))
 
             if constants.DEBUG_MODE:
                 break
@@ -881,16 +894,17 @@ class NeuralNetwork:
 
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
 
-        # Scelta dei parametri corrispondenti alla miglior rete (errore di validazione minimo)
-        index = int(np.argmin([n["Report"].validation_error for n in net_params], keepdims=False))
-        print(f"\nMiglior rete (epoca): {index+1}")
+        # Disegno dei grafici delle curve di errore
+        auxfunc.plot_error(
+            [r.training_error for r in history_report],
+            [r.validation_error for r in history_report]
+        )
 
-        # TODO: verificare che si copiano weights e biases
-        self.weights = net_params[index]["Weights"]
-        self.biases = net_params[index]["Biases"]
-
-        self.training_report.update(net_params[index]["Report"])
-        print(repr(self.training_report))
+        # Disegno dei grafici delle curve di accuracy
+        auxfunc.plot_accuracy(
+            [r.training_accuracy for r in history_report],
+            [r.validation_accuracy for r in history_report],
+        )
 
     # end
 
@@ -945,8 +959,7 @@ class NeuralNetwork:
             hidden_sizes.append(l.layer_size)
             hidden_act_funs.append(l.act_fun)
         
-        if not os.path.exists(constants.OUTPUT_DIRECTORY):
-            os.makedirs(constants.OUTPUT_DIRECTORY)
+        os.makedirs(constants.OUTPUT_DIRECTORY, exist_ok=True)
     
         # Si apre il file in modalita' di scrittura per file binari.
         with open(constants.OUTPUT_DIRECTORY+filename, 'wb') as file:

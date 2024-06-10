@@ -13,9 +13,14 @@
 # ########################################################################### #
 # LIBRERIE
 
+from training_report import TrainingReport
+import constants
+
 import numpy as np
 import math
-import constants
+import os
+import matplotlib.pyplot as plot
+from datetime import datetime
 
 # ########################################################################### #
 # FUNZIONI DI ATTIVAZIONE
@@ -333,6 +338,103 @@ def print_progress_bar(
 
     # Stampa una nuova linea quando tutte le iterazioni sono terminate
     if iteration == total: print()
+
+# end
+
+def plot_data(
+        history_training : list[float],
+        history_validation : list[float],
+        title : constants.ReportTitle
+) -> None:
+    
+    """
+        Disegna un grafico che confronta le misure calcolate in fase di training e in fase di validazione.
+
+        Parameters:
+        -   history_training : la lista di misure calcolate sui dati di addestramento.
+        -   history_validation : la lista di misure calcolate sui dati di validazione.
+        -   title : il titolo del grafico.
+
+        Returns:
+        -   None.
+    """
+
+    # print(len(history_training), len(history_validation))
+    if not len(history_training) == len(history_validation):
+        raise IndexError("Le misure calcolate in fase training e validation non coincidono.")
+    
+    if not isinstance(title, constants.ReportTitle):
+        raise TypeError("Il titolo deve essere uno dei valori dell'enumerazione ReportTitle.")
+
+    max_value = max(history_training + history_validation)
+    x_min = 0; x_max = len(history_training)
+    y_min = 0; y_max = max_value + max_value * 0.1
+
+    out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H:%M") + "/"
+
+    os.makedirs(out_directory, exist_ok=True)
+    
+    plot.figure(num=int(title))
+    plot.title(str(title))
+    plot.xlim(x_min, x_max)
+    plot.xlabel('Epochs')
+    plot.ylim(y_min, y_max)
+    plot.ylabel(title.name)
+
+    plot.plot(range(x_max), history_training, 'b', label='Training ' + title.name)
+    plot.plot(range(x_max), history_validation, 'r', label='Validation ' + title.name)
+
+    plot.legend()
+    plot.savefig(out_directory + str(title) + ".pdf", bbox_inches='tight')
+    plot.show()
+
+# end
+
+def plot_error(
+        history_training_costs,
+        history_validation_costs
+) -> None:
+    
+    """
+        Disegna il grafico delle curve di errore, per mostrare se il modello e' in una condizione di overfitting sui dati di addestramento.
+
+        Parameters:
+        -   history_training_costs : la lista di misure di errore calcolate sui dati di addestramento.
+        -   history_validation_costs : la lista di misure di errore calcolate sui dati di validazione.
+
+        Returns:
+        -   None.
+    """
+
+    plot_data(
+        history_training_costs,
+        history_validation_costs,
+        constants.ReportTitle.Error
+    )
+
+# end
+
+def plot_accuracy(
+        history_training_accuracy,
+        history_validation_accuracy
+) -> None:
+    
+    """
+        Disegna il grafico delle curve di accuratezza, per valutare la capacita' del modello di generalizzare sui dati di validazione.
+
+        Parameters:
+        -   history_training_accuracy : la lista di misure di accuracy calcolate sui dati di addestramento.
+        -   history_validation_accuracy : la lista di misure di accuracy calcolate sui dati di validazione.
+
+        Returns:
+        -   None.
+    """
+
+    plot_data(
+        history_training_accuracy,
+        history_validation_accuracy,
+        constants.ReportTitle.Accuracy
+    )
 
 # end
 
