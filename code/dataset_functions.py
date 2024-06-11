@@ -1,9 +1,29 @@
+"""
+
+    dataset_functions.py
+    - Alessandro Trincone
+    - Mario Gabriele Carofano
+
+    ...
+
+"""
+
+# ########################################################################### #
+# LIBRERIE
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import constants
 
-def loadDataset(training_length : int, test_length : int):
+# ########################################################################### #
+# DEFINIZIONE DELLE FUNZIONI
+
+def loadDataset(
+        training_length : int,
+        test_length : int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    
     """
         ...
         
@@ -14,7 +34,7 @@ def loadDataset(training_length : int, test_length : int):
         -   ...
     """
 
-    print("Loading del dataset in corso...")
+    print("Loading del dataset in corso...                                   ", end='\r')
 
     current_dir = os.path.dirname(__file__)
     dataset_dir = os.path.abspath(os.path.join(current_dir, '..', 'dataset'))
@@ -23,7 +43,8 @@ def loadDataset(training_length : int, test_length : int):
     train_file = os.path.join(dataset_dir, 'mnist_train.csv')
 
     # Parsing del file '.csv' e shuffling
-    train_set = np.loadtxt(train_file, delimiter=','); np.random.shuffle(train_set)
+    train_set = np.loadtxt(train_file, delimiter=',')
+    np.random.shuffle(train_set)
 
     # Estrazione del numero di esempi richiesti
     train_set = train_set[:training_length]
@@ -36,12 +57,13 @@ def loadDataset(training_length : int, test_length : int):
 
     # Si ripetono gli stessi passaggi anche per il caricamento del test set
     test_file = os.path.join(dataset_dir, 'mnist_test.csv')
-    test_set = np.loadtxt(test_file, delimiter=','); np.random.shuffle(test_set)
+    test_set = np.loadtxt(test_file, delimiter=',')
+    np.random.shuffle(test_set)
     test_set = test_set[:test_length]
     test_imgs = np.asfarray(test_set[:, 1:]) / constants.DIMENSIONE_PIXEL
     test_labels = convert_to_one_hot(test_set[:, 0])
 
-    print("Loading del dataset completato.")
+    print("\r\nLoading del dataset completato.                               ")
     
     return (
         train_imgs,
@@ -117,38 +139,20 @@ def convert_to_one_hot(vet : np.ndarray) -> np.ndarray:
 
 # end
 
-def convert_to_single_label(vet : np.ndarray) -> int:
+def convert_to_label(vet : np.ndarray) -> str:
     """
         ...
         
         Parameters:
-        -   ...: ...
+        -   ... : ...
 
         Returns:
         -   ...
     """
 
-    return int(vet.argmax())
+    return constants.ETICHETTE_CLASSI[vet.argmax()]
 
 # end
-
-def show_image(x : np.ndarray) -> None:
-    """
-        ...
-        
-        Parameters:
-        -   ...: ...
-
-        Returns:
-        -   ...
-    """
-
-    xx = x.reshape((constants.DIMENSIONE_IMMAGINE, constants.DIMENSIONE_IMMAGINE))
-    plt.imshow(xx, 'gray')
-    plt.show()
-
-# end
-
 
 # ########################################################################### #
 # RIFERIMENTI

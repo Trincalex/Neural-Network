@@ -1,7 +1,7 @@
 import auxfunc
 import constants
 from artificial_neural_network import NeuralNetwork
-import dataset_function as df
+import dataset_functions as df
 import numpy as np
 import pprint
 

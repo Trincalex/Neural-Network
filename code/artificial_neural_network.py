@@ -1,4 +1,4 @@
-'''
+"""
 
     artificial_neural_network.py
     - Alessandro Trincone
@@ -7,7 +7,7 @@
     Questo file contiene l'implementazione di una rete neurale feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
     In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer).
 
-'''
+"""
 
 # ########################################################################### #
 # LIBRERIE
@@ -908,40 +908,63 @@ class NeuralNetwork:
 
     # end
 
-    def predict(self, x : np.ndarray) -> int:
+    def predict(self, Xtest : np.ndarray) -> list[str]:
+        
         """
-            Calcola una predizione per l'input dato in base alla configurazione attuale di pesi e bias della rete neurale. Inoltre, visualizza nel terminale le probabilita' delle predizioni di tutto l'output layer utilizzando la funzione "auxfunc.softmax()".
+            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale.
             
             Parameters:
-            -   x : la matrice di esempi da classificare.
+            -   Xtest : la matrice di esempi di testing da elaborare.
+            -   Ytest : ...
+            -   plot_mode : serve a distinguere quali grafici degli esempi in input e delle predizioni in output si devono disegnare (vedi documentazione di PlotTestingMode).
 
             Returns:
-            -   label : l'indice del neurone nell'output layer che ottiene il valore di attivazione piu' alto.
+            -   preds_label : la lista di etichette calcolate dalla rete neurale per ogni esempio di testing in input.
         """
 
-        labels = []
-        predictions = self.__forward_propagation(x)
+        import dataset_functions as df
 
-        for example_prediction in predictions:
-            labels.append(np.argmax(example_prediction))
+        # Calcola le predizioni della rete dagli esempi di testing forniti in input
+        preds_activation = self.__forward_propagation(Xtest)
 
-            # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
-            probabilities = auxfunc.softmax(example_prediction)
+        # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
+        probabilities = auxfunc.softmax(preds_activation)
 
-            i = 0
-            print(f"Predizione della rete: {constants.ETICHETTE_CLASSI[labels[-1]]}")
-            for pred, prob in zip(example_prediction, probabilities):
-                print(f'\tClasse {i}:\t{pred:.5f},\t{(prob * 100):.2f}')
-                i += 1
-            print()
+        # Recupera le etichette giuste in base alla distribuzione di probabilita'
+        preds_label = [df.convert_to_label(p) for p in probabilities]
 
-        return labels
+        return preds_label
         
     # end
 
-    def save_network_to_file(self, filename : str = "params.pkl" ) -> None:
-        import dill, os
+    def test(
+            self,
+            Xtest : np.ndarray,
+            Ytest : np.ndarray,
+            plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.NONE
+    ) -> None:
+        
+        """
+            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale. Quindi, confronta le etichette della ground truth con le etichette delle predizioni, mostrando i risultati in una grande tabella (vedi documentazione di plot_testing_predictions()).
 
+            Parameters:
+            -   Xtest : la matrice di esempi di testing da elaborare.
+            -   Ytest : ...
+            -   plot_mode : serve a distinguere per quali esempi in input e quali predizioni in output si devono disegnare i grafici (vedi documentazione di PlotTestingMode).
+
+            Returns:
+            -   None.
+        """
+
+        import plot_functions as pf
+
+        preds_activation = self.__forward_propagation(Xtest)
+        probabilities = auxfunc.softmax(preds_activation)
+        pf.plot_testing_predictions(Xtest, Ytest, probabilities, plot_mode)
+    
+    # end 
+
+    def save_network_to_file(self, filename : str = "params.pkl" ) -> None:
         """
             Salva tutti gli iperparametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
 
@@ -951,6 +974,8 @@ class NeuralNetwork:
             Returns:
             -   None.
         """
+
+        import dill, os
 
         hidden_sizes = []
         hidden_act_funs = []
@@ -999,8 +1024,6 @@ class NeuralNetwork:
 
     @staticmethod
     def load_network_from_file(filename : str):
-        import dill, os
-
         """
             Carica la configurazione completa di iperparametri e parametri della rete neurale direttamente da un file.
 
@@ -1012,7 +1035,8 @@ class NeuralNetwork:
             -   net : la rete neurale con tutti gli iperparametri e parametri recuperati dal file.
         """
 
-        print(filename)
+        import dill
+
         with open(filename, 'rb') as file:
             store_dict = dill.load(file)
             
@@ -1026,7 +1050,7 @@ class NeuralNetwork:
             biases          = store_dict["biases"]
         
         # end open
-        
+
         net = NeuralNetwork(
             input_size,
             hidden_sizes,
@@ -1036,8 +1060,11 @@ class NeuralNetwork:
             err_fun
         )
 
-        net.weights = weights
-        net.biases = biases
+        # TODO: aggiungere TrainingParams.
+        # TODO: controllare che i parametri da file sono compatibili con la rete creata.
+
+        net.weights = copy.deepcopy(weights)
+        net.biases = copy.deepcopy(biases)
         net.__scatter_weights()
     
         return net

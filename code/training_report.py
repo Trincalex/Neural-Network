@@ -1,4 +1,4 @@
-'''
+"""
 
     training_report.py
     - Alessandro Trincone
@@ -6,7 +6,7 @@
 
     Questo file contiene l'implementazione della classe TrainingReport, il cui scopo e' quello di memorizzare tutte le misure riguardanti l'addestramento di una rete neurale feed-forward fully-connected.
 
-'''
+"""
 
 # ########################################################################### #
 # LIBRERIE

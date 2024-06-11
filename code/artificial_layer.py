@@ -1,4 +1,4 @@
-'''
+"""
 
     artificial_layer.py
     - Alessandro Trincone
@@ -7,7 +7,7 @@
     Questo file contiene l'implementazione di un layer di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
     In particolare, ogni oggetto della classe che implementa il layer (Layer) e' composto di uno o più neuroni (Neuron).
 
-'''
+"""
 
 # ########################################################################### #
 # LIBRERIE

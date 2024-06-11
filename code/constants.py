@@ -1,14 +1,12 @@
-'''
+"""
 
     constants.py
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene le definizioni dei valori costanti, utili per la
-    definizione di alcuni parametri nel codice, e dei codici di errore,
-    utili invece a rappresentare le cause di terminazione del programma.
+    Questo file contiene le definizioni dei valori costanti, utili per la definizione di alcuni parametri nel codice, e dei codici di errore, utili invece a rappresentare le cause di terminazione del programma.
 
-'''
+"""
 
 # ########################################################################### #
 # LIBRERIE
@@ -98,9 +96,6 @@ class ErrorFunctionError(Exception):
 STANDARD_DEVIATION = 1.0
 """ ... """
 
-NUMERO_CLASSI = 10
-""" ... """
-
 ETICHETTE_CLASSI = [
     "Cifra 0",
     "Cifra 1",
@@ -113,6 +108,9 @@ ETICHETTE_CLASSI = [
     "Cifra 8",
     "Cifra 9",
 ]
+""" ... """
+
+NUMERO_CLASSI = len(ETICHETTE_CLASSI)
 """ ... """
 
 COPPIE_TRAINING = 12500
@@ -167,6 +165,26 @@ class ReportTitle(Enum):
         return self.value[1]
 
 # end class ReportTitle
+
+PlotTestingMode = Enum('PlotTestingMode', [
+    'NONE',
+    'ALL',
+    'CORRECT',
+    'WRONG',
+    'UNSURE'
+])
+
+PLOT_TESTING_FIGSIZE = (15, 20)
+""" ... """
+
+PLOT_TESTING_COLUMNS = 2
+""" ... """
+
+PLOT_TESTING_IMAGE_PLOT_INDEX = 0
+""" ... """
+
+PLOT_TESTING_BAR_CHART_INDEX = 1
+""" ... """
 
 # ########################################################################### #
 # COSTANTI

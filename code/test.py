@@ -6,7 +6,7 @@ import numpy as np
 import neural_network as nn
 import matplotlib.pyplot as plot
 import auxfunc as af
-import dataset_function as ds
+import dataset_functions as ds
 import pprint
 import constants
 
@@ -30,7 +30,7 @@ for i in range(10):
     print(Ytrain.shape)
     index = int(i * np.random.normal())
     # print(Ytrain[:, index])
-    print(ds.convert_to_single_label(Ytrain[:, index]))
+    print(ds.convert_to_label(Ytrain[:, index]))
     x=Xtrain[:,index]
     ix=np.reshape(x,(constants.DIMENSIONE_IMMAGINE, constants.DIMENSIONE_IMMAGINE))
     ds.show_image(ix)
