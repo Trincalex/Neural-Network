@@ -1,0 +1,20 @@
+Nel framework Keras si utilizza un valore percentuale per la scelta del numero di esempi del dataset: possiamo implementare questa scelta progettuale o è meglio lasciare una costante?
+
+
+Quale funzione di attivazione bisogna utilizzare per l'output layer? Si dovrebbe utilizzare la softmax per i problemi di multi-classificazione?
+
+
+La k-fold è implementata correttamente?
+
+
+I grafici per il testing report sono impostati correttamente? Come ottenere una visione globale dei risultati di testing (es. tabella)?
+
+
+Nella fase di addestramento bisogna implementare l'early stopping?
+
+
+Bisogna utilizzare sia il metodo di "grid search" che il metodo di "random search"?
+
+
+Come possiamo strutturare la documentazione?
+

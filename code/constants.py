@@ -158,10 +158,13 @@ DEFAULT_RANDOM_SEED = 0
 DEBUG_MODE = False
 """ Consente di attivare la modalita' di debug per stampare in console i valori attuali delle strutture dati coinvolte nell'addestramento della rete neurale. """
 
-DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
+PRINT_DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
 """ ... """
 
 OUTPUT_DIRECTORY = "../output/"
+""" ... """
+
+OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
 """ ... """
 
 class ReportTitle(Enum):
@@ -180,8 +183,10 @@ class ReportTitle(Enum):
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
+    'REPORT',
     'HIGH_CONFIDENCE_CORRECT',
     'LOW_CONFIDENCE_CORRECT',
+    'ALMOST_CORRECT',
     'WRONG',
     'ALL'
 ])

@@ -778,7 +778,7 @@ class NeuralNetwork:
         history_report : list[TrainingReport] = []
 
         start_time = time.time()
-        print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+        print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
 
         # Prima di iniziare l'addestramento, recuperiamo i pesi dai layer della rete.
         self.weights, self.biases = self.__gather_weights()
@@ -891,7 +891,6 @@ class NeuralNetwork:
             else:
                 self.training_report.update(curr_net_report)
 
-
             # STEP 5: stampa del report dell'epoca migliore
             print("\r\t                                                      ")
             print(repr(self.training_report))
@@ -901,7 +900,7 @@ class NeuralNetwork:
 
         # end for e
 
-        print(f"\nAddestramento completato: {datetime.now().strftime(constants.DATE_TIME_FORMAT)}")
+        print(f"\nAddestramento completato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
 
         return history_report
 
@@ -944,7 +943,8 @@ class NeuralNetwork:
             idTest : np.ndarray,
             Xtest : np.ndarray,
             Ytest : np.ndarray,
-            plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.NONE
+            out_directory : str,
+            plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.REPORT
     ) -> None:
         
         """
@@ -954,6 +954,7 @@ class NeuralNetwork:
             -   idTest : l'array contenente gli identificativi degli esempi di testing.
             -   Xtest : la matrice contenente gli esempi di testing da elaborare. Ogni riga e' la rappresentazione dell'immagine del singolo esempio di training.
             -   Ytest : la matrice contenente le etichette corrispondenti per gli esempi di testing. Ogni riga rappresenta l'etichetta per il rispettivo esempio di testing.
+            -   out_directory : la directory di output dove salvare i grafici richiesti.
             -   plot_mode : serve a distinguere per quali esempi in input e quali predizioni in output si devono disegnare i grafici (vedi documentazione di PlotTestingMode).
 
             Returns:
@@ -972,16 +973,17 @@ class NeuralNetwork:
 
         preds_activation = self.__forward_propagation(Xtest)
         probabilities = auxfunc.softmax(preds_activation)
-        pf.plot_predictions(idTest, Xtest, Ytest, probabilities, plot_mode)
+        pf.plot_predictions(idTest, Xtest, Ytest, probabilities, out_directory, plot_mode)
     
     # end 
 
-    def save_network_to_file(self, filename : str = "params.pkl" ) -> None:
+    def save_network_to_file(self, out_directory : str, out_name : str = "params.pkl" ) -> None:
         """
             Salva tutti gli iperparametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
 
             Parameters:
-            -   filename : il percorso del file dove memorizzare i parametri della rete neurale.
+            -   out_directory : la directory di output dove memorizzare i parametri della rete neurale.
+            -   out_name : il nome del file di output.
 
             Returns:
             -   None.
@@ -996,11 +998,10 @@ class NeuralNetwork:
             hidden_sizes.append(l.layer_size)
             hidden_act_funs.append(l.act_fun)
         
-        out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H:%M") + "/"
         os.makedirs(out_directory, exist_ok=True)
     
         # Si apre il file in modalita' di scrittura per file binari.
-        with open(out_directory+filename, 'wb') as file:
+        with open(out_directory+out_name, 'wb') as file:
             store_dict = {
                 "input_size"        : self.input_size,
                 "hidden_sizes"      : hidden_sizes,
@@ -1015,7 +1016,7 @@ class NeuralNetwork:
             dill.dump(store_dict, file, dill.HIGHEST_PROTOCOL)
         # end open
 
-        print(f"Salvataggio della rete neurale in '{out_directory+filename}' completato.")
+        print(f"Salvataggio della rete neurale in '{out_directory+out_name}' completato.")
 
     # end
 
@@ -1043,7 +1044,6 @@ class NeuralNetwork:
 
             Parameters:
             -   filename : il percorso del file dove sono memorizzati gli iperparametri e parametri della rete neurale.
-            -   random_init : indica se pesi e bias della rete neurale saranno inizializzati tramite un generatore di valori casuali con seed fissato o meno.
 
             Returns:
             -   net : la rete neurale con tutti gli iperparametri e parametri recuperati dal file.
