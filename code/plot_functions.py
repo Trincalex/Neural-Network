@@ -63,7 +63,6 @@ def plot_training_epochs(
     if y_max is None:
         y_max = max_value + max_value * 0.1
 
-
     plot.figure(num=int(title))
     plot.title(str(title))
 
@@ -81,11 +80,12 @@ def plot_training_epochs(
 
     plot.legend()
 
-    out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H:%M") + "/"
+    out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H-%M") + "/"
     os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + str(title) + ".pdf", bbox_inches='tight')
+    plot.savefig(out_directory + str(title) + '.pdf', bbox_inches='tight')
+    print(f"Salvataggio di '{str(title)}.pdf' in '{out_directory}' completato.")
 
-    plot.show()
+    plot.close()
 
 # end
 
@@ -141,7 +141,53 @@ def plot_accuracy(
 # ########################################################################### #
 # FUNZIONI PER LA FASE DI TESTING
 
-def plot_testing_predictions(
+def plot_testing(
+        id : int,
+        x : np.ndarray,
+        y : np.ndarray,
+        prob : np.ndarray,
+        out_directory : str
+) -> None:
+    
+    """
+        ...
+
+        Parameters:
+        -   ... : ...
+
+        Returns:
+        -   None.
+    """
+
+    os.makedirs(out_directory, exist_ok=True)
+
+    fig, axes = plot.subplots(1, constants.PLOT_TESTING_COLUMNS)
+    fig.suptitle(f"testing-report_{id}", fontsize=20)
+    fig.set_size_inches(constants.PLOT_TESTING_FIGSIZE)
+    fig.tight_layout()
+
+    img         = x.reshape((constants.DIMENSIONE_IMMAGINE, constants.DIMENSIONE_IMMAGINE))
+    test_label  = df.convert_to_label(y)
+    pred_label  = df.convert_to_label(prob)
+
+    image_plot = axes[constants.PLOT_TESTING_IMAGE_PLOT_INDEX]
+    image_plot.imshow(img, cmap='gray')
+    image_plot.set_title(f"Etichetta: {test_label}")
+    image_plot.axis('off')
+
+    bar_chart = axes[constants.PLOT_TESTING_BAR_CHART_INDEX]
+    bar_chart.bar(constants.ETICHETTE_CLASSI, prob*100)
+    bar_chart.set_title(f"Predizione: {pred_label}")
+    bar_chart.set_ylim(0, 105)
+    bar_chart.tick_params('x', labelrotation=35.0)
+
+    plot.savefig(out_directory + f"testing-report_{id}.pdf", bbox_inches='tight')
+    plot.close()
+
+# end
+
+def plot_predictions(
+        idTest : np.ndarray,
         Xtest : np.ndarray,
         Ytest : np.ndarray,
         probabilities : np.ndarray,
@@ -154,44 +200,62 @@ def plot_testing_predictions(
         -   la seconda colonna contiene la rappresentazione della predizione della rete neurale sull'esempio di testing corrispondente, tramite un bar chart.
 
         Parameters:
-        -   plot_mode : serve a distinguere quali grafici degli esempi in input e delle predizioni in output si devono disegnare (vedi documentazione di PlotTestingMode).
+        -   idTest : l'array contenente gli identificativi degli esempi di testing.
+        -   Xtest : la matrice contenente gli esempi di testing da elaborare. Ogni riga e' la rappresentazione dell'immagine del singolo esempio di training.
+        -   Ytest : la matrice contenente le etichette corrispondenti per gli esempi di testing. Ogni riga rappresenta l'etichetta per il rispettivo esempio di testing.
+        -   probabilities : la matrice contenente la distribuzione di probabilita' delle predizioni della rete neurale.
+        -   plot_mode : serve a distinguere per quali esempi in input e quali predizioni in output si devono disegnare i grafici (vedi documentazione di PlotTestingMode).
 
         Returns:
         -   None.
     """
 
-    num_rows = len(Xtest)
+    out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H-%M") + "/"
 
-    fig, axes = plot.subplots(
-        num_rows,
-        constants.PLOT_TESTING_COLUMNS
-    )
+    high_confidence_corrects = []
+    low_confidence_corrects = []
+    wrongs = []
 
-    fig.set_size_inches(constants.PLOT_TESTING_FIGSIZE)
-    fig.subplots_adjust(wspace=0, hspace=0.5)
+    for i, (x, y) in enumerate(zip(probabilities, Ytest)):
+        prob_index = np.argmax(x)
+        target_index = np.argmax(y)
 
-    # TODO: aggiungere modalità plot
-    for i in range(num_rows):
-        img = Xtest[i].reshape((constants.DIMENSIONE_IMMAGINE, constants.DIMENSIONE_IMMAGINE))
-        test_label = df.convert_to_label(Ytest[i])
-        pred_label = df.convert_to_label(probabilities[i])
+        # print("prob:", prob_index, "target:", target_index)
+        if prob_index == target_index:
+            if x[prob_index] >= constants.PLOT_TESTING_CONFIDENCE_THRESHOLD:
+                high_confidence_corrects.append(i)
+            else:
+                low_confidence_corrects.append(i)
+        else:
+            wrongs.append(i)
+    
+    acc = (len(Xtest)-len(wrongs)) / len(Xtest) * 100
 
-        image_plot = axes[i, constants.PLOT_TESTING_IMAGE_PLOT_INDEX]
-        image_plot.imshow(img, cmap='gray')
-        image_plot.set_title(f"Etichetta: {test_label}")
-        image_plot.axis('off')
+    print(f"Esempi di testing: {len(Xtest)}")
+    print(f"Predizioni ad alta confidenza: {len(high_confidence_corrects)}")
+    print(f"Predizioni a bassa confidenza: {len(low_confidence_corrects)}")
+    print(f"Predizioni errate: {len(wrongs)}")
+    print(f"Accuracy: {acc:.2f} %")
 
-        bar_chart = axes[i, constants.PLOT_TESTING_BAR_CHART_INDEX]
-        bar_chart.bar(constants.ETICHETTE_CLASSI, probabilities[i]*100)
-        bar_chart.set_title(f"Etichetta: {pred_label}")
-        bar_chart.set_xticks([_ for _ in range(0, constants.NUMERO_CLASSI)])
-        bar_chart.set_ylim(0, 105)
-
-    out_directory = constants.OUTPUT_DIRECTORY + datetime.now().strftime("%Y-%m-%d_%H:%M") + "/"
-    os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + "Testing report.pdf", bbox_inches='tight')
-
-    plot.show()
+    if plot_mode == constants.PlotTestingMode.NONE:
+        return
+    
+    if plot_mode == constants.PlotTestingMode.ALL or plot_mode == constants.PlotTestingMode.HIGH_CONFIDENCE_CORRECT:
+        out_directory = out_directory+"high_confidence_corrects/" if plot_mode == constants.PlotTestingMode.ALL else out_directory
+        for i in high_confidence_corrects:
+            plot_testing(idTest[i], Xtest[i], Ytest[i], probabilities[i], out_directory)
+    
+    if plot_mode == constants.PlotTestingMode.ALL or plot_mode == constants.PlotTestingMode.LOW_CONFIDENCE_CORRECT:
+        out_directory = out_directory+"low_confidence_corrects/" if plot_mode == constants.PlotTestingMode.ALL else out_directory
+        for i in low_confidence_corrects:
+            plot_testing(idTest[i], Xtest[i], Ytest[i], probabilities[i], out_directory)
+    
+    if plot_mode == constants.PlotTestingMode.ALL or plot_mode == constants.PlotTestingMode.WRONG:
+        out_directory = out_directory+"wrongs/" if plot_mode == constants.PlotTestingMode.ALL else out_directory
+        for i in wrongs:
+            plot_testing(idTest[i], Xtest[i], Ytest[i], probabilities[i], out_directory)
+    
+    print(f"Salvataggio dei 'testing-report' in '{out_directory}' completato.")
 
 # end
 
@@ -199,3 +263,4 @@ def plot_testing_predictions(
 # RIFERIMENTI
 
 # https://github.com/MrDataScience/tutorials/blob/master/Data/MNIST/How%20To%20Plot%20MNIST%20Digits%20Using%20Matplotlib.ipynb
+# https://stackoverflow.com/questions/18717877/prevent-plot-from-showing-in-jupyter-notebook

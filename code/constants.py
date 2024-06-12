@@ -66,6 +66,18 @@ class TrainError(Exception):
 
 # end class TrainError
 
+class TestError(Exception):
+
+    def __init__(self, value):
+        self.value = value
+    # end
+
+    def __str__(self):
+        return(repr(self.value))
+    # end
+
+# end class TestError
+
 class ActivationFunctionError(Exception):
 
     def __init__(self, value):
@@ -155,8 +167,8 @@ OUTPUT_DIRECTORY = "../output/"
 class ReportTitle(Enum):
     """ ... """
 
-    Error = 1, "Error report"
-    Accuracy = 2, "Accuracy report"
+    Error = 1, "error-report"
+    Accuracy = 2, "accuracy-report"
 
     def __int__(self):
         return self.value[0]
@@ -168,13 +180,13 @@ class ReportTitle(Enum):
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
-    'ALL',
-    'CORRECT',
+    'HIGH_CONFIDENCE_CORRECT',
+    'LOW_CONFIDENCE_CORRECT',
     'WRONG',
-    'UNSURE'
+    'ALL'
 ])
 
-PLOT_TESTING_FIGSIZE = (15, 20)
+PLOT_TESTING_FIGSIZE = (12, 4)
 """ ... """
 
 PLOT_TESTING_COLUMNS = 2
@@ -184,6 +196,9 @@ PLOT_TESTING_IMAGE_PLOT_INDEX = 0
 """ ... """
 
 PLOT_TESTING_BAR_CHART_INDEX = 1
+""" ... """
+
+PLOT_TESTING_CONFIDENCE_THRESHOLD = 0.99
 """ ... """
 
 # ########################################################################### #

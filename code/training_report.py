@@ -117,8 +117,8 @@ class TrainingReport:
             Calcola l'errore della rete neurale confrontando le previsioni con i target corrispondenti.
 
             Parameters:
-            -   predictions : e' un'array contenente tutte le previsioni della rete.
-            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
+            -   predictions : la matrice contenente tutte le previsioni della rete.
+            -   targets : la matrice contenente le etichette vere corrispondenti alle previsioni (ground truth).
 
             Returns:
             -   float : la media delle distanze tra le predizioni della rete neurale e le etichette della ground truth.
@@ -138,8 +138,8 @@ class TrainingReport:
             Calcola l'accuratezza della rete neurale confrontando le previsioni con i target corrispondenti.
 
             Parameters:
-            -   predictions : e' un'array contenente tutte le previsioni della rete.
-            -   targets : e' un'array contenente le etichette vere corrispondenti alle previsioni (ground truth).
+            -   predictions : la matrice contenente tutte le previsioni della rete.
+            -   targets : la matrice contenente le etichette vere corrispondenti alle previsioni (ground truth).
 
             Returns:
             -   float : il rapporto tra predizioni corrette e totale delle etichette, moltiplicato per 100 per ottenere il valore percentuale.

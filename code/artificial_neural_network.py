@@ -895,7 +895,6 @@ class NeuralNetwork:
             # STEP 5: stampa del report dell'epoca migliore
             print("\r\t                                                      ")
             print(repr(self.training_report))
-            # history_report.append(copy.deepcopy(self.training_report))
 
             if constants.DEBUG_MODE:
                 break
@@ -908,15 +907,14 @@ class NeuralNetwork:
 
     # end
 
-    def predict(self, Xtest : np.ndarray) -> list[str]:
+    def predict(self, idTest : np.ndarray, Xtest : np.ndarray) -> list[str]:
         
         """
             Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale.
             
             Parameters:
+            -   idTest : l'array contenente gli identificativi degli esempi di testing.
             -   Xtest : la matrice di esempi di testing da elaborare.
-            -   Ytest : ...
-            -   plot_mode : serve a distinguere quali grafici degli esempi in input e delle predizioni in output si devono disegnare (vedi documentazione di PlotTestingMode).
 
             Returns:
             -   preds_label : la lista di etichette calcolate dalla rete neurale per ogni esempio di testing in input.
@@ -924,14 +922,18 @@ class NeuralNetwork:
 
         import dataset_functions as df
 
-        # Calcola le predizioni della rete dagli esempi di testing forniti in input
+        # print(len(Xtest), len(idTest))
+        if not len(Xtest) == len(idTest):
+            raise constants.TestError("Il numero di esempi non e' compatibile con il numero di identificativi.")
+
+        # Calcola le predizioni della rete dagli esempi di testing forniti in input.
         preds_activation = self.__forward_propagation(Xtest)
 
-        # Utilizza la funzione softmax per ottenere valori probabilistici della predizione
+        # Calcola la distribuzione di probabilita' della predizione utilizzando la funzione softmax.
         probabilities = auxfunc.softmax(preds_activation)
 
-        # Recupera le etichette giuste in base alla distribuzione di probabilita'
-        preds_label = [df.convert_to_label(p) for p in probabilities]
+        # Calcola le etichette in base alla distribuzione di probabilita' della predizione.
+        preds_label = [(id, df.convert_to_label(p)) for id, p in zip(idTest, probabilities)]
 
         return preds_label
         
@@ -939,6 +941,7 @@ class NeuralNetwork:
 
     def test(
             self,
+            idTest : np.ndarray,
             Xtest : np.ndarray,
             Ytest : np.ndarray,
             plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.NONE
@@ -948,8 +951,9 @@ class NeuralNetwork:
             Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale. Quindi, confronta le etichette della ground truth con le etichette delle predizioni, mostrando i risultati in una grande tabella (vedi documentazione di plot_testing_predictions()).
 
             Parameters:
-            -   Xtest : la matrice di esempi di testing da elaborare.
-            -   Ytest : ...
+            -   idTest : l'array contenente gli identificativi degli esempi di testing.
+            -   Xtest : la matrice contenente gli esempi di testing da elaborare. Ogni riga e' la rappresentazione dell'immagine del singolo esempio di training.
+            -   Ytest : la matrice contenente le etichette corrispondenti per gli esempi di testing. Ogni riga rappresenta l'etichetta per il rispettivo esempio di testing.
             -   plot_mode : serve a distinguere per quali esempi in input e quali predizioni in output si devono disegnare i grafici (vedi documentazione di PlotTestingMode).
 
             Returns:
@@ -958,9 +962,17 @@ class NeuralNetwork:
 
         import plot_functions as pf
 
+        # print(len(Xtest), len(Ytest))
+        if not len(Xtest) == len(Ytest):
+            raise constants.TestError("Il numero di esempi non e' compatibile con il numero di etichette.")
+        
+        # print(len(Xtest), len(idTest))
+        if not len(Xtest) == len(idTest):
+            raise constants.TestError("Il numero di esempi non e' compatibile con il numero di identificativi.")
+
         preds_activation = self.__forward_propagation(Xtest)
         probabilities = auxfunc.softmax(preds_activation)
-        pf.plot_testing_predictions(Xtest, Ytest, probabilities, plot_mode)
+        pf.plot_predictions(idTest, Xtest, Ytest, probabilities, plot_mode)
     
     # end 
 
@@ -1002,6 +1014,8 @@ class NeuralNetwork:
 
             dill.dump(store_dict, file, dill.HIGHEST_PROTOCOL)
         # end open
+
+        print(f"Salvataggio della rete neurale in '{out_directory+filename}' completato.")
 
     # end
 

@@ -22,7 +22,7 @@ import constants
 def loadDataset(
         training_length : int,
         test_length : int
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     """
         ...
@@ -39,35 +39,56 @@ def loadDataset(
     current_dir = os.path.dirname(__file__)
     dataset_dir = os.path.abspath(os.path.join(current_dir, '..', 'dataset'))
 
-    # Caricamento del file contenenti gli esempi di training
+    # Caricamento del file contenenti gli esempi di training.
     train_file = os.path.join(dataset_dir, 'mnist_train.csv')
 
-    # Parsing del file '.csv' e shuffling
-    train_set = np.loadtxt(train_file, delimiter=',')
+    # Parsing del file '.csv' e aggiunta di un valore identificativo del singolo esempio.
+    ts = np.loadtxt(train_file, delimiter=',')
+    ids = np.array(range(ts.shape[0]))
+    # print(ts[0], type(ts[0]))
+    # print(ts.shape, ts[0].shape)
+
+    train_set = np.concatenate((ids[:, None], ts), axis=1)
+
+    # Shuffling degli elementi del training set.
     np.random.shuffle(train_set)
 
-    # Estrazione del numero di esempi richiesti
+    # Estrazione del numero di esempi richiesti.
     train_set = train_set[:training_length]
 
     # Normalizzazione per valori da 0 a 1
-    train_imgs = np.asfarray(train_set[:, 1:]) / constants.DIMENSIONE_PIXEL
+    train_imgs = np.asfarray(train_set[:, 2:]) / constants.DIMENSIONE_PIXEL
 
-    # Conversione delle etichette degli esempi in rappresentazione one-hot
-    train_labels = convert_to_one_hot(train_set[:, 0])
+    # Conversione delle etichette degli esempi in rappresentazione one-hot.
+    train_labels = convert_to_one_hot(train_set[:, 1])
 
-    # Si ripetono gli stessi passaggi anche per il caricamento del test set
+    # Recupero degli identificativi delle cifre del training set.
+    train_ids = train_set[:, 0].astype(int)
+
+    # Si ripetono gli stessi passaggi anche per il caricamento del test set.
     test_file = os.path.join(dataset_dir, 'mnist_test.csv')
-    test_set = np.loadtxt(test_file, delimiter=',')
+
+    ts = np.loadtxt(test_file, delimiter=',')
+    ids = np.array(range(ts.shape[0]))
+    test_set = np.concatenate((ids[:, None], ts), axis=1)
     np.random.shuffle(test_set)
+
     test_set = test_set[:test_length]
-    test_imgs = np.asfarray(test_set[:, 1:]) / constants.DIMENSIONE_PIXEL
-    test_labels = convert_to_one_hot(test_set[:, 0])
+    test_imgs = np.asfarray(test_set[:, 2:]) / constants.DIMENSIONE_PIXEL
+    test_labels = convert_to_one_hot(test_set[:, 1])
+    test_ids = test_set[:, 0].astype(int)
+
+    # print("id:", test_set[0,0], "label:", test_set[0,1])
+    # print("label:", test_labels[0])
+    # print("id:", test_ids[0])
 
     print("\r\nLoading del dataset completato.                               ")
     
     return (
+        train_ids,
         train_imgs,
         train_labels,
+        test_ids,
         test_imgs,
         test_labels
     )
@@ -150,7 +171,7 @@ def convert_to_label(vet : np.ndarray) -> str:
         -   ...
     """
 
-    return constants.ETICHETTE_CLASSI[vet.argmax()]
+    return constants.ETICHETTE_CLASSI[np.argmax(vet)]
 
 # end
 
