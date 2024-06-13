@@ -42,18 +42,6 @@ class InputLayerError(Exception):
 
 # end class InputLayerError
 
-class HiddenLayerError(Exception):
- 
-    def __init__(self, value):
-        self.value = value
-    # end
- 
-    def __str__(self):
-        return(repr(self.value))
-    # end
-
-# end class HiddenLayerError
-
 class TrainError(Exception):
 
     def __init__(self, value):
@@ -125,13 +113,16 @@ ETICHETTE_CLASSI = [
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
 """ ... """
 
-COPPIE_TRAINING = 12500
+COPPIE_TRAINING = 1000
 """ ... """
 
-COPPIE_TEST = 2500
+COPPIE_TEST = 200
 """ ... """
 
-DEFAULT_K_FOLD_VALUE = 10
+DEFAULT_EPOCHS = 10
+""" ... """
+
+DEFAULT_K_FOLD_VALUE = 2
 """ ... """
 
 DIMENSIONE_NEURONE_INPUT = 1
@@ -141,9 +132,6 @@ DIMENSIONE_PIXEL = 255
 """ ... """
 
 DIMENSIONE_IMMAGINE = 28
-""" ... """
-
-DEFAULT_EPOCHS = 100
 """ ... """
 
 DEFAULT_LEARNING_RATE = 0.1
@@ -170,14 +158,8 @@ OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
 class ReportTitle(Enum):
     """ ... """
 
-    Error = 1, "error-report"
-    Accuracy = 2, "accuracy-report"
-
-    def __int__(self):
-        return self.value[0]
-
-    def __str__(self):
-        return self.value[1]
+    Error = "error-report"
+    Accuracy = "accuracy-report"
 
 # end class ReportTitle
 
@@ -190,6 +172,7 @@ PlotTestingMode = Enum('PlotTestingMode', [
     'WRONG',
     'ALL'
 ])
+""" ... """
 
 PLOT_TESTING_FIGSIZE = (12, 4)
 """ ... """

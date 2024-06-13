@@ -23,8 +23,9 @@ from datetime import datetime
 # FUNZIONI PER LA FASE DI ADDESTRAMENTO
 
 def plot_training_epochs(
-        title : constants.ReportTitle,
         out_directory : str,
+        title : str,
+        y_label : str,
         history_training : list[float],
         history_validation : list[float],
         x_max : float = None,
@@ -35,8 +36,9 @@ def plot_training_epochs(
         Disegna un grafico che confronta le misure calcolate in fase di training e in fase di validazione.
 
         Parameters:
-        -   title : il titolo del grafico.
         -   out_directory : la directory di output dove salvare il grafico richiesto.
+        -   title : il titolo del grafico.
+        -   y_label : l'etichetta per l'asse delle ordinate.
         -   history_training : la lista di misure calcolate sui dati di addestramento.
         -   history_validation : la lista di misure calcolate sui dati di validazione.
 
@@ -48,9 +50,6 @@ def plot_training_epochs(
         # print(len(history_training), len(history_validation))
         if not len(history_training) == len(history_validation):
             raise IndexError("Le misure calcolate in fase training e validation non coincidono.")
-    
-    if not isinstance(title, constants.ReportTitle):
-        raise TypeError("Il titolo deve essere uno dei valori dell'enumerazione ReportTitle.")
 
     h_val = [] if history_validation is None else history_validation 
 
@@ -65,26 +64,25 @@ def plot_training_epochs(
     if y_max is None:
         y_max = max_value + max_value * 0.1
 
-    plot.figure(num=int(title))
-    plot.title(str(title))
+    plot.title(title)
 
-    plot.xlim(x_min, x_max)
+    plot.xlim(x_min, x_max+1)
     plot.xlabel('Epochs')
-    plot.xticks(range(x_min, x_max))
+    plot.xticks(range(x_min, x_max+1, 10))
 
     plot.ylim(y_min, y_max)
-    plot.ylabel(title.name)
+    plot.ylabel(y_label)
 
-    plot.plot(range(x_min, x_max), history_training, 'b', label='Training ' + title.name)
+    plot.plot(range(x_min, x_max), history_training, 'b', label=f'Training {y_label}')
 
     if history_validation is not None:
-        plot.plot(range(x_min, x_max), h_val, 'r', label='Validation ' + title.name)
+        plot.plot(range(x_min, x_max), h_val, 'r', label=f'Validation {y_label}')
 
     plot.legend()
 
     os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + str(title) + '.pdf', bbox_inches='tight')
-    print(f"Salvataggio di '{str(title)}.pdf' in '{out_directory}' completato.")
+    plot.savefig(out_directory + title + '.pdf', bbox_inches='tight')
+    print(f"Salvataggio di '{title}.pdf' in '{out_directory}' completato.")
 
     plot.close()
 
@@ -92,6 +90,7 @@ def plot_training_epochs(
 
 def plot_error(
         out_directory : str,
+        title : str,
         history_training_costs : list[float],
         history_validation_costs : list[float] = None
 ) -> None:
@@ -101,6 +100,7 @@ def plot_error(
 
         Parameters:
         -   out_directory : la directory di output dove salvare il grafico delle curve di errore.
+        -   title : il titolo del grafico.
         -   history_training_costs : la lista di misure di errore calcolate sui dati di addestramento.
         -   history_validation_costs : la lista di misure di errore calcolate sui dati di validazione.
 
@@ -109,8 +109,9 @@ def plot_error(
     """
 
     plot_training_epochs(
-        constants.ReportTitle.Error,
         out_directory,
+        f"{title}_{constants.ReportTitle.Error.value}",
+        constants.ReportTitle.Error.name,
         history_training_costs,
         history_validation_costs
     )
@@ -119,6 +120,7 @@ def plot_error(
 
 def plot_accuracy(
         out_directory : str,
+        title : str,
         history_training_accuracy : list[float],
         history_validation_accuracy : list[float] = None
 ) -> None:
@@ -128,6 +130,7 @@ def plot_accuracy(
 
         Parameters:
         -   out_directory : la directory di output dove salvare il grafico delle curve di accuracy.
+        -   title : il titolo del grafico.
         -   history_training_accuracy : la lista di misure di accuracy calcolate sui dati di addestramento.
         -   history_validation_accuracy : la lista di misure di accuracy calcolate sui dati di validazione.
 
@@ -136,8 +139,9 @@ def plot_accuracy(
     """
 
     plot_training_epochs(
-        constants.ReportTitle.Accuracy,
         out_directory,
+        f"{title}_{constants.ReportTitle.Accuracy.value}",
+        constants.ReportTitle.Accuracy.name,
         history_training_accuracy,
         history_validation_accuracy,
         y_max=100

@@ -140,11 +140,6 @@ class NeuralNetwork:
         return self._err_fun
     # end
 
-    @err_fun.setter
-    def err_fun(self, value : constants.ErrorFunctionType) -> None:
-        self._err_fun = value
-    # end
-
     @property
     def training_report(self):
         """..."""
@@ -157,11 +152,10 @@ class NeuralNetwork:
     def __init__(
             self,
             i_size : int,
-            hidden_sizes : list[int],
-            output_size : int,
-            hidden_act_funs : list[constants.ActivationFunctionType] = auxfunc.sigmoid,
-            output_act_fun : constants.ActivationFunctionType = auxfunc.sigmoid,
+            l_sizes : list[int],
+            l_act_funs : list[constants.ActivationFunctionType] = [auxfunc.leaky_relu, auxfunc.identity],
             e_fun : constants.ErrorFunctionType = auxfunc.cross_entropy_softmax,
+            t_rep : TrainingReport = None,
             random_init : bool = True
     ) -> None:
         
@@ -171,80 +165,64 @@ class NeuralNetwork:
 
             Parameters:
             -   i_size : e' la dimensione del vettore in input alla rete neurale
-            -   hidden_sizes : può essere un numero o una lista contenente la dimensione di uno o più-  hidden layer della rete neurale.
-            -   output_size : e' la dimensione dell'output layer della rete neurale.
-            -   hidden_act_funs : può essere una funzione o una lista contenente le funzioni di attivazione di uno o più hidden layer della rete neurale.
-            -   output_act_fun : e' la funzione di attivazione dei neuroni dell'output layer.
+            -   l_sizes : e' una lista contenente le dimensioni di uno o piu' hidden layer e dell'output layer della rete neurale.
+            -   l_act_funs : e' una lista contenente le funzioni di attivazione di uno o piu' hidden layer e dell'output layer della rete neurale.
             -   e_fun : e' la funzione di errore utilizzata per verificare la qualità della rete neurale.
-            -   random_init : indica se pesi e bias della rete neurale saranno inizializzati tramite un generatore di valori casuali con seed fissato o meno.
+            -   t_rep : e' un oggetto della classe TrainingReport che contiene alcune metriche di valutazione per la fase di addestramento della rete neurale.
+            -   random_init : indica se i parametri (weights, biases) della rete neurale devono essere inizializzati tramite un generatore di valori casuali con seed fissato o meno.
 
             Returns:
             -   None.
         """
         
-        # Inizializzazione dell'input
+        # Inizializzazione della matrice di input della rete neurale.
         if (i_size <= 0):
-            raise constants.InputLayerError("La dimensione dell'input della rete neurale deve essere maggiore di 0.")
+            raise constants.InputLayerError("La dimensione dell'input della rete neurale deve essere strettamente maggiore di 0.")
         self._input_size = i_size
-        self.inputs = np.zeros((1, self.input_size))
+        self.inputs = np.zeros((constants.DIMENSIONE_NEURONE_INPUT, self.input_size))
 
-        # Inserimento delle dimensioni dell'input e degli hidden layer in una lista
-        l_sizes = []
-        l_sizes.insert(0, self.input_size)
-        if np.isscalar(hidden_sizes):
-            l_sizes.append(hidden_sizes)
-        else:
-            for hs in hidden_sizes:
-                l_sizes.append(hs)
+        # Controlli sulla lista delle dimensioni e delle funzioni di attivazione dei layers.
+        if not isinstance(l_sizes, list):
+            raise constants.LayerError("Le dimensioni dei layers devono essere passate attraverso un oggetto 'list'!")
         
-        # Inserimento delle funzioni di attivazioni degli hidden e dell'output layer in una lista
-        l_act_funs = []
-        if not isinstance(hidden_act_funs, list):
-            l_act_funs.append(hidden_act_funs)
-        else:
-            for hf in hidden_act_funs:
-                l_act_funs.append(hf)
-        l_act_funs.append(output_act_fun)
-
-        # Controllo sul numero di hidden layer e funzioni di attivazioni inserite
-        if (len(l_sizes) != len(l_act_funs)):
-            raise constants.HiddenLayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
+        if not isinstance(l_act_funs, list):
+            raise constants.LayerError("Le funzioni di attivazioni devono essere passate attraverso un oggetto 'list'!")
         
-        # Inizializzazione degli hidden layers
+        if not len(l_sizes) == len(l_act_funs):
+            raise constants.LayerError("Il numero di funzioni di attivazione deve essere uguale al numero di layer!")
+        
+        if (not len(l_sizes) >= 2) or (not len(l_act_funs) >= 2):
+            raise constants.LayerError("I layers della rete neurale devono essere almeno 2 (e.g. un hidden layer e l'output layer)!")
+        
+        # Inizializzazione e aggiunta dei layers.
         self._layers = []
-        for i in range(1, len(l_sizes)):
+        for i, curr_size in enumerate(l_sizes):
             # print(f'Hidden layer n.{i}')
-            prev_size = l_sizes[i-1]
-            actual_size = l_sizes[i]
-            hl = Layer(actual_size, prev_size, l_act_funs[i], random_init)
-            self.layers.append(hl)
+            prev_size = self.input_size if i == 0 else l_sizes[i-1]
+            l = Layer(curr_size, prev_size, l_act_funs[i], random_init)
+            self._layers.append(l)
 
-        # Inizializzazione dell'output layer
-        ol = Layer(output_size, l_sizes[-1], l_act_funs[-1], random_init)
-        self.layers.append(ol)
-
-        # Inizializzazione del vettore serializzato di pesi / bias
-        weights_size = 0
-        biases_size = 0
+        # Inizializzazione del vettore serializzato di pesi / bias.
+        weights_size = self.input_size * l_sizes[0]
+        biases_size = l_sizes[0]
 
         for i in range(1, len(l_sizes)):
             weights_size += l_sizes[i-1] * l_sizes[i]
             biases_size += l_sizes[i]
 
-        weights_size += l_sizes[-1] * output_size
-        biases_size += output_size
-
         self._weights = np.zeros(weights_size)
         self._biases = np.zeros(biases_size)
+        self.weights, self.biases = self.__gather_weights()
 
-        # Inizializzazione della profondita' della rete neurale
+        # Inizializzazione della profondita' della rete neurale.
         # La profondita' della rete e' data dal numero di layer totali.
         self._depth = len(self.layers)
 
-        # Inizializzazione della funzione di errore della rete
+        # Inizializzazione della funzione di errore della rete neurale.
         self._err_fun = e_fun
         
-        self._training_report = TrainingReport()
+        # Inizializzazione delle metriche di valutazione della fase di addestramento.
+        self._training_report = TrainingReport() if t_rep is None else t_rep
 
     # end
     
@@ -940,10 +918,10 @@ class NeuralNetwork:
 
     def test(
             self,
+            out_directory : str,
             idTest : np.ndarray,
             Xtest : np.ndarray,
             Ytest : np.ndarray,
-            out_directory : str,
             plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.REPORT
     ) -> None:
         
@@ -951,10 +929,10 @@ class NeuralNetwork:
             Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale. Quindi, confronta le etichette della ground truth con le etichette delle predizioni, mostrando i risultati in una grande tabella (vedi documentazione di plot_testing_predictions()).
 
             Parameters:
+            -   out_directory : la directory di output dove salvare i grafici richiesti.
             -   idTest : l'array contenente gli identificativi degli esempi di testing.
             -   Xtest : la matrice contenente gli esempi di testing da elaborare. Ogni riga e' la rappresentazione dell'immagine del singolo esempio di training.
             -   Ytest : la matrice contenente le etichette corrispondenti per gli esempi di testing. Ogni riga rappresenta l'etichetta per il rispettivo esempio di testing.
-            -   out_directory : la directory di output dove salvare i grafici richiesti.
             -   plot_mode : serve a distinguere per quali esempi in input e quali predizioni in output si devono disegnare i grafici (vedi documentazione di PlotTestingMode).
 
             Returns:
@@ -991,12 +969,12 @@ class NeuralNetwork:
 
         import dill, os
 
-        hidden_sizes = []
-        hidden_act_funs = []
+        layers_sizes = []
+        layers_act_funs = []
 
-        for l in self.layers[:-1]:
-            hidden_sizes.append(l.layer_size)
-            hidden_act_funs.append(l.act_fun)
+        for l in self.layers:
+            layers_sizes.append(l.layer_size)
+            layers_act_funs.append(l.act_fun)
         
         os.makedirs(out_directory, exist_ok=True)
     
@@ -1004,11 +982,10 @@ class NeuralNetwork:
         with open(out_directory+out_name, 'wb') as file:
             store_dict = {
                 "input_size"        : self.input_size,
-                "hidden_sizes"      : hidden_sizes,
-                "output_size"       : self.layers[-1].layer_size,
-                "hidden_act_funs"   : hidden_act_funs,
-                "output_act_fun"    : self.layers[-1].act_fun,
+                "layers_sizes"      : layers_sizes,
+                "layers_act_funs"   : layers_act_funs,
                 "err_fun"           : self.err_fun,
+                "training_report"   : self.training_report,
                 "weights"           : self.weights,
                 "biases"            : self.biases
             }
@@ -1030,7 +1007,7 @@ class NeuralNetwork:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_params = {pprint.pformat(self.training_report)}\n)'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_report = {pprint.pformat(self.training_report)}\n)'
     
     # end
 
@@ -1055,11 +1032,10 @@ class NeuralNetwork:
             store_dict = dill.load(file)
             
             input_size      = store_dict["input_size"]
-            hidden_sizes    = store_dict["hidden_sizes"]
-            output_size     = store_dict["output_size"]
-            hidden_act_funs = store_dict["hidden_act_funs"]
-            output_act_fun  = store_dict["output_act_fun"]
+            layers_sizes    = store_dict["layers_sizes"]
+            layers_act_funs = store_dict["layers_act_funs"]
             err_fun         = store_dict["err_fun"]
+            training_report = store_dict["training_report"]
             weights         = store_dict["weights"]
             biases          = store_dict["biases"]
         
@@ -1067,15 +1043,11 @@ class NeuralNetwork:
 
         net = NeuralNetwork(
             input_size,
-            hidden_sizes,
-            output_size,
-            hidden_act_funs,
-            output_act_fun,
-            err_fun
+            layers_sizes,
+            layers_act_funs,
+            err_fun,
+            training_report
         )
-
-        # TODO: aggiungere TrainingParams.
-        # TODO: controllare che i parametri da file sono compatibili con la rete creata.
 
         net.weights = copy.deepcopy(weights)
         net.biases = copy.deepcopy(biases)
