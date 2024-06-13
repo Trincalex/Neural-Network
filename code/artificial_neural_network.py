@@ -754,6 +754,8 @@ class NeuralNetwork:
                 raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
         
         history_report : list[TrainingReport] = []
+        prev_num_epochs = self.training_report.num_epochs
+        prev_elapsed_time = self.training_report.elapsed_time
 
         start_time = time.time()
         print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
@@ -854,7 +856,11 @@ class NeuralNetwork:
 
             # STEP 4: aggiornamento del report (e, se necessario, dei parametri)
             print("\r\tAggiornamento del report in corso...                  ", end='\r')
-            curr_net_report = TrainingReport(e+1, tot_time, t_cost, v_cost, t_acc, v_acc)
+            curr_net_report = TrainingReport(
+                prev_num_epochs + (e+1),
+                prev_elapsed_time + tot_time,
+                t_cost, v_cost, t_acc, v_acc
+            )
             history_report.append(copy.deepcopy(curr_net_report))
 
             """

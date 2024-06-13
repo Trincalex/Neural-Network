@@ -53,10 +53,12 @@ def plot_training_epochs(
 
     h_val = [] if history_validation is None else history_validation 
 
-    max_value = max(history_training + h_val)
-
     x_min = 0
     y_min = 0
+
+    min_value   = min(history_training + h_val)
+    max_value   = max(history_training + h_val)
+    mean_value  = sum(history_training + h_val) / len(history_training + h_val)
 
     if x_max is None:
         x_max = len(history_training)
@@ -68,10 +70,15 @@ def plot_training_epochs(
 
     plot.xlim(x_min, x_max+1)
     plot.xlabel('Epochs')
-    plot.xticks(range(x_min, x_max+1, 10))
+    plot.xticks(range(x_min, x_max+1, x_max//10))
 
     plot.ylim(y_min, y_max)
     plot.ylabel(y_label)
+
+    y_ticks = [0, min_value, max_value, mean_value]
+    if y_label == constants.ReportTitle.Accuracy.name:
+        y_ticks = y_ticks + [100]
+    plot.yticks(y_ticks)
 
     plot.plot(range(x_min, x_max), history_training, 'b', label=f'Training {y_label}')
 
