@@ -1,24 +1,42 @@
 Nel framework Keras si utilizza un valore percentuale per la scelta del numero di esempi del dataset: possiamo implementare questa scelta progettuale o è meglio lasciare una costante?
 
 
-Quale funzione di attivazione bisogna utilizzare per l'output layer?
-Si dovrebbe utilizzare la softmax per i problemi di multi-classificazione?
-
+> Quale funzione di attivazione bisogna utilizzare per l'output layer?
+> Si dovrebbe utilizzare la softmax per i problemi di multi-classificazione?
+La softmax è una funzione di attivazione "GLOBALE" perché dipende dall'input del nodo e dall'input di tutti gli altri nodi. Utilizzare l'identità 
 
 La k-fold è implementata correttamente?
 Cioè, dopo aver trovato la miglior fold, bisogna riaddestrare la rete sull'intero training set?
 
+>Serve per la valutazione degli iper-parametri scelti.
+>Si addestra il modello per ogni fold, alla fine si ottiene una media e una deviazione standard. Alla fine del processo si sceglie la migliore sul validation set che generalizza meglio. Si ottengono 10 accuratezze di cui calcolare media e deviazione standard.
+A quale epoca si ottiene 
 
-I grafici per il testing report sono impostati correttamente?
-Come ottenere una visione globale dei risultati di testing (es. tabella)?
+> I grafici per il testing report sono impostati correttamente?
+> Come ottenere una visione globale dei risultati di testing (es. tabella)?
 
 
 Nella fase di addestramento bisogna implementare l'early stopping?
+pazienza = dopo 20 epoche
+passare a 500 epoche
 
 
-Bisogna utilizzare sia il metodo di "grid search" che il metodo di "random search"?
-Si devono confrontare i risultati nella documentazione?
-
+> Bisogna utilizzare sia il metodo di "grid search" che il metodo di "random search"?
+> Si devono confrontare i risultati nella documentazione?
+Per capire quali configurazione di iper-parametri scegliere nello spazio degli iper-parametri.
 
 Come possiamo strutturare la documentazione?
+Parte A (libreria)
+Non descrivere teoricamente (serve all'orale), solo alto livello e in maniera qualitativa
+Le principali strutture dati utilizzate (attibuti, metodi, ecc.)
+Descrivere in modo qualitativo input / output di classi e metodi
 
+Parte B (sperimentale)
+Descrivere in modo dettagliato il setup sperimentale.
+Descrivere il goal.
+Descrivere come è stato scelto il dataset, iper-parametri, numero epoche, se esiste una condizione di early-stopping, tutte le informazioni necessarie per ripetere l'esperimento con le proprie librerie.
+Presentare risultati specifici e risultati sintetici.
+
+Discussione e conclusioni
+Confronto tra grid search e random search (es. tabelle).
+Discutere e motivare i risultati ottenuti.

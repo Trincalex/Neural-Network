@@ -113,16 +113,25 @@ ETICHETTE_CLASSI = [
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
 """ ... """
 
-COPPIE_TRAINING = 1000
+COPPIE_TRAINING = 12500
 """ ... """
 
-COPPIE_TEST = 200
+COPPIE_TEST = 2500
 """ ... """
 
-DEFAULT_EPOCHS = 10
+DEFAULT_EPOCHS = 500
 """ ... """
 
-DEFAULT_K_FOLD_VALUE = 2
+DEFAULT_MINI_BATCH_SIZE = 64
+""" ... """
+
+DEFAULT_EARLY_STOPPING_DELTA = 0.1
+""" La soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti nell'addestramento. Si sceglie di default il valore 0.1 perche', essendo il dataset MNIST grande e relativamente pulito, il modello dovrebbe migliorare in modo più consistente. """
+
+DEFAULT_EARLY_STOPPING_PATIENCE = 20
+""" Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
+
+DEFAULT_K_FOLD_VALUE = 10
 """ ... """
 
 DIMENSIONE_NEURONE_INPUT = 1
@@ -186,7 +195,7 @@ PLOT_TESTING_IMAGE_PLOT_INDEX = 0
 PLOT_TESTING_BAR_CHART_INDEX = 1
 """ ... """
 
-PLOT_TESTING_CONFIDENCE_THRESHOLD = 0.99
+PLOT_TESTING_CONFIDENCE_THRESHOLD = 0.55
 """ ... """
 
 # ########################################################################### #

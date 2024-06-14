@@ -14,15 +14,16 @@
 
 from artificial_layer import Layer
 from training_report import TrainingReport
-
 import constants
 import auxfunc
+
 import numpy as np
 import pprint
 import time
 from datetime import datetime
 import copy
 import matplotlib.pyplot as plot
+import gc
 
 # ########################################################################### #
 # IMPLEMENTAZIONE DELLA CLASSE NEURALNETWORK
@@ -461,7 +462,7 @@ class NeuralNetwork:
             self,
             network_outputs : list[np.ndarray],
             network_activations : list[np.ndarray],
-            training_labels : np.ndarray,
+            training_labels : np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         
         """
@@ -620,6 +621,54 @@ class NeuralNetwork:
 
     # end
 
+    def __resilient_back_propagation(
+            self,
+            network_outputs : list[np.ndarray],
+            network_activations : list[np.ndarray],
+            training_labels : np.ndarray,
+            eta_minus : float = 0.5,
+            eta_plus : float = 1.2,
+            delta_zero : float = 0.0125,
+            delta_min : float = 0.00001,
+            delta_max : float = 1
+    ) -> None:
+
+        """
+            Gli algoritmi di Resilient Backpropagation (Rprop) sono algoritmi iterativi che aggiornano i parametri di una rete neurale (weights, biases) ottimizzando la funzione di costo tramite calcolo del suo gradiente rispetto ai pesi:
+            -   Risolvono il principale problema del batch learning, ovvero la necessita' di configurare a priori gli iper-parametri della rete neurale.
+            -   Considerano solo il segno delle derivate parziali della funzione di costo da ottimizzare e non il loro valore assoluto. Ad ogni iterazione, ciascun peso della rete viene aumentato o diminuito se il segno della derivata parziale e' positivo o negativo, rispettivamente.
+            -   Aggiustano la step size (e.g. learning rate) in base a come cambia il segno della derivata parziale della funzione di costo su iterazioni consecutive. Se il segno cambia, si diminuisce il learning rate (perche' e' stato superato il punto di minimo); altrimenti, lo si incrementa (per scendere piu' velocemente verso il punto di minimo).
+
+            Parameters:
+            -   network_outputs : la lista di output di ogni layer della rete.
+            -   network_activations : la lista di valori di attivazione di ogni layer della rete.
+            -   training_labels : e' la matrice di tutte le etichette delle coppie del dataset.
+            -   ... : ...
+
+            Returns:
+            -   ... : ...
+        """
+
+        # Controlli sui valori dei parametri in input.
+        if not eta_plus > 1:
+            raise constants.TrainError(f"Il valore di 'eta_plus' ({eta_plus}) deve essere maggiore di 1.")
+        
+        if not (eta_minus >= 0 and eta_minus <= 1):
+            raise constants.TrainError(f"Il valore di 'eta_minus' ({eta_minus}) deve essere compreso tra 0 e 1.")
+        
+        if not delta_zero > 0:
+            raise constants.TrainError(f"Il valore di 'delta_zero' ({delta_zero}) deve essere maggiore di 0.")
+        
+        if not delta_min > 0:
+            raise constants.TrainError(f"Il valore di 'delta_min' ({delta_min}) deve essere maggiore di 0.")
+        
+        if not delta_max > 0:
+            raise constants.TrainError(f"Il valore di 'delta_max' ({delta_max}) deve essere maggiore di 0.")
+    
+        # TODO: completare implementazione Rprop.
+    
+    # end
+
     # def __resilient_back_propagation(self,
     #         X_train : np.array,
     #         Y_train : np.array,
@@ -724,7 +773,10 @@ class NeuralNetwork:
             training_labels : np.ndarray,
             validation_data : np.ndarray = None,
             validation_labels : np.ndarray = None,
+            examples : int = constants.DEFAULT_MINI_BATCH_SIZE,
             epochs : int = constants.DEFAULT_EPOCHS,
+            es_patience : int = constants.DEFAULT_EARLY_STOPPING_PATIENCE,
+            es_delta : float = constants.DEFAULT_EARLY_STOPPING_DELTA,
             learning_rate : float = constants.DEFAULT_LEARNING_RATE
     ) -> list[TrainingReport]:
         
@@ -737,103 +789,118 @@ class NeuralNetwork:
             -   training_labels : una matrice numpy.ndarray contenente le etichette corrispondenti per i dati di addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
             -   validation_data : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta un esempio di addestramento.
             -   validation_labels : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
+            -   examples : ...
             -   epochs : il numero di iterazioni per cui il modello deve essere addestrato. Un'epoca e' un'esecuzione completa dell'addestramento attraverso l'intero training_set.
+            -   es_patience : ...
+            -   es_delta : ...
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
             -   None.
         """
 
-        # Controllo sulla compatibilita' di training_data e training_labels
+        # Controllo sulla compatibilita' di training_data e training_labels.
         if (not training_data.shape[0] == training_labels.shape[0]):
             raise constants.TrainError(f"Le dimensioni del dataset [{training_data.shape[0]}] e delle labels [{training_labels.shape[0]}] di addestramento non sono compatibili.")
 
+        # Controllo sulla compatibilita' di validation_data e validation_labels.
         if validation_data is not None and validation_labels is not None:
-            # Controllo sulla compatibilita' di validation_data e validation_labels
             if (not validation_data.shape[0] == validation_labels.shape[0]):
                 raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
         
+        # Calcolo degli indici dei mini-batch di addestramento.
+        training_batches = auxfunc.compute_batches(len(training_data), examples)
+        
+        # Inizializzazione delle variabili necessarie all'aggiornamento dei report.
         history_report : list[TrainingReport] = []
         prev_num_epochs = self.training_report.num_epochs
         prev_elapsed_time = self.training_report.elapsed_time
 
+        # Salvataggio del tempo di inizio dell'addestramento della rete neurale.
         start_time = time.time()
         print(f"\nAddestramento iniziato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
 
-        # Prima di iniziare l'addestramento, recuperiamo i pesi dai layer della rete.
+        # Prima di iniziare l'addestramento, si recuperano tutti i pesi dai layer della rete.
         self.weights, self.biases = self.__gather_weights()
 
         for e in range(epochs):
             print(f"\nEpoca {e+1} di {epochs}")
 
-            # FASE DI TRAINING
+            # STEP 1 : FASE DI TRAINING
 
-            best_net_params = {
-                "Weights" : copy.deepcopy(self.weights),
-                "Biases" : copy.deepcopy(self.biases),
-                "Report" : copy.deepcopy(self.training_report)
-            }
+            for start, end in training_batches:
 
-            # STEP 1: forward propagation su tutti gli esempi di addestramento
-            print("\r\tEsecuzione della forward propagation...               ", end='\r')
-            training_outputs, training_activations = self.__forward_propagation(
-                training_data,
-                train=True
-            )
+                best_net_params = {
+                    "Weights" : copy.deepcopy(self.weights),
+                    "Biases" : copy.deepcopy(self.biases),
+                    "Report" : copy.deepcopy(self.training_report)
+                }
 
-            if constants.DEBUG_MODE:
-                with np.printoptions(threshold=np.inf):
-                    print("--- NETWORK TRAINING (targets) ---\n")
-                    print(training_labels.shape)
-                    pprint.pprint(training_labels)
-                    print("\n-----\n")
-                    print("--- NETWORK TRAINING (outputs) ---\n")
-                    print([out.shape for out in training_outputs])
-                    pprint.pprint(training_outputs)
-                    print("\n-----\n")
-                    print("--- NETWORK TRAINING (activations) ---\n")
-                    print([act.shape for act in training_activations])
-                    pprint.pprint(training_activations)
-                    print("\n-----\n\n")
+                # STEP 1a: forward propagation su tutti gli esempi di addestramento
+                print("\r\tEsecuzione della forward propagation...               ", end='\r')
+                training_outputs, training_activations = self.__forward_propagation(
+                    training_data[start:end],
+                    train=True
+                )
 
-            # STEP 2: backpropagation su tutti gli esempi di addestramento
-            print("\r\tEsecuzione della backpropagation...                   ", end='\r')
-            gw, gb = self.__back_propagation(
-                training_outputs,
-                training_activations,
-                training_labels
-            )
+                if constants.DEBUG_MODE:
+                    with np.printoptions(threshold=np.inf):
+                        print("--- NETWORK TRAINING (targets) ---\n")
+                        print(training_labels[start:end].shape)
+                        pprint.pprint(training_labels[start:end])
+                        print("\n-----\n")
+                        print("--- NETWORK TRAINING (outputs) ---\n")
+                        print([out.shape for out in training_outputs])
+                        pprint.pprint(training_outputs)
+                        print("\n-----\n")
+                        print("--- NETWORK TRAINING (activations) ---\n")
+                        print([act.shape for act in training_activations])
+                        pprint.pprint(training_activations)
+                        print("\n-----\n\n")
 
-            # STEP 3: aggiornamento dei parametri
-            print("\r\tAggiornamento dei parametri in corso...               ", end='\r')
-            self.__gradient_descent(gw, gb, learning_rate)
+                # STEP 1b: backpropagation su tutti gli esempi di addestramento
+                print("\r\tEsecuzione della backpropagation...                   ", end='\r')
+                gw, gb = self.__back_propagation(
+                    training_outputs,
+                    training_activations,
+                    training_labels[start:end]
+                )
 
-            # STEP 4: calcolo dell'errore di addestramento
-            print("\r\tCalcolo dell'errore di addestramento in corso...      ", end='\r')
-            t_cost = self.training_report.compute_error(
-                training_activations[-1],
-                training_labels,
-                self.err_fun
-            )
+                # STEP 1c: aggiornamento dei parametri
+                print("\r\tAggiornamento dei parametri in corso...               ", end='\r')
+                self.__gradient_descent(gw, gb, learning_rate)
 
-            # STEP 5: calcolo dell'accuracy di addestramento
-            print("\r\tCalcolo dell'accuracy di addestramento in corso...    ", end='\r')
-            t_acc = self.training_report.compute_accuracy(
-                training_activations[-1],
-                training_labels
-            )
+                # STEP 1d: calcolo dell'errore di addestramento
+                print("\r\tCalcolo dell'errore di addestramento in corso...      ", end='\r')
+                t_cost = self.training_report.compute_error(
+                    training_activations[-1],
+                    training_labels[start:end],
+                    self.err_fun
+                )
 
-            end_time = time.time()
-            tot_time = end_time - start_time
+                # STEP 1e: calcolo dell'accuracy di addestramento
+                print("\r\tCalcolo dell'accuracy di addestramento in corso...    ", end='\r')
+                t_acc = self.training_report.compute_accuracy(
+                    training_activations[-1],
+                    training_labels[start:end]
+                )
+
+                del training_outputs
+                del training_activations
+                del gw, gb
+                gc.collect()
             
-            if validation_data is not None and validation_labels is not None:
-                # FASE DI VALIDATION
+            # end for start, end
+            
+            # STEP 2 : FASE DI VALIDATION
 
-                # STEP 1: forward propagation su tutti gli esempi di validazione
+            if validation_data is not None and validation_labels is not None:
+
+                # STEP 2a: forward propagation su tutti gli esempi di validazione
                 print("\r\tEsecuzione della forward propagation...               ", end='\r')
                 validation_activations = self.__forward_propagation(validation_data)
 
-                # STEP 2: calcolo dell'errore di validazione
+                # STEP 2b: calcolo dell'errore di validazione
                 print("\r\tCalcolo dell'errore di validazione in corso...        ", end='\r')
                 v_cost = self.training_report.compute_error(
                     validation_activations,
@@ -841,27 +908,28 @@ class NeuralNetwork:
                     self.err_fun
                 )
 
-                # STEP 3: calcolo dell'accuracy di validazione
+                # STEP 2c: calcolo dell'accuracy di validazione
                 print("\r\tCalcolo dell'accuracy di validazione in corso...      ", end='\r')
                 v_acc = self.training_report.compute_accuracy(
                     validation_activations,
                     validation_labels
                 )
 
-                end_time = time.time()
-                tot_time = end_time - start_time
-            else:
-                v_cost = 0.0
-                v_acc = 0.0
+                del validation_activations
+                gc.collect()
 
-            # STEP 4: aggiornamento del report (e, se necessario, dei parametri)
+            else: v_cost = 0.0; v_acc = 0.0
+
+            end_time = time.time()
+            tot_time = end_time - start_time
+
+            # STEP 3: aggiornamento del report (e, se necessario, dei parametri)
             print("\r\tAggiornamento del report in corso...                  ", end='\r')
             curr_net_report = TrainingReport(
                 prev_num_epochs + (e+1),
                 prev_elapsed_time + tot_time,
                 t_cost, v_cost, t_acc, v_acc
             )
-            history_report.append(copy.deepcopy(curr_net_report))
 
             """
                 Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo).
@@ -874,10 +942,22 @@ class NeuralNetwork:
                     self.biases = copy.deepcopy(best_net_params["Biases"])
             else:
                 self.training_report.update(curr_net_report)
+            
+            history_report.append(copy.deepcopy(curr_net_report))
 
-            # STEP 5: stampa del report dell'epoca migliore
+            del curr_net_report
+            gc.collect()
+
+            # STEP 4: stampa del report dell'epoca migliore
             print("\r\t                                                      ")
             print(repr(self.training_report))
+
+            # STEP 5 : verifica della qualita' dei miglioramenti (early stopping)
+            if e >= es_patience:
+                value = history_report[-es_patience].validation_error - history_report[-1].validation_error
+                
+                if not value > es_delta:
+                    break
 
             if constants.DEBUG_MODE:
                 break
@@ -1084,3 +1164,5 @@ class NeuralNetwork:
 # Backpropagation algorithm: https://youtu.be/sIX_9n-1UbM
 # https://www.geeksforgeeks.org/how-to-convert-numpy-matrix-to-array/
 # https://medium.com/@greyboi/serialising-all-the-functions-in-python-cd880a63b591
+# https://www.kaggle.com/code/residentmario/full-batch-mini-batch-and-online-learning
+# https://stackoverflow.com/questions/1316767/how-can-i-explicitly-free-memory-in-python

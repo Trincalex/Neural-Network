@@ -278,7 +278,7 @@ def cross_entropy_softmax(
     if not isinstance(targets, np.ndarray):
         raise constants.ErrorFunctionError("La matrice delle etichette deve essere di tipo 'numpy.ndarray'.")
     if not predictions.shape == targets.shape:
-        raise constants.ErrorFunctionError("Il numero di predizioni e di etichette non sono compatibili.")
+        raise constants.ErrorFunctionError(f"Il numero di predizioni ({predictions.shape}) e di etichette ({targets.shape}) non sono compatibili.")
 
     prob_predictions = softmax(predictions)
 
@@ -326,6 +326,52 @@ def print_progress_bar(
 
     # Stampa una nuova linea quando tutte le iterazioni sono terminate
     if iteration == total: print()
+
+# end
+
+def compute_batches(
+        length : int,
+        batch_size : int = constants.DEFAULT_MINI_BATCH_SIZE
+) -> list[tuple[int, int]]:
+    
+    """
+        Calcola gli indici di inizio e fine dei mini-batch di un dataset sulla quale eseguire le fasi di addestramento e/o validazione.
+
+        Parameters:
+        -   length : e' la lunghezza del dataset.
+        -   batch_size : e' la lunghezza del singolo mini-batch.
+            In particolare:
+            -   se e' esattamente uguale a 'length', allora si ottiene un unico batch (e.g. batch learning).
+            -   se e' minore di 'length', allora si ottiene un maggior numero di batch (e.g. mini-batch learning).
+            -   se e' '1', allora si ottiene il massimo numero di batch (e.g. online learning).
+
+        Returns:
+        -   batches_indexes : la lista di indici di inizio e fine dei mini-batch del dataset.
+    """
+
+    if not batch_size > 0:
+        raise ValueError(f"Il numero di esempi ({batch_size}) deve essere maggiore di 0.")
+
+    batches_indexes = []
+
+    num_batches = length // batch_size
+    end = batch_size * num_batches
+
+    if end < length:
+        num_batches += 1
+    
+    for c in range(num_batches):
+        start   = c * batch_size
+        end     = (c+1) * batch_size
+
+        if length < end:
+            end = length
+
+        batches_indexes.append((start,end))
+
+    # end for c
+    
+    return batches_indexes
 
 # end
 
