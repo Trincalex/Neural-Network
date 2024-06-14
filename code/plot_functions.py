@@ -13,6 +13,7 @@
 
 import constants
 import dataset_functions as df
+from training_report import TrainingReport
 
 import numpy as np
 import os
@@ -153,6 +154,114 @@ def plot_accuracy(
         history_validation_accuracy,
         y_max=100
     )
+
+# end
+
+def plot_k_fold_error_scores(
+        out_directory : str,
+        fold_reports : list[dict[int, TrainingReport]],
+        err_mean : float,
+        err_std : float
+) -> None:
+    
+    """
+        ...
+
+        Parameters:
+        -   ... : ...
+
+        Returns:
+        -   ... : ...
+    """
+
+    # Titolo dell'istogramma.
+    plot.suptitle("Error scores", fontsize=20)
+    plot.title(f"Media: {err_mean:.2f}, Deviazione standard: {err_std:.2f}", fontsize=10)
+    plot.tight_layout()
+
+    # Etichette sull'asse x.
+    x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
+    plot.xlabel("Folds", fontsize=15)
+
+    # Altezze delle barre (valori sull'asse y).
+    y_bars = [r['Report'].validation_error for r in fold_reports]
+
+    # Etichette sull'asse y.
+    y_ticks = [i for i in range(0, 105) if abs(i - err_mean) > 5.0 and i%20 == 0] + [err_mean]
+    plot.ylabel("Error", fontsize=15)
+    plot.yticks(y_ticks)
+    plot.gca().set_yticklabels([f'{y:.2f}' for y in plot.gca().get_yticks()])
+    plot.ylim(0, max(y_bars) + max(y_bars)*0.1)
+
+    bar_chart = plot.bar(x_ticks, y_bars)
+
+    for i, b in enumerate(bar_chart):
+        h = b.get_height()
+        plot.text(
+            b.get_x() + b.get_width() / 2.0, h,
+            f'{y_bars[i]:.2f}',
+            ha='center', va='bottom', fontsize=8
+        )
+
+    os.makedirs(out_directory, exist_ok=True)
+    plot.savefig(out_directory + "error_scores.pdf", bbox_inches='tight')
+    plot.close()
+
+# end
+
+def plot_k_fold_accuracy_scores(
+        out_directory : str,
+        fold_reports : list[dict[int, TrainingReport]],
+        acc_mean : float,
+        acc_std : float
+) -> None:
+    
+    """
+        ...
+
+        Parameters:
+        -   ... : ...
+
+        Returns:
+        -   ... : ...
+    """
+
+    # Titolo dell'istogramma.
+    plot.suptitle("Accuracy scores", fontsize=20)
+    plot.title(f"Media: {acc_mean:.2f} %, Deviazione standard: {acc_std:.2f} %", fontsize=10)
+    plot.tight_layout()
+
+    # Etichette sull'asse x.
+    x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
+    plot.xlabel("Folds", fontsize=15)
+
+    # Etichette sull'asse y.
+    y_ticks = [i for i in range(0, 105) if abs(i - acc_mean) > 5.0 and i%20 == 0] + [acc_mean]
+    plot.ylabel("Accuracy", fontsize=15)
+    plot.yticks(y_ticks)
+    plot.gca().set_yticklabels([f'{y:.2f} %' for y in plot.gca().get_yticks()])
+    plot.ylim(0, 105)
+
+    # Altezze delle barre (valori sull'asse y).
+    y_bars = [r['Report'].validation_accuracy for r in fold_reports]
+
+    # Colore delle barre
+    # bar_color = get_random_color()
+
+    bar_chart = plot.bar(x_ticks, y_bars)
+
+    for i, b in enumerate(bar_chart):
+        # b.set_color(bar_color)
+        h = b.get_height()
+        plot.text(
+            b.get_x() + b.get_width() / 2.0, h,
+            f'{y_bars[i]:.2f} %',
+            ha='center', va='bottom', fontsize=8
+        )
+
+    os.makedirs(out_directory, exist_ok=True)
+    plot.savefig(out_directory + "accuracy_scores.pdf", bbox_inches='tight')
+    plot.close()
 
 # end
 
@@ -349,7 +458,32 @@ def plot_predictions(
 # end
 
 # ########################################################################### #
+# ALTRE FUNZIONI
+
+def get_random_color() -> str:
+    """
+        Genera un numero intero di 24-bit corrispondenti alle 3 componenti di colore RGB, rispettivamente di 8 bit, e ne restituisce la rappresentazione in un codice esadecimale.
+
+        Returns:
+        -   hex_color : il codice esadecimale di un colore RGB.
+    """
+
+    import random
+
+    # Si ottiene un numero intero di 24-bit. 
+    color = random.randrange(0, 2**24)
+
+    # Si scrive il valore intero in una stringa esadecimale di 6 caratteri.
+    hex_color = f"#{color:06x}"
+
+    return hex_color
+
+# end
+
+# ########################################################################### #
 # RIFERIMENTI
 
 # https://github.com/MrDataScience/tutorials/blob/master/Data/MNIST/How%20To%20Plot%20MNIST%20Digits%20Using%20Matplotlib.ipynb
 # https://stackoverflow.com/questions/18717877/prevent-plot-from-showing-in-jupyter-notebook
+# https://www.geeksforgeeks.org/create-random-hex-color-code-using-python/
+# https://stackoverflow.com/questions/12638408/decorating-hex-function-to-pad-zeros

@@ -1,31 +1,32 @@
-Nel framework Keras si utilizza un valore percentuale per la scelta del numero di esempi del dataset: possiamo implementare questa scelta progettuale o è meglio lasciare una costante?
-
+> Nel framework Keras si utilizza un valore percentuale per la scelta del numero di esempi del dataset: possiamo implementare questa scelta progettuale o è meglio lasciare una costante?
+...
 
 > Quale funzione di attivazione bisogna utilizzare per l'output layer?
-> Si dovrebbe utilizzare la softmax per i problemi di multi-classificazione?
-La softmax è una funzione di attivazione "GLOBALE" perché dipende dall'input del nodo e dall'input di tutti gli altri nodi. Utilizzare l'identità 
+> Si dovrebbe utilizzare la softmax per i problemi di multi-classe?
+La softmax è una funzione di attivazione "GLOBALE" perché dipende dall'input del nodo e dall'input di tutti gli altri nodi. Utilizzare la funzione identità per l'output layer e la funzione di errore cross_entropy_softmax.
 
-La k-fold è implementata correttamente?
-Cioè, dopo aver trovato la miglior fold, bisogna riaddestrare la rete sull'intero training set?
-
->Serve per la valutazione degli iper-parametri scelti.
->Si addestra il modello per ogni fold, alla fine si ottiene una media e una deviazione standard. Alla fine del processo si sceglie la migliore sul validation set che generalizza meglio. Si ottengono 10 accuratezze di cui calcolare media e deviazione standard.
+> La k-fold è implementata correttamente?
+> Cioè, dopo aver trovato la miglior fold, bisogna riaddestrare la rete sull'intero training set?
+Assolutamente no, la k-fold si utilizza solo per il tuning degli iper-parametri e la scelta del modello. Bisogna costruire dei grafici / tabelle per la visualizzazione dei risultati, calcolando media e deviazione standard dei valori di errore e accuracy, e confrontare le varie configurazioni.
+Serve per la valutazione degli iper-parametri scelti tramite grid / random search.
+Si addestra il modello per ogni fold, alla fine si ottiene una media e una deviazione standard. Alla fine del processo si sceglie la migliore sul validation set che generalizza meglio. Si ottengono 10 accuratezze di cui calcolare media e deviazione standard.
 A quale epoca si ottiene 
 
 > I grafici per il testing report sono impostati correttamente?
+Si, i grafici sono fatti bene.
+
 > Come ottenere una visione globale dei risultati di testing (es. tabella)?
+È stato utilizzato un istogramma.
 
-
-Nella fase di addestramento bisogna implementare l'early stopping?
-pazienza = dopo 20 epoche
-passare a 500 epoche
-
+> Nella fase di addestramento bisogna implementare l'early stopping?
+Criterio della "pazienza" = forzare l'uscita dall'addestramento dopo 20 epoche se l'errore di validazione non diminuisce di una certa soglia.
+Passare a 500 epoche, visto che la miglior configurazione dei parametri era data sempre dall'ultima epoca.
 
 > Bisogna utilizzare sia il metodo di "grid search" che il metodo di "random search"?
 > Si devono confrontare i risultati nella documentazione?
 Per capire quali configurazione di iper-parametri scegliere nello spazio degli iper-parametri.
 
-Come possiamo strutturare la documentazione?
+> Come possiamo strutturare la documentazione?
 Parte A (libreria)
 Non descrivere teoricamente (serve all'orale), solo alto livello e in maniera qualitativa
 Le principali strutture dati utilizzate (attibuti, metodi, ecc.)

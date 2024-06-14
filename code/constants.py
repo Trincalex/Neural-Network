@@ -19,7 +19,8 @@ from enum import Enum
 # CODICI DI ERRORE e EXCEPTIONS
 
 class LayerError(Exception):
- 
+    """ ... """
+
     def __init__(self, value):
         self.value = value
     # end
@@ -31,6 +32,7 @@ class LayerError(Exception):
 # end class LayerError
 
 class InputLayerError(Exception):
+    """ ... """
  
     def __init__(self, value):
         self.value = value
@@ -43,6 +45,7 @@ class InputLayerError(Exception):
 # end class InputLayerError
 
 class TrainError(Exception):
+    """ ... """
 
     def __init__(self, value):
         self.value = value
@@ -55,6 +58,7 @@ class TrainError(Exception):
 # end class TrainError
 
 class TestError(Exception):
+    """ ... """
 
     def __init__(self, value):
         self.value = value
@@ -67,6 +71,7 @@ class TestError(Exception):
 # end class TestError
 
 class ActivationFunctionError(Exception):
+    """ ... """
 
     def __init__(self, value):
         self.value = value
@@ -79,6 +84,7 @@ class ActivationFunctionError(Exception):
 # end class ActivationFunctionError
 
 class ErrorFunctionError(Exception):
+    """ ... """
 
     def __init__(self, value):
         self.value = value
@@ -164,13 +170,13 @@ OUTPUT_DIRECTORY = "../output/"
 OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
 """ ... """
 
-class ReportTitle(Enum):
-    """ ... """
+# class ReportTitle(Enum):
+#     """ ... """
 
-    Error = "error-report"
-    Accuracy = "accuracy-report"
+#     Error = "error-report"
+#     Accuracy = "accuracy-report"
 
-# end class ReportTitle
+# # end class ReportTitle
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
@@ -212,3 +218,4 @@ ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | n
 
 # https://www.geeksforgeeks.org/user-defined-exceptions-python-examples/
 # https://stackoverflow.com/questions/6060635/convert-enum-to-int-in-python
+# https://keras.io/api/callbacks/early_stopping/
