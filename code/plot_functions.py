@@ -18,6 +18,8 @@ from training_report import TrainingReport
 import numpy as np
 import os
 import matplotlib.pyplot as plot
+from matplotlib.ticker import FormatStrFormatter
+from matplotlib.ticker import PercentFormatter
 from datetime import datetime
 
 # ########################################################################### #
@@ -78,7 +80,7 @@ def plot_training_epochs(
 
     y_ticks = [0, min_value, max_value, mean_value]
     if y_label == "Accuracy":
-        y_ticks = y_ticks + [100]
+        y_ticks = y_ticks + [0.1]
     plot.yticks(y_ticks)
 
     plot.plot(range(x_min, x_max), history_training, 'b', label=f'Training {y_label}')
@@ -152,16 +154,14 @@ def plot_accuracy(
         "Accuracy",
         history_training_accuracy,
         history_validation_accuracy,
-        y_max=100
+        y_max=0.1
     )
 
 # end
 
 def plot_k_fold_error_scores(
         out_directory : str,
-        fold_reports : list[dict[int, TrainingReport]],
-        err_mean : float,
-        err_std : float
+        fold_reports : list[dict[int, TrainingReport]]
 ) -> None:
     
     """
@@ -174,7 +174,11 @@ def plot_k_fold_error_scores(
         -   ... : ...
     """
 
-    # Titolo dell'istogramma.
+    errs = [r['Report'].validation_error for r in fold_reports]
+    err_mean = np.mean(errs)
+    err_std = np.std(errs)
+
+    # Titolo del grafico.
     plot.suptitle("Error scores", fontsize=20)
     plot.title(f"Media: {err_mean:.2f}, Deviazione standard: {err_std:.2f}", fontsize=10)
     plot.tight_layout()
@@ -183,37 +187,46 @@ def plot_k_fold_error_scores(
     x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
     plot.xlabel("Folds", fontsize=15)
 
-    # Altezze delle barre (valori sull'asse y).
-    y_bars = [r['Report'].validation_error for r in fold_reports]
+    # Si calcola il massimo errore di validazione di tutte le fold.
+    y_max = max([r['E_max'] for r in fold_reports])
+    # y_min = max([r['E_min'] for r in fold_reports])
+    plot.ylim(0, y_max)
+    plot.margins()
 
     # Etichette sull'asse y.
-    y_ticks = [i for i in range(0, 105) if abs(i - err_mean) > 5.0 and i%20 == 0] + [err_mean]
     plot.ylabel("Error", fontsize=15)
-    plot.yticks(y_ticks)
-    plot.gca().set_yticklabels([f'{y:.2f}' for y in plot.gca().get_yticks()])
-    plot.ylim(0, max(y_bars) + max(y_bars)*0.1)
+    plot.locator_params(axis='y', nbins=5)
+    plot.yticks([y for y in plot.yticks()[0]] + [err_mean])
+    plot.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
-    bar_chart = plot.bar(x_ticks, y_bars)
+    # Disegna un line plot per confrontare gli errori di validazione.
+    # Ad ogni fold e' anche associato una barra di errore che mostra il massimo ed il minimo errore di validazione ottenuto in fase di addestramento.
+    plot.errorbar(
+        x_ticks,
+        [r['E_mean'] for r in fold_reports],
+        yerr=[abs(r['E_max']-r['E_min']) for r in fold_reports],
+        fmt='o'
+    )
 
-    for i, b in enumerate(bar_chart):
-        h = b.get_height()
-        plot.text(
-            b.get_x() + b.get_width() / 2.0, h,
-            f'{y_bars[i]:.2f}',
-            ha='center', va='bottom', fontsize=8
-        )
+    # Disegna una linea retta rossa che indica la media degli errori di validazione.
+    plot.plot(
+        x_ticks,
+        [err_mean for _ in fold_reports],
+        color='red', linestyle='dashed', linewidth=1
+    )
 
+    # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
     plot.savefig(out_directory + "error_scores.pdf", bbox_inches='tight')
     plot.close()
+
+    return err_mean, err_std
 
 # end
 
 def plot_k_fold_accuracy_scores(
         out_directory : str,
-        fold_reports : list[dict[int, TrainingReport]],
-        acc_mean : float,
-        acc_std : float
+        fold_reports : list[dict[int, TrainingReport]]
 ) -> None:
     
     """
@@ -226,42 +239,53 @@ def plot_k_fold_accuracy_scores(
         -   ... : ...
     """
 
-    # Titolo dell'istogramma.
+    accs = [r['Report'].validation_accuracy for r in fold_reports]
+    acc_mean = np.mean(accs)
+    acc_std = np.std(accs)
+
+    # Titolo del grafico.
     plot.suptitle("Accuracy scores", fontsize=20)
-    plot.title(f"Media: {acc_mean:.2f} %, Deviazione standard: {acc_std:.2f} %", fontsize=10)
+    plot.title(f"Media: {acc_mean:.2%}, Deviazione standard: {acc_std:.2%}", fontsize=10)
     plot.tight_layout()
 
     # Etichette sull'asse x.
     x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
     plot.xlabel("Folds", fontsize=15)
 
+    # Si calcola la massima accuracy di validazione di tutte le fold.
+    y_max = max([r['A_max'] for r in fold_reports])
+    y_min = min([r['A_min'] for r in fold_reports])
+    plot.ylim(y_min, y_max)
+    plot.margins()
+
     # Etichette sull'asse y.
-    y_ticks = [i for i in range(0, 105) if abs(i - acc_mean) > 5.0 and i%20 == 0] + [acc_mean]
     plot.ylabel("Accuracy", fontsize=15)
-    plot.yticks(y_ticks)
-    plot.gca().set_yticklabels([f'{y:.2f} %' for y in plot.gca().get_yticks()])
-    plot.ylim(0, 105)
+    plot.locator_params(axis='y', nbins=5)
+    plot.yticks([y for y in plot.yticks()[0]] + [acc_mean])
+    plot.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=2))
 
-    # Altezze delle barre (valori sull'asse y).
-    y_bars = [r['Report'].validation_accuracy for r in fold_reports]
+    # Disegna un line plot per confrontare le accuracy di validazione.
+    # Ad ogni fold e' anche associato una barra di errore che mostra la massima e la minima accuracy di validazione ottenuta in fase di addestramento.
+    plot.errorbar(
+        x_ticks,
+        [r['A_mean'] for r in fold_reports],
+        yerr=[abs(r['A_max']-r['A_min']) for r in fold_reports],
+        fmt='o'
+    )
 
-    # Colore delle barre
-    # bar_color = get_random_color()
+    # Disegna una linea retta rossa che indica la media delle accuracy di validazione.
+    plot.plot(
+        x_ticks,
+        [acc_mean for _ in fold_reports],
+        color='red', linestyle='dashed', linewidth=1
+    )
 
-    bar_chart = plot.bar(x_ticks, y_bars)
-
-    for i, b in enumerate(bar_chart):
-        # b.set_color(bar_color)
-        h = b.get_height()
-        plot.text(
-            b.get_x() + b.get_width() / 2.0, h,
-            f'{y_bars[i]:.2f} %',
-            ha='center', va='bottom', fontsize=8
-        )
-
+    # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
     plot.savefig(out_directory + "accuracy_scores.pdf", bbox_inches='tight')
     plot.close()
+
+    return acc_mean, acc_std
 
 # end
 
@@ -372,15 +396,15 @@ def plot_predictions(
             else:
                 wrongs.append(i)
 
-    highs_acc       = len(high_confidence_corrects) / len(Xtest) * 100
-    lows_acc        = len(low_confidence_corrects) / len(Xtest) * 100
-    almosts_acc     = len(almost_corrects) / len(Xtest) * 100
-    wrongs_acc      = len(wrongs) / len(Xtest) * 100
+    highs_acc       = len(high_confidence_corrects) / len(Xtest)
+    lows_acc        = len(low_confidence_corrects) / len(Xtest)
+    almosts_acc     = len(almost_corrects) / len(Xtest)
+    wrongs_acc      = len(wrongs) / len(Xtest)
 
-    highs_label     = f"{len(high_confidence_corrects)} ({highs_acc:.2f} %)"
-    lows_label      = f"{len(low_confidence_corrects)} ({lows_acc:.2f} %)"
-    almosts_label   = f"{len(almost_corrects)} ({almosts_acc:.2f} %)"
-    wrongs_label    = f"{len(wrongs)} ({wrongs_acc:.2f} %)"
+    highs_label     = f"{len(high_confidence_corrects)} ({highs_acc:.2%})"
+    lows_label      = f"{len(low_confidence_corrects)} ({lows_acc:.2%})"
+    almosts_label   = f"{len(almost_corrects)} ({almosts_acc:.2%})"
+    wrongs_label    = f"{len(wrongs)} ({wrongs_acc:.2%})"
 
     # Se "plot_mode" e' constants.PlotTestingMode.NONE, stampa i risultati del testing.
     if plot_mode == constants.PlotTestingMode.NONE:
@@ -487,3 +511,4 @@ def get_random_color() -> str:
 # https://stackoverflow.com/questions/18717877/prevent-plot-from-showing-in-jupyter-notebook
 # https://www.geeksforgeeks.org/create-random-hex-color-code-using-python/
 # https://stackoverflow.com/questions/12638408/decorating-hex-function-to-pad-zeros
+# https://machinelearningmastery.com/how-to-configure-k-fold-cross-validation/

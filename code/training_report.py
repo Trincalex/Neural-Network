@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione della classe TrainingReport, il cui scopo e' quello di memorizzare tutte le misure riguardanti l'addestramento di una rete neurale feed-forward fully-connected.
+    Questo file contiene l'implementazione della classe TrainingReport, il cui scopo e' quello di memorizzare tutte le misure di valutazione riguardanti l'addestramento di una rete neurale feed-forward fully-connected.
 
 """
 
@@ -12,7 +12,6 @@
 # LIBRERIE
 
 import constants
-import auxfunc
 import numpy as np
 
 # ########################################################################### #
@@ -36,9 +35,21 @@ class TrainingReport:
     # end
 
     @property
+    def training_examples(self) -> int:
+        """..."""
+        return self._training_examples
+    # end
+
+    @property
     def training_error(self) -> float:
         """..."""
         return self._training_error
+    # end
+
+    @property
+    def validation_examples(self) -> int:
+        """..."""
+        return self._validation_examples
     # end
 
     @property
@@ -64,12 +75,14 @@ class TrainingReport:
 
     def __init__(
             self,
-            epochs : int = 0,
-            time : float = 0.0,
-            t_error : float = 0.0,
-            v_error : float = 0.0,
-            t_accuracy : float = 0.0,
-            v_accuracy : float = 0.0
+            epochs : int        = 0,
+            time : float        = 0.0,
+            t_examples : int    = 0,
+            v_examples : int    = 0,
+            t_error : float     = 0.0,
+            v_error : float     = 0.0,
+            t_accuracy : float  = 0.0,
+            v_accuracy : float  = 0.0
     ):
         """
             E' il costruttore della classe TrainingReport.
@@ -88,6 +101,10 @@ class TrainingReport:
         # Inizializzazione del tempo di addestramento.
         self._elapsed_time = time
 
+        # Inizializzazione del numero di esempi di addestramento e validazione.
+        self._training_examples = t_examples
+        self._validation_examples = v_examples
+
         # Inizializzazione delle metriche di errore.
         self._training_error = t_error
         self._validation_error = v_error
@@ -97,11 +114,6 @@ class TrainingReport:
         self._validation_accuracy = v_accuracy
     
     # end
-
-    # ####################################################################### #
-    # METODI PRIVATI
-
-
 
     # ####################################################################### #
     # METODI PUBBLICI
@@ -142,7 +154,7 @@ class TrainingReport:
             -   targets : la matrice contenente le etichette vere corrispondenti alle previsioni (ground truth).
 
             Returns:
-            -   float : il rapporto tra predizioni corrette e totale delle etichette, moltiplicato per 100 per ottenere il valore percentuale.
+            -   float : il rapporto tra predizioni corrette e totale delle etichette.
         """
 
         # print(predictions.shape, targets.shape)
@@ -150,7 +162,7 @@ class TrainingReport:
             raise constants.TrainError("Il numero di predizioni e di etichette non sono compatibili.")
 
         matches = [int(np.argmax(x) == np.argmax(y)) for x, y in zip(predictions, targets)]
-        return np.sum(matches) / len(targets) * 100
+        return np.sum(matches) / len(targets)
 
     # end
 
@@ -171,6 +183,8 @@ class TrainingReport:
 
         self._num_epochs            = value.num_epochs
         self._elapsed_time          = value.elapsed_time
+        self._training_examples     = value.training_examples
+        self._validation_examples   = value.validation_examples
         self._training_error        = value.training_error
         self._validation_error      = value.validation_error
         self._training_accuracy     = value.training_accuracy
@@ -188,7 +202,7 @@ class TrainingReport:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'TrainingReport(\n\tnum_epochs = {self.num_epochs},\n\telapsed_time = {self.elapsed_time:.3f} secondi,\n\ttraining_error = {self.training_error:.5f},\n\ttraining_accuracy = {self.training_accuracy:.2f} %,\n\tvalidation_error = {self.validation_error:.5f}\n\tvalidation_accuracy = {self.validation_accuracy:.2f} %\n)'
+        return f'TrainingReport(\n\tnum_epochs = {self.num_epochs},\n\telapsed_time = {self.elapsed_time:.3f} secondi,\n\ttraining_examples = {self.training_examples},\n\ttraining_error = {self.training_error:.5f},\n\ttraining_accuracy = {self.training_accuracy:.2%},\n\tvalidation_examples = {self.validation_examples},\n\tvalidation_error = {self.validation_error:.5f}\n\tvalidation_accuracy = {self.validation_accuracy:.2%}\n)'
     
     # end
 

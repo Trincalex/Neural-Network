@@ -14,6 +14,7 @@
 
 from artificial_layer import Layer
 from training_report import TrainingReport
+from training_params import TrainingParams
 import constants
 import auxfunc
 
@@ -147,6 +148,12 @@ class NeuralNetwork:
         return self._training_report
     # end
 
+    @property
+    def training_params(self):
+        """..."""
+        return self._training_params
+    # end
+
     # ####################################################################### #
     # COSTRUTTORE
 
@@ -224,6 +231,9 @@ class NeuralNetwork:
         
         # Inizializzazione delle metriche di valutazione della fase di addestramento.
         self._training_report = TrainingReport() if t_rep is None else t_rep
+
+        # Inizializzazione degli iper-parametri per la fase di addestramento.
+        self._training_params = TrainingParams()
 
     # end
     
@@ -645,19 +655,6 @@ class NeuralNetwork:
             -   un array contenente gli step size relativi ad ogni peso / bias della rete.
         """
 
-        # Controlli sui valori dei parametri in input.
-        if not eta_plus > 1:
-            raise constants.TrainError(f"Il valore di 'eta_plus' ({eta_plus}) deve essere maggiore di 1.")
-        
-        if not (eta_minus > 0 and eta_minus < 1):
-            raise constants.TrainError(f"Il valore di 'eta_minus' ({eta_minus}) deve essere compreso tra 0 e 1.")
-        
-        if not delta_min > 0:
-            raise constants.TrainError(f"Il valore di 'delta_min' ({delta_min}) deve essere maggiore di 0.")
-        
-        if not delta_max > 0:
-            raise constants.TrainError(f"Il valore di 'delta_max' ({delta_max}) deve essere maggiore di 0.")
-
         return np.where(
             prod_gradients > 0,
             np.minimum(prev_delta_layer * eta_plus, delta_max),
@@ -751,16 +748,7 @@ class NeuralNetwork:
             training_labels : np.ndarray,
             validation_data : np.ndarray = None,
             validation_labels : np.ndarray = None,
-            examples : int = constants.DEFAULT_MINI_BATCH_SIZE,
-            epochs : int = constants.DEFAULT_EPOCHS,
-            es_patience : int = constants.DEFAULT_EARLY_STOPPING_PATIENCE,
-            es_delta : float = constants.DEFAULT_EARLY_STOPPING_DELTA,
-            learning_rate : float = constants.DEFAULT_LEARNING_RATE,
-            rprop : bool = constants.DEFAULT_BACK_PROPAGATION_MODE,
-            eta_minus : float = constants.DEFAULT_RPROP_ETA_MINUS,
-            eta_plus : float = constants.DEFAULT_RPROP_ETA_PLUS,
-            delta_min : float = constants.DEFAULT_RPROP_DELTA_MIN,
-            delta_max : float = constants.DEFAULT_RPROP_DELTA_MAX
+            params : TrainingParams = None
     ) -> list[TrainingReport]:
         
         """
@@ -772,24 +760,12 @@ class NeuralNetwork:
             -   training_labels : una matrice numpy.ndarray contenente le etichette corrispondenti per i dati di addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
             -   validation_data : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta un esempio di addestramento.
             -   validation_labels : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
-            -   examples : ...
-            -   epochs : il numero di iterazioni per cui il modello deve essere addestrato. Un'epoca e' un'esecuzione completa dell'addestramento attraverso l'intero training_set.
-            -   es_patience : ...
-            -   es_delta : ...
-            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
-            -   rprop : ...
-            -   eta_minus : ...
-            -   eta_plus : ...
-            -   delta_min : ...
-            -   delta_max : ...
 
             Returns:
             -   None.
         """
 
-        # Controllo del valore di learning_rate
-        if not (learning_rate >= 0 and learning_rate <= 1):
-            raise constants.TrainError(f"Il valore di 'learning_rate' ({learning_rate}) deve essere compreso tra 0 e 1.")
+        if params is None: params = TrainingParams()
 
         # Controllo sulla compatibilita' di training_data e training_labels.
         if (not training_data.shape[0] == training_labels.shape[0]):
@@ -801,7 +777,7 @@ class NeuralNetwork:
                 raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
         
         # Calcolo degli indici dei mini-batch di addestramento.
-        training_batches = auxfunc.compute_batches(len(training_data), examples)
+        training_batches = auxfunc.compute_batches(len(training_data), params.batch_size)
         
         # Inizializzazione delle variabili necessarie all'aggiornamento dei report.
         history_report : list[TrainingReport] = []
@@ -809,8 +785,8 @@ class NeuralNetwork:
         prev_elapsed_time = self.training_report.elapsed_time
 
         # Inizializzazione del delta_layer rispetto a pesi / bias (per la rprop)
-        dlw = np.ones(self.weights.size) * learning_rate
-        dlb = np.ones(self.biases.size) * learning_rate
+        dlw = np.ones(self.weights.size) * params.learning_rate
+        dlb = np.ones(self.biases.size) * params.learning_rate
         gw  = np.zeros(self.weights.size)
         gb  = np.zeros(self.biases.size)
 
@@ -821,8 +797,8 @@ class NeuralNetwork:
         # Prima di iniziare l'addestramento, si recuperano tutti i pesi dai layer della rete.
         self.weights, self.biases = self.__gather_weights()
 
-        for e in range(epochs):
-            print(f"\nEpoca {e+1} di {epochs}")
+        for e in range(params.epochs):
+            print(f"\nEpoca {e+1} di {params.epochs}")
 
             # STEP 1 : FASE DI TRAINING
 
@@ -857,15 +833,15 @@ class NeuralNetwork:
                         print("\n-----\n\n")
 
                 # STEP 1b: aggiornamento dei parametri
-                if rprop:
+                if params.rprop:
 
                     gw, gb, dlw, dlb = self.__resilient_back_propagation(
                         training_outputs,
                         training_activations,
                         training_labels[start:end],
                         gw, gb, dlw, dlb,
-                        eta_minus, eta_plus,
-                        delta_min, delta_max
+                        params.eta_minus, params.eta_plus,
+                        params.delta_min, params.delta_max
                     )
 
                 else:
@@ -879,7 +855,7 @@ class NeuralNetwork:
                     )
 
                     print("\r\tAggiornamento dei parametri in corso...               ", end='\r')
-                    self.__gradient_descent(gw, gb, learning_rate)
+                    self.__gradient_descent(gw, gb, params.learning_rate)
 
                     del gw, gb
                     gc.collect()
@@ -938,12 +914,18 @@ class NeuralNetwork:
             end_time = time.time()
             tot_time = end_time - start_time
 
-            # STEP 3: aggiornamento del report (e, se necessario, dei parametri)
+            # STEP 3 : AGGIORNAMENTO DEL REPORT (e, se necessario, dei parametri)
+
+            t_len = len(training_data)
+            v_len = 0 if validation_data is None else len(validation_data)
+
             print("\r\tAggiornamento del report in corso...                  ", end='\r')
             curr_net_report = TrainingReport(
                 prev_num_epochs + (e+1),
                 prev_elapsed_time + tot_time,
-                t_cost, v_cost, t_acc, v_acc
+                t_len, v_len,
+                t_cost, v_cost,
+                t_acc, v_acc
             )
 
             """
@@ -969,10 +951,10 @@ class NeuralNetwork:
 
             # STEP 5 : verifica della qualita' dei miglioramenti (early stopping)
             if validation_data is not None and validation_labels is not None:
-                if e >= es_patience:
-                    value = history_report[-es_patience].validation_error - history_report[-1].validation_error
+                if e >= params.es_patience:
+                    value = history_report[-params.es_patience].validation_error - history_report[-1].validation_error
                     
-                    if not value > es_delta:
+                    if not value > params.es_delta:
                         break
 
             if constants.DEBUG_MODE:
@@ -1109,7 +1091,7 @@ class NeuralNetwork:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_report = {pprint.pformat(self.training_report)}\n)'
+        return f'NeuralNetwork(\n\tdepth = {self.depth},\n\tinput_size = {repr(self.input_size)},\n\tnetwork_layers = {pprint.pformat(self.layers)},\n\terr_fun = {self.err_fun},\n\ttraining_report = {pprint.pformat(self.training_report)},\n\ttraining_params = {pprint.pformat(self.training_params)}\n)'
     
     # end
 
