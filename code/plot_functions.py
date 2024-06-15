@@ -77,7 +77,7 @@ def plot_training_epochs(
     plot.ylabel(y_label)
 
     y_ticks = [0, min_value, max_value, mean_value]
-    if y_label == constants.ReportTitle.Accuracy.name:
+    if y_label == "Accuracy":
         y_ticks = y_ticks + [100]
     plot.yticks(y_ticks)
 
@@ -118,8 +118,8 @@ def plot_error(
 
     plot_training_epochs(
         out_directory,
-        f"{title}_{constants.ReportTitle.Error.value}",
-        constants.ReportTitle.Error.name,
+        f"{title}_error-report",
+        "Error",
         history_training_costs,
         history_validation_costs
     )
@@ -148,8 +148,8 @@ def plot_accuracy(
 
     plot_training_epochs(
         out_directory,
-        f"{title}_{constants.ReportTitle.Accuracy.value}",
-        constants.ReportTitle.Accuracy.name,
+        f"{title}_accuracy-report",
+        "Accuracy",
         history_training_accuracy,
         history_validation_accuracy,
         y_max=100

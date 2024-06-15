@@ -621,17 +621,65 @@ class NeuralNetwork:
 
     # end
 
+    def __rprop_delta_layer(
+        self,
+        prod_gradients : np.ndarray,
+        prev_delta_layer : np.ndarray,
+        eta_minus : float, eta_plus : float,
+        delta_min : float, delta_max : float
+    ) -> np.ndarray:
+        
+        """
+            Calcola lo 'step size' individualmente per ogni peso e bias della rete neurale.
+            -   Con il termine 'step size' si indica la quantita' con cui aggiornare ogni peso / bias.
+            -   In particolare, con la Rprop, gli 'step size' sono indipendenti dai valori assoluti delle derivate parziali della funzione di costo, ma dipendono solo dal loro segno.
+
+            Parameters:
+            -   prod_gradients : e' un array contenente il prodotto elemento per elemento del gradiente della funzione di costo calcolato all'epoca corrente e all'epoca precedente. Si utilizza per capire come cambia il segno.
+            -   eta_minus : ...
+            -   eta_plus : ...
+            -   delta_min : ...
+            -   delta_max : ...
+
+            Returns:
+            -   un array contenente gli step size relativi ad ogni peso / bias della rete.
+        """
+
+        # Controlli sui valori dei parametri in input.
+        if not eta_plus > 1:
+            raise constants.TrainError(f"Il valore di 'eta_plus' ({eta_plus}) deve essere maggiore di 1.")
+        
+        if not (eta_minus > 0 and eta_minus < 1):
+            raise constants.TrainError(f"Il valore di 'eta_minus' ({eta_minus}) deve essere compreso tra 0 e 1.")
+        
+        if not delta_min > 0:
+            raise constants.TrainError(f"Il valore di 'delta_min' ({delta_min}) deve essere maggiore di 0.")
+        
+        if not delta_max > 0:
+            raise constants.TrainError(f"Il valore di 'delta_max' ({delta_max}) deve essere maggiore di 0.")
+
+        return np.where(
+            prod_gradients > 0,
+            np.minimum(prev_delta_layer * eta_plus, delta_max),
+            np.where(
+                prod_gradients < 0,
+                np.maximum(prev_delta_layer * eta_minus, delta_min),
+                prev_delta_layer
+            )
+        )
+    
+    # end
+
     def __resilient_back_propagation(
             self,
             network_outputs : list[np.ndarray],
             network_activations : list[np.ndarray],
             training_labels : np.ndarray,
-            eta_minus : float = 0.5,
-            eta_plus : float = 1.2,
-            delta_zero : float = 0.0125,
-            delta_min : float = 0.00001,
-            delta_max : float = 1
-    ) -> None:
+            prev_gw : np.ndarray, prev_gb : np.ndarray,
+            prev_dlw : np.ndarray, prev_dlb : np.ndarray,
+            eta_minus : float, eta_plus : float,
+            delta_min : float, delta_max : float
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
         """
             Gli algoritmi di Resilient Backpropagation (Rprop) sono algoritmi iterativi che aggiornano i parametri di una rete neurale (weights, biases) ottimizzando la funzione di costo tramite calcolo del suo gradiente rispetto ai pesi:
@@ -643,126 +691,56 @@ class NeuralNetwork:
             -   network_outputs : la lista di output di ogni layer della rete.
             -   network_activations : la lista di valori di attivazione di ogni layer della rete.
             -   training_labels : e' la matrice di tutte le etichette delle coppie del dataset.
-            -   ... : ...
+            -   prev_gw : ...
+            -   prev_gb : ...
+            -   prev_dlw : ...
+            -   prev_dlb : ...
+            -   eta_minus : ...
+            -   eta_plus : ...
+            -   delta_min : ...
+            -   delta_max : ...
 
             Returns:
             -   ... : ...
         """
 
-        # Controlli sui valori dei parametri in input.
-        if not eta_plus > 1:
-            raise constants.TrainError(f"Il valore di 'eta_plus' ({eta_plus}) deve essere maggiore di 1.")
-        
-        if not (eta_minus >= 0 and eta_minus <= 1):
-            raise constants.TrainError(f"Il valore di 'eta_minus' ({eta_minus}) deve essere compreso tra 0 e 1.")
-        
-        if not delta_zero > 0:
-            raise constants.TrainError(f"Il valore di 'delta_zero' ({delta_zero}) deve essere maggiore di 0.")
-        
-        if not delta_min > 0:
-            raise constants.TrainError(f"Il valore di 'delta_min' ({delta_min}) deve essere maggiore di 0.")
-        
-        if not delta_max > 0:
-            raise constants.TrainError(f"Il valore di 'delta_max' ({delta_max}) deve essere maggiore di 0.")
-    
-        # TODO: completare implementazione Rprop.
+        gw, gb = self.__back_propagation(
+            network_outputs,
+            network_activations,
+            training_labels
+        )
+
+        # Si calcola il prodotto elemento per elemento per capire se gradiente della funzione di costo calcolato all'epoca corrente e all'epoca precedente hanno o meno lo stesso segno.
+        prod_gw = np.multiply(prev_gw, gw)
+        prod_gb = np.multiply(prev_gb, gb)
+
+        dl_weights = self.__rprop_delta_layer(
+            prod_gw,
+            prev_dlw,
+            eta_minus, eta_plus,
+            delta_min, delta_max
+        )
+
+        dl_biases = self.__rprop_delta_layer(
+            prod_gb,
+            prev_dlb,
+            eta_minus, eta_plus,
+            delta_min, delta_max
+        )
+
+        # Applicazione del weight-backtracking
+        gw          = np.where(prod_gw < 0, 0, gw)
+        gb          = np.where(prod_gb < 0, 0, gb)
+        u_weights   = np.where(prod_gw < 0, -np.sign(prev_gw) * prev_dlw, -np.sign(gw) * dl_weights)
+        u_biases    = np.where(prod_gb < 0, -np.sign(prev_gb) * prev_dlb, -np.sign(gb) * dl_biases)
+
+        self.weights += u_weights
+        self.biases += u_biases
+        self.__scatter_weights()
+
+        return gw, gb, dl_weights, dl_biases
     
     # end
-
-    # def __resilient_back_propagation(self,
-    #         X_train : np.array,
-    #         Y_train : np.array,
-    #         X_val : np.array,
-    #         Y_val : np.array,
-    #         err_fun : function,
-    #         num_epoche : int = 0,
-    #         eta_minus : float = 0.5,
-    #         eta_plus : float = 1.2,
-    #         delta_zero : float = 0.0125,
-    #         delta_min : float = 0.00001,
-    #         delta_max : float = 1) -> list:
-    #     """
-    #         Esegue la Resilient Propagation (Rprop) per l'addestramento di una rete neurale
-
-    #         Parameters:
-    #         -   X_train: Il dataset di addestramento.
-    #         -   Y_train: I valori target corrispondenti al dataset di addestramento.
-    #         -   X_val: Il dataset di validazione.
-    #         -   Y_val: I valori target corrispondenti al dataset di validazione.
-    #         -   err_fun (function): La funzione di errore utilizzata per calcolare la perdita.
-    #         -   num_epoche: Il numero di epoche per l'addestramento. Default è 0.
-    #         -   eta_minus: Il fattore di decremento per l'aggiornamento dei pesi. Default è 0.5.
-    #         -   eta_plus: Il fattore di incremento per l'aggiornamento dei pesi. Default è 1.2.
-    #         -   delta_zero: Il valore iniziale per gli incrementi dei pesi. Default è 0.0125.
-    #         -   delta_min: Il valore minimo per gli incrementi dei pesi. Default è 0.00001.
-    #         -   delta_max: Il valore massimo per gli incrementi dei pesi. Default è 1.
-
-    #         Returns:
-    #         -   evaluation_parameters: Una lista contenente tuple con i seguenti valori per ogni epoca:
-    #         -   Errore di addestramento
-    #         -   Accuratezza di addestramento
-    #         -   Errore di validazione
-    #         -   Accuratezza di validazione
-    #     """
-        
-    #     epoca = 0
-    #     d = self.depth()
-    #     Z_train = self.__forward_propagation(X_train)
-    #     train_err = self.err_fun(Z_train,Y_train)
-    #     train_accuracy = self.training_report.compute_accuracy(Z_train,Y_train)
-
-    #     Z_val = self.__forward_propagation(X_val)
-    #     val_err = self.err_fun(Z_val,Y_val)
-    #     val_accuracy = self.training_report.compute_accuracy(Z_val,Y_val)
-    #     evaluation_parameters = []
-    #     if constants.DEBUG_MODE:
-    #         print("Epoca: ",-1,
-    #         "Training Error: ",train_err,
-    #         "Training Accuracy: ",train_accuracy,
-    #         "Validation Error: ",val_err,
-    #         "Validation Accuracy: ",val_accuracy)
-
-    #     evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
-
-    #     der_list = []
-    #     delta_ij = []
-
-    #     for i in range(num_epoche):
-    #         delta_ij.append([delta_zero]*d)
-
-    #     while epoca < num_epoche:
-    #         cur_out, cur_act = self.__forward_propagation(X_train,True)
-    #         gradient_weight, gradient_bias = self.__back_propagation(cur_out,cur_act,Y_train)
-
-    #         for layer in range(d):
-    #             prev_der = der_list[epoca-1][layer]
-    #             actual_der = der_list[epoca][layer]
-    #             der_prod = prev_der * actual_der
-
-    #             delta_ij[epoca][layer] = np.where(der_prod > 0, np.minimum(delta_ij[epoca-1][layer] * eta_plus, delta_max), np.where(der_prod < 0, np.maximum(delta_ij[epoca-1][layer] * delta_min), delta_ij[epoca-1][layer]))
-
-    #             self.weights[layer] = self._weights[layer] - (np.sign(der_list[epoca][layer]) * delta_ij[epoca][layer])
-
-    #         Z_train = self.__forward_propagation(X_train)
-    #         train_err = self.err_fun(Z_train,Y_train)
-    #         train_accuracy = self.training_report.compute_accuracy(Z_train,Y_train)
-
-    #         Z_val = self.__forward_propagation(X_val)
-    #         val_err = self.err_fun(Z_val,Y_val)
-    #         val_accuracy = self.training_report.compute_accuracy(Z_val,Y_val)
-    #         if constants.DEBUG_MODE:
-    #              print("Epoca: ",-1,
-    #                 "Training Error: ",train_err,
-    #                 "Training Accuracy: ",train_accuracy,
-    #                 "Validation Error: ",val_err,
-    #                 "Validation Accuracy: ",val_accuracy)
-                 
-    #         evaluation_parameters.append((train_err,train_accuracy,val_err,val_accuracy))
-    #         epoca += 1
-            
-    #     return evaluation_parameters
-
-    # # end
     
     # ####################################################################### #
     # METODI PUBBLICI
@@ -777,7 +755,12 @@ class NeuralNetwork:
             epochs : int = constants.DEFAULT_EPOCHS,
             es_patience : int = constants.DEFAULT_EARLY_STOPPING_PATIENCE,
             es_delta : float = constants.DEFAULT_EARLY_STOPPING_DELTA,
-            learning_rate : float = constants.DEFAULT_LEARNING_RATE
+            learning_rate : float = constants.DEFAULT_LEARNING_RATE,
+            rprop : bool = constants.DEFAULT_BACK_PROPAGATION_MODE,
+            eta_minus : float = constants.DEFAULT_RPROP_ETA_MINUS,
+            eta_plus : float = constants.DEFAULT_RPROP_ETA_PLUS,
+            delta_min : float = constants.DEFAULT_RPROP_DELTA_MIN,
+            delta_max : float = constants.DEFAULT_RPROP_DELTA_MAX
     ) -> list[TrainingReport]:
         
         """
@@ -794,10 +777,19 @@ class NeuralNetwork:
             -   es_patience : ...
             -   es_delta : ...
             -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
+            -   rprop : ...
+            -   eta_minus : ...
+            -   eta_plus : ...
+            -   delta_min : ...
+            -   delta_max : ...
 
             Returns:
             -   None.
         """
+
+        # Controllo del valore di learning_rate
+        if not (learning_rate >= 0 and learning_rate <= 1):
+            raise constants.TrainError(f"Il valore di 'learning_rate' ({learning_rate}) deve essere compreso tra 0 e 1.")
 
         # Controllo sulla compatibilita' di training_data e training_labels.
         if (not training_data.shape[0] == training_labels.shape[0]):
@@ -815,6 +807,12 @@ class NeuralNetwork:
         history_report : list[TrainingReport] = []
         prev_num_epochs = self.training_report.num_epochs
         prev_elapsed_time = self.training_report.elapsed_time
+
+        # Inizializzazione del delta_layer rispetto a pesi / bias (per la rprop)
+        dlw = np.ones(self.weights.size) * learning_rate
+        dlb = np.ones(self.biases.size) * learning_rate
+        gw  = np.zeros(self.weights.size)
+        gb  = np.zeros(self.biases.size)
 
         # Salvataggio del tempo di inizio dell'addestramento della rete neurale.
         start_time = time.time()
@@ -858,19 +856,37 @@ class NeuralNetwork:
                         pprint.pprint(training_activations)
                         print("\n-----\n\n")
 
-                # STEP 1b: backpropagation su tutti gli esempi di addestramento
-                print("\r\tEsecuzione della backpropagation...                   ", end='\r')
-                gw, gb = self.__back_propagation(
-                    training_outputs,
-                    training_activations,
-                    training_labels[start:end]
-                )
+                # STEP 1b: aggiornamento dei parametri
+                if rprop:
 
-                # STEP 1c: aggiornamento dei parametri
-                print("\r\tAggiornamento dei parametri in corso...               ", end='\r')
-                self.__gradient_descent(gw, gb, learning_rate)
+                    gw, gb, dlw, dlb = self.__resilient_back_propagation(
+                        training_outputs,
+                        training_activations,
+                        training_labels[start:end],
+                        gw, gb, dlw, dlb,
+                        eta_minus, eta_plus,
+                        delta_min, delta_max
+                    )
 
-                # STEP 1d: calcolo dell'errore di addestramento
+                else:
+
+                    # STEP 1b.1: backpropagation su tutti gli esempi di addestramento
+                    print("\r\tEsecuzione della backpropagation...                   ", end='\r')
+                    gw, gb = self.__back_propagation(
+                        training_outputs,
+                        training_activations,
+                        training_labels[start:end]
+                    )
+
+                    print("\r\tAggiornamento dei parametri in corso...               ", end='\r')
+                    self.__gradient_descent(gw, gb, learning_rate)
+
+                    del gw, gb
+                    gc.collect()
+                
+                # end if
+
+                # STEP 1c: calcolo dell'errore di addestramento
                 print("\r\tCalcolo dell'errore di addestramento in corso...      ", end='\r')
                 t_cost = self.training_report.compute_error(
                     training_activations[-1],
@@ -878,7 +894,7 @@ class NeuralNetwork:
                     self.err_fun
                 )
 
-                # STEP 1e: calcolo dell'accuracy di addestramento
+                # STEP 1d: calcolo dell'accuracy di addestramento
                 print("\r\tCalcolo dell'accuracy di addestramento in corso...    ", end='\r')
                 t_acc = self.training_report.compute_accuracy(
                     training_activations[-1],
@@ -887,7 +903,6 @@ class NeuralNetwork:
 
                 del training_outputs
                 del training_activations
-                del gw, gb
                 gc.collect()
             
             # end for start, end
@@ -953,11 +968,12 @@ class NeuralNetwork:
             print(repr(self.training_report))
 
             # STEP 5 : verifica della qualita' dei miglioramenti (early stopping)
-            if e >= es_patience:
-                value = history_report[-es_patience].validation_error - history_report[-1].validation_error
-                
-                if not value > es_delta:
-                    break
+            if validation_data is not None and validation_labels is not None:
+                if e >= es_patience:
+                    value = history_report[-es_patience].validation_error - history_report[-1].validation_error
+                    
+                    if not value > es_delta:
+                        break
 
             if constants.DEBUG_MODE:
                 break
@@ -1166,3 +1182,4 @@ class NeuralNetwork:
 # https://medium.com/@greyboi/serialising-all-the-functions-in-python-cd880a63b591
 # https://www.kaggle.com/code/residentmario/full-batch-mini-batch-and-online-learning
 # https://stackoverflow.com/questions/1316767/how-can-i-explicitly-free-memory-in-python
+# Resilient backpropagation: https://florian.github.io/rprop/

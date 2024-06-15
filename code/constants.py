@@ -137,6 +137,24 @@ DEFAULT_EARLY_STOPPING_DELTA = 0.1
 DEFAULT_EARLY_STOPPING_PATIENCE = 20
 """ Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
 
+DEFAULT_LEARNING_RATE = 0.1
+""" ... """
+
+DEFAULT_BACK_PROPAGATION_MODE = True
+""" ... """
+
+DEFAULT_RPROP_ETA_MINUS = 0.5
+""" ... """
+
+DEFAULT_RPROP_ETA_PLUS = 1.2
+""" ... """
+
+DEFAULT_RPROP_DELTA_MIN = 1e-6
+""" ... """
+
+DEFAULT_RPROP_DELTA_MAX = 50.0
+""" ... """
+
 DEFAULT_K_FOLD_VALUE = 10
 """ ... """
 
@@ -147,9 +165,6 @@ DIMENSIONE_PIXEL = 255
 """ ... """
 
 DIMENSIONE_IMMAGINE = 28
-""" ... """
-
-DEFAULT_LEARNING_RATE = 0.1
 """ ... """
 
 DEFAULT_LEAKY_RELU_ALPHA = 0.01
@@ -169,14 +184,6 @@ OUTPUT_DIRECTORY = "../output/"
 
 OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
 """ ... """
-
-# class ReportTitle(Enum):
-#     """ ... """
-
-#     Error = "error-report"
-#     Accuracy = "accuracy-report"
-
-# # end class ReportTitle
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
