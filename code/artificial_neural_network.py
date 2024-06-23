@@ -159,8 +159,8 @@ class NeuralNetwork:
 
     def __init__(
             self,
-            i_size : int,
-            l_sizes : list[int],
+            i_size : int = constants.DEFAULT_INPUT_LAYER_NEURONS,
+            l_sizes : list[int] = constants.DEFAULT_HIDDEN_LAYER_NEURONS,
             l_act_funs : list[constants.ActivationFunctionType] = [auxfunc.leaky_relu, auxfunc.identity],
             e_fun : constants.ErrorFunctionType = auxfunc.cross_entropy_softmax,
             t_rep : TrainingReport = None,
@@ -183,9 +183,11 @@ class NeuralNetwork:
             -   None.
         """
         
-        # Inizializzazione della matrice di input della rete neurale.
-        if (i_size <= 0):
+        # Controllo sulla dimensione dell'input layer della rete neurale.
+        if not i_size > 0:
             raise constants.InputLayerError("La dimensione dell'input della rete neurale deve essere strettamente maggiore di 0.")
+        
+        # Inizializzazione della matrice di input della rete neurale.
         self._input_size = i_size
         self.inputs = np.zeros((constants.DIMENSIONE_NEURONE_INPUT, self.input_size))
 
@@ -760,6 +762,7 @@ class NeuralNetwork:
             -   training_labels : una matrice numpy.ndarray contenente le etichette corrispondenti per i dati di addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
             -   validation_data : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta un esempio di addestramento.
             -   validation_labels : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
+            -   params : e' un oggetto della classe TrainingParams che contiene alcuni iperparametri per la fase di addestramento della rete neurale.
 
             Returns:
             -   None.
