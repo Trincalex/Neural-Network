@@ -269,7 +269,7 @@ def cross_entropy_softmax(
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto alle predizioni.
 
         Returns:
-        -   se der=False, ...
+        -   se der=False, restituisce il valore della funzione di perdita di entropia incrociata (float).
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alle predizioni.
     """
 

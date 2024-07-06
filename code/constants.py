@@ -19,7 +19,7 @@ from enum import Enum
 # CODICI DI ERRORE e EXCEPTIONS
 
 class LayerError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi ai layer della rete neurale. """
 
     def __init__(self, value):
         self.value = value
@@ -32,7 +32,7 @@ class LayerError(Exception):
 # end class LayerError
 
 class InputLayerError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi all'input layer della rete neurale. """
  
     def __init__(self, value):
         self.value = value
@@ -45,7 +45,7 @@ class InputLayerError(Exception):
 # end class InputLayerError
 
 class TrainError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi alla fase di addestramento. """
 
     def __init__(self, value):
         self.value = value
@@ -58,7 +58,7 @@ class TrainError(Exception):
 # end class TrainError
 
 class TestError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi alla fase di test """
 
     def __init__(self, value):
         self.value = value
@@ -71,7 +71,7 @@ class TestError(Exception):
 # end class TestError
 
 class ActivationFunctionError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi alla funzione di attivazione """
 
     def __init__(self, value):
         self.value = value
@@ -84,7 +84,7 @@ class ActivationFunctionError(Exception):
 # end class ActivationFunctionError
 
 class ErrorFunctionError(Exception):
-    """ ... """
+    """ Eccezione lanciata da errori relativi alla funzione di errore """
 
     def __init__(self, value):
         self.value = value
@@ -100,7 +100,7 @@ class ErrorFunctionError(Exception):
 # COSTANTI e ENUMERAZIONI
 
 STANDARD_DEVIATION = 1.0
-""" ... """
+""" Deviazione standard utilizzata per l'inizializzazione dei pesi e bias della rete neurale. """
 
 ETICHETTE_CLASSI = [
     "Cifra 0",
@@ -114,28 +114,28 @@ ETICHETTE_CLASSI = [
     "Cifra 8",
     "Cifra 9",
 ]
-""" ... """
+""" Enumerazione delle etichette rappresentative delle classi di output della rete neurale. """
 
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
-""" ... """
+""" Numero delle classi della rete neurale. """
 
 COPPIE_TRAINING = 12500
-""" ... """
+""" Numero di elementi del training set da estrarre. """
 
 COPPIE_TEST = 2500
-""" ... """
+""" Numero di elementi del test set da estrarre. """
 
 DEFAULT_INPUT_LAYER_NEURONS = 784
-""" ... """
+""" Numero di neuroni dell'input layer di default. """
 
 DEFAULT_HIDDEN_LAYER_NEURONS = [64, 10]
-""" ... """
+""" Numero di neuroni dei due strati dei nodi interni di default. """
 
 DEFAULT_EPOCHS = 500
-""" ... """
+""" Numero di epoche di default. """
 
 DEFAULT_MINI_BATCH_SIZE = 64
-""" ... """
+""" Dimensione di default del mini-batch utilizzata durante l'addestramento della rete neurale. """
 
 DEFAULT_EARLY_STOPPING_DELTA = 0.1
 """ La soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti nell'addestramento. Si sceglie di default il valore 0.1 perche', essendo il dataset MNIST grande e relativamente pulito, il modello dovrebbe migliorare in modo più consistente. """
@@ -144,7 +144,7 @@ DEFAULT_EARLY_STOPPING_PATIENCE = 20
 """ Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
 
 DEFAULT_LEARNING_RATE = 0.1
-""" ... """
+""" Tasso di apprendimento di default utilizzato durante l'addestramento della rete neurale. """
 
 DEFAULT_BACK_PROPAGATION_MODE = True
 """ ... """
