@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    ...
+    Questo file contiene tutte le funzioni per caricare e gestire il dataset
 
 """
 
@@ -25,13 +25,19 @@ def loadDataset(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     """
-        ...
+        E' la funzione per caricare il dataset mnist.
         
         Parameters:
-        -   ... : ...
+        -   training_length : intero rappresentante la grandezza del training set.
+        -   test_length : intero rappresentante la grandezza del test set.
 
         Returns:
-        -   ...
+        -   train_ids : array che contiene gli id degli elementi del training set.
+        -   train_imgs : array che contiene gli elementi del training set.
+        -   train_labels : array che contiene le etichette degli elementi del training set.
+        -   test_ids : array che contiene gli elementi del test set.
+        -   test_imgs : array che contiene gli elementi del test set.
+        -   test_labels : array che contiene le etichette degli elementi del test set.
     """
 
     print("Loading del dataset in corso...                                   ", end='\r')
@@ -135,13 +141,13 @@ def split_dataset(
 
 def convert_to_one_hot(vet : np.ndarray) -> np.ndarray:
     """
-        ...
+        Converte un vettore di interi nella rappresentazione one hot in forma di matrice
         
         Parameters:
-        -   ...: ...
+        -   vet : vettore di interi da convertire in formato one hot
 
         Returns:
-        -   ...
+        -   one_hot_matrix : matrice rappresentante la forma one hot del vettore di ingresso
     """
     
     num_label = len(vet)

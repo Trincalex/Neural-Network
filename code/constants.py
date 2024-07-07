@@ -147,52 +147,52 @@ DEFAULT_LEARNING_RATE = 0.1
 """ Tasso di apprendimento di default utilizzato durante l'addestramento della rete neurale. """
 
 DEFAULT_BACK_PROPAGATION_MODE = True
-""" ... """
+""" Modalità di default per l'uso della retropropagazione durante l'addestramento della rete neurale. """
 
 DEFAULT_RPROP_ETA_MINUS = 0.5
-""" ... """
+""" Valore di default per l'iperparametro eta_minus, usato nella rprop. """
 
 DEFAULT_RPROP_ETA_PLUS = 1.2
-""" ... """
+""" Valore di default per l'iperparametro eta_plus, usato nella rprop. """
 
 DEFAULT_RPROP_DELTA_MIN = 1e-6
-""" ... """
+""" Valore di default per l'iperparametro delta_min, usato nella rprop. """
 
 DEFAULT_RPROP_DELTA_MAX = 50.0
-""" ... """
+""" Valore di default per l'iperparametro eta_max, usato nella rprop. """
 
 DEFAULT_RANDOM_COMBINATIONS = 5
-""" ... """
+""" Valore di defoult da usare nel random search """
 
 DEFAULT_K_FOLD_VALUE = 10
-""" ... """
+""" Valore di default del numero k di fold in cui dividere il training set. """
 
 DIMENSIONE_NEURONE_INPUT = 1
-""" ... """
+""" Valore di defoult della dimensione del neurone di input """
 
 DIMENSIONE_PIXEL = 255
-""" ... """
+""" Dimensione dei pixel utilizzati per visualizzare le immagini del dataset """
 
 DIMENSIONE_IMMAGINE = 28
-""" ... """
+""" Dimensione delle immagini del dataset """
 
 DEFAULT_LEAKY_RELU_ALPHA = 0.01
-""" ... """
+""" Valore di default da usare nella leaky_relu """
 
 DEFAULT_RANDOM_SEED = 0
-""" ... """
+""" Seed di default per la generazione random di pesi e bias """
 
 DEBUG_MODE = False
 """ Consente di attivare la modalita' di debug per stampare in console i valori attuali delle strutture dati coinvolte nell'addestramento della rete neurale. """
 
 PRINT_DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
-""" ... """
+""" Formato di default per la visualizzazione di data e ora. """
 
 OUTPUT_DIRECTORY = "../output/"
-""" ... """
+""" Directory dove salvare i file di output. """
 
 OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
-""" ... """
+""" Formato di default per la visualizzazione di data e ora nei file di output. """
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
