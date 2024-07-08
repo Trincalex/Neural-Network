@@ -203,13 +203,23 @@ PlotTestingMode = Enum('PlotTestingMode', [
     'WRONG',
     'ALL'
 ])
-""" ... """
+""" Costante usata nella funzione plot_predictions, serve a determinare come visualizzare i risultati del testing. 
+    -   NONE : stampa i risulati del testing in semplice formato testuale
+    -   REPORT : ...
+    Qualsiasi altra modalità stampa i risultati del testing tramite un istogramma
+    Le seguenti modalità servono a far stampare anche i risultati delle predizioni
+    -   HIGH_CONFIDENCE_CORRECT : per visulizzare solo le predizioni corrette ad alta confidenza.
+    -   LOW_CONFIDENCE_CORRECT : per visulizzare tutte le altre predizioni corrette (a bassa confidenza).
+    -   ALMOST_CORRECT : per visulizzare solo le predizioni errate che superano la soglia di confidenza sull'etichetta esatta.
+    -   WRONG : per visulizzare tutte le altre predizioni errate.
+    -   ALL : per visulizzare tutte le predizioni.
+"""
 
 PLOT_TESTING_FIGSIZE = (12, 4)
-""" ... """
+""" Grandezza dell'istogramma riguardante il testing """
 
 PLOT_TESTING_COLUMNS = 2
-""" ... """
+""" Numero di colonne dell'istogramma sul testing """
 
 PLOT_TESTING_IMAGE_PLOT_INDEX = 0
 """ ... """
@@ -224,10 +234,10 @@ PLOT_TESTING_CONFIDENCE_THRESHOLD = 0.55
 # COSTANTI
 
 ActivationFunctionType = Callable[[float | np.ndarray, Optional[bool]], float | np.ndarray]
-""" ... """
+""" Tipo delle funzioni di attivazione. """
 
 ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | np.ndarray]
-""" ... """
+""" Tipo delle funzioni di errore. """
 
 # ########################################################################### #
 # RIFERIMENTI
