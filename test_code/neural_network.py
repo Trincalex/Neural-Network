@@ -15,13 +15,13 @@ class Neural_Network:
             hidden_size_list=[hidden_size_list]
 
         for l in hidden_size_list:           #l: size of actual layer
-            weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,x]))
-            biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[l,1]))
+            weights.append(constants.DEFAULT_STANDARD_DEVIATION * np.random.normal(size=[l,x]))
+            biases.append(constants.DEFAULT_STANDARD_DEVIATION * np.random.normal(size=[l,1]))
             act_fun.append(af.tanh)
             x=l
 
-        weights.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,x]))
-        biases.append(constants.STANDARD_DEVIATION * np.random.normal(size=[output_size,1]))
+        weights.append(constants.DEFAULT_STANDARD_DEVIATION * np.random.normal(size=[output_size,x]))
+        biases.append(constants.DEFAULT_STANDARD_DEVIATION * np.random.normal(size=[output_size,1]))
         act_fun.append(af.identity)
 
         self.w = weights

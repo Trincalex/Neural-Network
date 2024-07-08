@@ -190,15 +190,15 @@ class Layer:
 
         self._weights = np.zeros((ls,ns))
         if not random_init:
-            self.weights = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,ns))
+            self.weights = rng.normal(loc=0.0, scale=constants.DEFAULT_STANDARD_DEVIATION, size=(ls,ns))
         else:
-            self.weights = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,ns))
+            self.weights = np.random.normal(loc=0.0, scale=constants.DEFAULT_STANDARD_DEVIATION, size=(ls,ns))
 
         self._biases = np.zeros((ls,1))
         if not random_init:
-            self.biases = rng.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,1))
+            self.biases = rng.normal(loc=0.0, scale=constants.DEFAULT_STANDARD_DEVIATION, size=(ls,1))
         else:
-            self.biases = np.random.normal(loc=0.0, scale=constants.STANDARD_DEVIATION, size=(ls,1))
+            self.biases = np.random.normal(loc=0.0, scale=constants.DEFAULT_STANDARD_DEVIATION, size=(ls,1))
         
         self.act_fun = af
 

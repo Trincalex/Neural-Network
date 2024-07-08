@@ -16,7 +16,7 @@ from typing import Callable, Optional
 from enum import Enum
 
 # ########################################################################### #
-# CODICI DI ERRORE e EXCEPTIONS
+# CLASSI DI ECCEZIONE
 
 class LayerError(Exception):
     """ Eccezione lanciata da errori relativi ai layer della rete neurale. """
@@ -58,7 +58,7 @@ class TrainError(Exception):
 # end class TrainError
 
 class TestError(Exception):
-    """ Eccezione lanciata da errori relativi alla fase di test """
+    """ Eccezione lanciata da errori relativi alla fase di test. """
 
     def __init__(self, value):
         self.value = value
@@ -71,7 +71,7 @@ class TestError(Exception):
 # end class TestError
 
 class ActivationFunctionError(Exception):
-    """ Eccezione lanciata da errori relativi alla funzione di attivazione """
+    """ Eccezione lanciata da errori relativi alla funzione di attivazione. """
 
     def __init__(self, value):
         self.value = value
@@ -84,7 +84,7 @@ class ActivationFunctionError(Exception):
 # end class ActivationFunctionError
 
 class ErrorFunctionError(Exception):
-    """ Eccezione lanciata da errori relativi alla funzione di errore """
+    """ Eccezione lanciata da errori relativi alla funzione di errore. """
 
     def __init__(self, value):
         self.value = value
@@ -99,9 +99,6 @@ class ErrorFunctionError(Exception):
 # ########################################################################### #
 # COSTANTI e ENUMERAZIONI
 
-STANDARD_DEVIATION = 1.0
-""" Deviazione standard utilizzata per l'inizializzazione dei pesi e bias della rete neurale. """
-
 ETICHETTE_CLASSI = [
     "Cifra 0",
     "Cifra 1",
@@ -114,85 +111,99 @@ ETICHETTE_CLASSI = [
     "Cifra 8",
     "Cifra 9",
 ]
-""" Enumerazione delle etichette rappresentative delle classi di output della rete neurale. """
+""" Enumerazione delle etichette rappresentative delle classi di output del training set e del test set del MNIST dataset. """
 
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
-""" Numero delle classi della rete neurale. """
+""" Numero di classi di output del training set e del test set del MNIST dataset. """
 
 COPPIE_TRAINING = 12500
-""" Numero di elementi del training set da estrarre. """
+""" Numero di elementi da estrarre dal training set su cui eseguire la fase di addestramento della rete neurale. """
 
 COPPIE_TEST = 2500
-""" Numero di elementi del test set da estrarre. """
+""" Numero di elementi da estrarre del test set su cui eseguire la fase di test della rete neurale. """
 
-DEFAULT_INPUT_LAYER_NEURONS = 784
-""" Numero di neuroni dell'input layer di default. """
-
-DEFAULT_HIDDEN_LAYER_NEURONS = [64, 10]
-""" Numero di neuroni dei due strati dei nodi interni di default. """
-
-DEFAULT_EPOCHS = 500
-""" Numero di epoche di default. """
-
-DEFAULT_MINI_BATCH_SIZE = 64
-""" Dimensione di default del mini-batch utilizzata durante l'addestramento della rete neurale. """
-
-DEFAULT_EARLY_STOPPING_DELTA = 0.1
-""" La soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti nell'addestramento. Si sceglie di default il valore 0.1 perche', essendo il dataset MNIST grande e relativamente pulito, il modello dovrebbe migliorare in modo più consistente. """
-
-DEFAULT_EARLY_STOPPING_PATIENCE = 20
-""" Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
-
-DEFAULT_LEARNING_RATE = 0.1
-""" Tasso di apprendimento di default utilizzato durante l'addestramento della rete neurale. """
-
-DEFAULT_BACK_PROPAGATION_MODE = True
-""" Modalità di default per l'uso della retropropagazione durante l'addestramento della rete neurale. """
-
-DEFAULT_RPROP_ETA_MINUS = 0.5
-""" Valore di default per l'iperparametro eta_minus, usato nella rprop. """
-
-DEFAULT_RPROP_ETA_PLUS = 1.2
-""" Valore di default per l'iperparametro eta_plus, usato nella rprop. """
-
-DEFAULT_RPROP_DELTA_MIN = 1e-6
-""" Valore di default per l'iperparametro delta_min, usato nella rprop. """
-
-DEFAULT_RPROP_DELTA_MAX = 50.0
-""" Valore di default per l'iperparametro eta_max, usato nella rprop. """
-
-DEFAULT_RANDOM_COMBINATIONS = 5
-""" Valore di defoult da usare nel random search """
-
-DEFAULT_K_FOLD_VALUE = 10
-""" Valore di default del numero k di fold in cui dividere il training set. """
-
-DIMENSIONE_NEURONE_INPUT = 1
-""" Valore di defoult della dimensione del neurone di input """
-
-DIMENSIONE_PIXEL = 255
-""" Dimensione dei pixel utilizzati per visualizzare le immagini del dataset """
-
-DIMENSIONE_IMMAGINE = 28
-""" Dimensione delle immagini del dataset """
-
-DEFAULT_LEAKY_RELU_ALPHA = 0.01
-""" Valore di default da usare nella leaky_relu """
+# ##### #
 
 DEFAULT_RANDOM_SEED = 0
-""" Seed di default per la generazione random di pesi e bias """
+""" Seed di default per la generazione random di pesi e bias, utile per la riproducibilità delle fasi di addestramento e test della rete neurale. """
 
-DEBUG_MODE = False
-""" Consente di attivare la modalita' di debug per stampare in console i valori attuali delle strutture dati coinvolte nell'addestramento della rete neurale. """
+DEFAULT_STANDARD_DEVIATION = 1.0
+""" Valore di default per la deviazione standard utilizzata per l'inizializzazione dei pesi e bias della rete neurale. """
+
+DEFAULT_INPUT_LAYER_NEURONS = 784
+""" Valore di default per il numero di neuroni dell'input layer della rete neurale. """
+
+DEFAULT_HIDDEN_LAYER_NEURONS = [64, 10]
+""" Valori di default per il numero di neuroni dei due layer interni della rete neurale. """
+
+DEFAULT_EPOCHS = 500
+""" Valore di default del numero di epoche per la fase di addestramento della rete neurale. Un'epoca e' un'esecuzione completa dell'addestramento (e validazione, se presente) sul training set (e validation set). """
+
+DEFAULT_MINI_BATCH_SIZE = 64
+""" Dimensione di default del mini-batch utilizzata durante la fase di addestramento della rete neurale. """
+
+DEFAULT_EARLY_STOPPING_PATIENCE = 20
+""" Valore di default per il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
+
+DEFAULT_EARLY_STOPPING_DELTA = 0.1
+""" Valore di default per la soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti significativinell'addestramento. Si sceglie di default il valore 0.1 perche', essendo il dataset MNIST grande e relativamente pulito, il modello dovrebbe migliorare in modo più consistente. """
+
+DEFAULT_LEARNING_RATE = 0.1
+""" Valore di default per il tasso di apprendimento utilizzato nella fase di addestramento della rete neurale. Indica quanto i pesi debbano essere modificati in risposta all'errore calcolato. """
+
+# ##### #
+
+DEFAULT_LEAKY_RELU_ALPHA = 0.01
+""" Valore di default per l'iperparametro "alpha", usato nella funzione di attivazione 'leaky_relu'. Determina la pendenza per i valori negativi dell'input (invece di annullarli come nella ReLU standard). Serve a migliorare la stabilita' del modello in presenza di input che possono produrre valori negativi. """
+
+# ##### #
+
+DEFAULT_BACK_PROPAGATION_MODE = True
+""" Valore di default per la scelta dell'algoritmo di retropropagazione da utilizzare durante la fase di addestramento della rete neurale. Il valore 'True' indica l'utilizzo dell'algoritmo di '__resilient_back_propagation', mentre il valore 'False' indica l'utilizzo dell'algoritmo di '__back_propagation' e '__gradient_descent'. """
+
+DEFAULT_RPROP_ETA_MINUS = 0.5
+""" Valore di default per l'iperparametro 'eta_minus', usato nell'algoritmo di '__resilient_back_propagation'. E' un fattore di riduzione utilizzato per ridurre il passo di aggiornamento dei pesi (step size) quando il gradiente cambia segno. Serve per stabilizzare il processo di ottimizzazione. """
+
+DEFAULT_RPROP_ETA_PLUS = 1.2
+""" Valore di default per l'iperparametro 'eta_plus', usato nell'algoritmo di '__resilient_back_propagation'. E' un fattore di incremento utilizzato per aumentare il passo di aggiornamento dei pesi (step size) quando il gradiente mantiene lo stesso segno. Serve per accelerare la convergenza verso il minimo della funzione di costo. """
+
+DEFAULT_RPROP_DELTA_MIN = 1e-6
+""" Valore di default per l'iperparametro 'delta_min', usato nell'algoritmo di '__resilient_back_propagation'. Definisce il limite inferiore per il passo di aggiornamento dei pesi (step size). Serve a garantire che l'ottimizzazione con RPROP rimanga efficiente, evitando che i passi di aggiornamento diventino troppo piccoli per contribuire significativamente al processo di apprendimento. """
+
+DEFAULT_RPROP_DELTA_MAX = 50.0
+""" Valore di default per l'iperparametro 'eta_max', usato nell'algoritmo di '__resilient_back_propagation'. Definisce il limite superiore per il passo di aggiornamento dei pesi (step size). Serve a controllare la crescita del passo di aggiornamento nell'algoritmo RPROP, bilanciando l'accelerazione della convergenza al fine di mantenere un addestramento efficiente e stabile del modello. """
+
+# ##### #
+
+DEFAULT_RANDOM_COMBINATIONS = 5
+""" Valore di default del numero di combinazioni di iperparametri da testare nell'utilizzare la tecnica del random search. """
+
+DEFAULT_K_FOLD_VALUE = 10
+""" Valore di default del numero di fold in cui dividere il training set per il tuning degli iperparametri tramite utilizzo della tecnica della k-fold cross validation. """
+
+# ##### #
+
+PIXEL_INTENSITY_LEVELS = 255
+""" Il numero di livelli di intensita' della scala di grigio del singolo pixel nelle immagini grayscale a 8-bit del MNIST dataset. """
+
+DIMENSIONE_IMMAGINE = 28
+""" Indica il numero di pixel su una singola dimensione delle immagini del MNIST dataset. Siccome le immagini di questo dataset sono quadrate, il numero di pixel sulle due dimensione e' lo stesso. """
+
+# ##### #
 
 PRINT_DATE_TIME_FORMAT = "%d-%m-%Y, %H:%M:%S"
-""" Formato di default per la visualizzazione di data e ora. """
+""" Formato di default per la visualizzazione di data e ora nelle stampe in console. """
+
+OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
+""" Formato di default per la visualizzazione di data e ora nei file di output. """
+
+# ##### #
 
 OUTPUT_DIRECTORY = "../output/"
 """ Directory dove salvare i file di output. """
 
-OUTPUT_DATE_TIME_FORMAT = "%Y-%m-%d_%H-%M"
-""" Formato di default per la visualizzazione di data e ora nei file di output. """
+DEBUG_MODE = False
+""" Consente di attivare (con il valore 'True') la modalita' di debug, per stampare in console i valori attuali delle strutture dati coinvolte nella fase di addestramento della rete neurale. """
 
 PlotTestingMode = Enum('PlotTestingMode', [
     'NONE',
@@ -203,41 +214,50 @@ PlotTestingMode = Enum('PlotTestingMode', [
     'WRONG',
     'ALL'
 ])
-""" Costante usata nella funzione plot_predictions, serve a determinare come visualizzare i risultati del testing. 
-    -   NONE : stampa i risulati del testing in semplice formato testuale
-    -   REPORT : ...
-    Qualsiasi altra modalità stampa i risultati del testing tramite un istogramma
-    Le seguenti modalità servono a far stampare anche i risultati delle predizioni
-    -   HIGH_CONFIDENCE_CORRECT : per visulizzare solo le predizioni corrette ad alta confidenza.
-    -   LOW_CONFIDENCE_CORRECT : per visulizzare tutte le altre predizioni corrette (a bassa confidenza).
-    -   ALMOST_CORRECT : per visulizzare solo le predizioni errate che superano la soglia di confidenza sull'etichetta esatta.
-    -   WRONG : per visulizzare tutte le altre predizioni errate.
-    -   ALL : per visulizzare tutte le predizioni.
+"""
+    Un'enumerazione che raccoglie le modalità di visualizzazione dei risultati di testing.
+    -   NONE : per stampare i risultati del testing direttamente in console, senza creare e/o salvare alcun grafico.
+
+    -   REPORT : per stampare un report generale, cioe' un barchart che mostra a quale categoria appartengono le predizioni restituite in output dalla rete neurale.
+
+    -   HIGH_CONFIDENCE_CORRECT : oltre a stampare il report generale, fornisce anche i grafici delle sole predizioni corrette ad alta confidenza.
+    -   LOW_CONFIDENCE_CORRECT : oltre a stampare il report generale, fornisce anche i grafici delle sole predizioni corrette a bassa confidenza.
+    -   ALMOST_CORRECT : oltre a stampare il report generale, fornisce anche i grafici delle sole predizioni errate che superano la soglia di confidenza sull'etichetta esatta.
+    -   WRONG : oltre a stampare il report generale, fornisce anche i grafici di tutte le altre predizioni errate.
+    -   ALL : oltre a stampare il report generale, fornisce anche i grafici di tutte le singole predizioni divisi nelle quattro categorie di cui sopra (in sottocartelle).
+    
 """
 
 PLOT_TESTING_FIGSIZE = (12, 4)
-""" Grandezza dell'istogramma riguardante il testing """
+""" Indica le dimensioni di altezza e larghezza del report della singola predizione.  """
 
 PLOT_TESTING_COLUMNS = 2
-""" Numero di colonne dell'istogramma sul testing """
+""" Indica il numero di colonne in cui dividere il report della singola predizione. """
 
 PLOT_TESTING_IMAGE_PLOT_INDEX = 0
-""" ... """
+""" È l'indice di colonna dell'immagine in scala di grigi della cifra scritta a mano contenuta nel test set nel report della singola predizione. """
 
 PLOT_TESTING_BAR_CHART_INDEX = 1
-""" ... """
+""" È l'indice di colonna del barchart della distribuzione di probabilita' della predizione in output nel report della singola predizione. """
 
 PLOT_TESTING_CONFIDENCE_THRESHOLD = 0.55
-""" ... """
+""" Indica la soglia di confidenza che la predizione in output deve superare affinche' possa essere categorizzata come "risultato corretto ad alta confidenza". Il suo complemento a 1 (cioe' 0.45), e', invece, utilizzato per categorizzare le predizioni in output come "risultati quasi corretti". """
 
 # ########################################################################### #
-# COSTANTI
+# ALIAS DI TIPO
 
 ActivationFunctionType = Callable[[float | np.ndarray, Optional[bool]], float | np.ndarray]
-""" Tipo delle funzioni di attivazione. """
+"""
+    Semplifica in un alias di tipo la struttura della firma di una funzione di attivazione.
+    Accetta in input: un valore 'float' oppure un 'np.ndarray'; opzionalmente, un valore 'bool'. Restituisce in output: un valore 'float' oppure un 'np.ndarray'.
+"""
 
 ErrorFunctionType = Callable[[np.ndarray, np.ndarray, Optional[bool]], float | np.ndarray]
-""" Tipo delle funzioni di errore. """
+"""
+    Semplifica in un alias di tipo la struttura della firma di una funzione di errore.
+    Accetta in input: due 'np.ndarray'; opzionalmente, un valore 'bool'.
+    Restituisce in output: un valore 'float' oppure un 'np.ndarray'.
+"""
 
 # ########################################################################### #
 # RIFERIMENTI

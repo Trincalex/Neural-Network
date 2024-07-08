@@ -153,7 +153,7 @@ def softmax(input : float | np.ndarray, der : bool = False) -> float | np.ndarra
 
         Returns:
         -   se der=False restituisce il risultato della softmax
-        -   se der=True restituisce l'eccezione poichè non è possibile calcolare la derivata della softmax
+        -   se der=True lancia un'eccezione poichè non è possibile calcolare la derivata della softmax.
     """
     
     if der:
@@ -239,7 +239,7 @@ def cross_entropy(
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
-        -   se der=False, ...
+        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione (float).
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alla predizione.
     """
 
@@ -269,7 +269,7 @@ def cross_entropy_softmax(
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto alle predizioni.
 
         Returns:
-        -   se der=False, restituisce il valore della funzione di perdita di entropia incrociata (float).
+        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione (float).
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alle predizioni.
     """
 

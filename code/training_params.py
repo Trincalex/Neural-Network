@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    ...
+    Questo file contiene l'implementazione della classe TrainingParams, il cui scopo e' quello di memorizzare una parte dei valori degli iper-parametri riguardanti l'addestramento di una rete neurale feed-forward fully-connected (perche' altri sono intrinsecamente memorizzati nell'implementazione della classe NeuralNetwork).
 
 """
 
@@ -24,61 +24,61 @@ class TrainingParams:
 
     @property
     def batch_size(self) -> int:
-        """ ... """
+        """ Il numero di esempi di addestramento contenuti in un singolo mini-batch. """
         return self._batch_size
     # end
 
     @property
     def epochs(self) -> int:
-        """ ... """
+        """ Il massimo numero di iterazioni per cui il modello deve essere addestrato. """
         return self._epochs
     # end
 
     @property
     def learning_rate(self) -> float:
-        """ ... """
+        """ Il tasso di apprendimento utilizzato nella fase di addestramento. """
         return self._learning_rate
     # end
 
     @property
     def rprop(self) -> bool:
-        """ ... """
+        """ Un flag che indica quale algoritmo di retro-propagazione utilizzare nella fase di addestramento. """
         return self._rprop
     # end
 
     @property
     def eta_minus(self) -> float:
-        """ ... """
+        """ Il fattore di riduzione utilizzato per ridurre il passo di aggiornamento dei pesi (step size) quando il gradiente cambia segno. """
         return self._eta_minus
     # end
 
     @property
     def eta_plus(self) -> float:
-        """ ... """
+        """ Il fattore di incremento utilizzato per aumentare il passo di aggiornamento dei pesi (step size) quando il gradiente mantiene lo stesso segno. """
         return self._eta_plus
     # end
 
     @property
     def delta_min(self) -> float:
-        """ ... """
+        """ Il limite inferiore per il passo di aggiornamento dei pesi (step size). """
         return self._delta_min
     # end
 
     @property
     def delta_max(self) -> float:
-        """ ... """
+        """ Il limite superiore per il passo di aggiornamento dei pesi (step size). """
         return self._delta_max
     # end
 
     @property
     def es_patience(self) -> int:
-        """ ... """
+        """ Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
         return self._es_patience
     # end
 
     @property
     def es_delta(self) -> float:
-        """ ... """
+        """ La soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti significativi nell'addestramento. """
         return self._es_delta
     # end
 
@@ -104,16 +104,16 @@ class TrainingParams:
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
-            -   batch_size : ...
-            -   epochs : il numero di iterazioni per cui il modello deve essere addestrato. Un'epoca e' un'esecuzione completa dell'addestramento attraverso l'intero training_set.
-            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
-            -   rprop : ...
-            -   eta_minus : ...
-            -   eta_plus : ...
-            -   delta_min : ...
-            -   delta_max : ...
-            -   es_patience : ...
-            -   es_delta : ...
+            -   batch_size : e' il numero di esempi di addestramento contenuti in un singolo mini-batch.
+            -   epochs : e' il massimo numero di iterazioni per cui il modello deve essere addestrato.
+            -   learning_rate : e' un iper-parametro utilizzato per l'aggiornamento dei pesi.
+            -   rprop : e' un flag che indica quale algoritmo di retro-propagazione utilizzare nella fase di addestramento.
+            -   eta_minus : e' il fattore di riduzione utilizzato per ridurre il passo di aggiornamento dei pesi (step size) quando il gradiente cambia segno.
+            -   eta_plus : e' il fattore di incremento utilizzato per aumentare il passo di aggiornamento dei pesi (step size) quando il gradiente mantiene lo stesso segno.
+            -   delta_min : e' il limite inferiore per il passo di aggiornamento dei pesi (step size).
+            -   delta_max : e' il limite superiore per il passo di aggiornamento dei pesi (step size).
+            -   es_patience : e' il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia.
+            -   es_delta : e' la soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti significativi nell'addestramento.
 
             Returns:
             -   None.

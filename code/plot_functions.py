@@ -25,153 +25,21 @@ from datetime import datetime
 # ########################################################################### #
 # FUNZIONI PER LA FASE DI ADDESTRAMENTO
 
-def plot_training_epochs(
-        out_directory : str,
-        title : str,
-        y_label : str,
-        history_training : list[float],
-        history_validation : list[float],
-        x_max : float = None,
-        y_max : float = None
-) -> None:
-    
-    """
-        Disegna un grafico che confronta le misure calcolate in fase di training e in fase di validazione.
-
-        Parameters:
-        -   out_directory : la directory di output dove salvare il grafico richiesto.
-        -   title : il titolo del grafico.
-        -   y_label : l'etichetta per l'asse delle ordinate.
-        -   history_training : la lista di misure calcolate sui dati di addestramento.
-        -   history_validation : la lista di misure calcolate sui dati di validazione.
-
-        Returns:
-        -   None.
-    """
-
-    if history_validation is not None:
-        # print(len(history_training), len(history_validation))
-        if not len(history_training) == len(history_validation):
-            raise IndexError("Le misure calcolate in fase training e validation non coincidono.")
-
-    h_val = [] if history_validation is None else history_validation 
-
-    x_min = 0
-    y_min = 0
-
-    min_value   = min(history_training + h_val)
-    max_value   = max(history_training + h_val)
-    mean_value  = sum(history_training + h_val) / len(history_training + h_val)
-
-    if x_max is None:
-        x_max = len(history_training)
-    
-    if y_max is None:
-        y_max = max_value + max_value * 0.1
-
-    plot.title(title)
-
-    plot.xlim(x_min, x_max+1)
-    plot.xlabel('Epochs')
-    plot.xticks(range(x_min, x_max+1, x_max//10))
-
-    plot.ylim(y_min, y_max)
-    plot.ylabel(y_label)
-
-    y_ticks = [0, min_value, max_value, mean_value]
-    if y_label == "Accuracy":
-        y_ticks = y_ticks + [0.1]
-    plot.yticks(y_ticks)
-
-    plot.plot(range(x_min, x_max), history_training, 'b', label=f'Training {y_label}')
-
-    if history_validation is not None:
-        plot.plot(range(x_min, x_max), h_val, 'r', label=f'Validation {y_label}')
-
-    plot.legend()
-
-    os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + title + '.pdf', bbox_inches='tight')
-    print(f"Salvataggio di '{title}.pdf' in '{out_directory}' completato.")
-
-    plot.close()
-
-# end
-
-def plot_error(
-        out_directory : str,
-        title : str,
-        history_training_costs : list[float],
-        history_validation_costs : list[float] = None
-) -> None:
-    
-    """
-        Disegna il grafico delle curve di errore, per mostrare se il modello e' in una condizione di overfitting sui dati di addestramento.
-
-        Parameters:
-        -   out_directory : la directory di output dove salvare il grafico delle curve di errore.
-        -   title : il titolo del grafico.
-        -   history_training_costs : la lista di misure di errore calcolate sui dati di addestramento.
-        -   history_validation_costs : la lista di misure di errore calcolate sui dati di validazione.
-
-        Returns:
-        -   None.
-    """
-
-    plot_training_epochs(
-        out_directory,
-        f"{title}_error-report",
-        "Error",
-        history_training_costs,
-        history_validation_costs
-    )
-
-# end
-
-def plot_accuracy(
-        out_directory : str,
-        title : str,
-        history_training_accuracy : list[float],
-        history_validation_accuracy : list[float] = None
-) -> None:
-    
-    """
-        Disegna il grafico delle curve di accuratezza, per valutare la capacita' del modello di generalizzare sui dati di validazione.
-
-        Parameters:
-        -   out_directory : la directory di output dove salvare il grafico delle curve di accuracy.
-        -   title : il titolo del grafico.
-        -   history_training_accuracy : la lista di misure di accuracy calcolate sui dati di addestramento.
-        -   history_validation_accuracy : la lista di misure di accuracy calcolate sui dati di validazione.
-
-        Returns:
-        -   None.
-    """
-
-    plot_training_epochs(
-        out_directory,
-        f"{title}_accuracy-report",
-        "Accuracy",
-        history_training_accuracy,
-        history_validation_accuracy,
-        y_max=0.1
-    )
-
-# end
-
 def plot_k_fold_error_scores(
         out_directory : str,
-        fold_reports : list[dict[int, TrainingReport]]
+        fold_reports : list[dict]
 ) -> None:
     
     """
-        ...
+        Disegna un line plot per visualizzare i risultati della k-fold cross validation rispetto agli errori di validazione di ogni singola fold.
 
         Parameters:
-        -   ... : ...
+        -   out_directory : la directory di output dove salvare i grafici richiesti.
+        -   fold_reports : e' una lista di dizionari contenenti tutte le metriche di valutazione della fase di addestramento della rete neurale su tutte le fold della cross validation.
 
         Returns:
-        -   ... : ...
+        -   err_mean : la media degli errori di validazione su tutte le fold.
+        -   err_std : la deviazione standard degli errori di validazione su tutte le fold.
     """
 
     errs = [r['Report'].validation_error for r in fold_reports]
@@ -208,7 +76,7 @@ def plot_k_fold_error_scores(
         fmt='o'
     )
 
-    # Disegna una linea retta rossa che indica la media degli errori di validazione.
+    # Disegna una linea retta rossa che indica la media degli errori di validazione su tutte le fold.
     plot.plot(
         x_ticks,
         [err_mean for _ in fold_reports],
@@ -226,17 +94,19 @@ def plot_k_fold_error_scores(
 
 def plot_k_fold_accuracy_scores(
         out_directory : str,
-        fold_reports : list[dict[int, TrainingReport]]
+        fold_reports : list[dict]
 ) -> None:
     
     """
-        ...
+        Disegna un line plot per visualizzare i risultati della k-fold cross validation rispetto alle accuracy di validazione di ogni singola fold.
 
         Parameters:
-        -   ... : ...
+        -   out_directory : la directory di output dove salvare i grafici richiesti.
+        -   fold_reports : e' una lista di dizionari contenenti tutte le metriche di valutazione della fase di addestramento della rete neurale su tutte le fold della cross validation.
 
         Returns:
-        -   ... : ...
+        -   acc_mean : la media delle accuracy di validazione su tutte le fold.
+        -   acc_std : la deviazione standard delle accuracy di validazione su tutte le fold.
     """
 
     accs = [r['Report'].validation_accuracy for r in fold_reports]
@@ -301,11 +171,16 @@ def plot_testing(
 ) -> None:
     
     """
-        ...
+        Disegna un'immagine composta di 2 'subplots':
+        -   la prima colonna contiene la rappresentazione in scala di grigi dell'immagine 28x28 delle cifre del dataset MNIST e la relativa etichetta prese dal testing set.
+        -   la seconda colonna contiene la rappresentazione della predizione della rete neurale sull'esempio di testing corrispondente, tramite un bar chart.
 
         Parameters:
-        -   ... : ...
-        -   out_directory : la directory di output dove salvare i grafici richiesti.
+        -   idTest : l'array contenente gli identificativi degli esempi di testing.
+        -   Xtest : la matrice contenente gli esempi di testing da elaborare. Ogni riga e' la rappresentazione dell'immagine del singolo esempio di training.
+        -   Ytest : la matrice contenente le etichette corrispondenti per gli esempi di testing. Ogni riga rappresenta l'etichetta per il rispettivo esempio di testing.
+        -   probabilities : la matrice contenente la distribuzione di probabilita' delle predizioni della rete neurale.
+        -   out_directory : la directory di output dove salvare l'immagine.
 
         Returns:
         -   None.
@@ -359,9 +234,7 @@ def plot_predictions(
 ) -> None:
     
     """
-        Disegna una tabella composta di 2 colonne e un numero di righe pari al numero di esempi di testing in input. E' strutturata come segue:
-        -   la prima colonna contiene la rappresentazione in scala di grigi dell'immagine 28x28 delle cifre del dataset MNIST e la relativa etichetta prese dal testing set.
-        -   la seconda colonna contiene la rappresentazione della predizione della rete neurale sull'esempio di testing corrispondente, tramite un bar chart.
+        Disegna un barchart che mostra a quale categoria appartengono le predizioni restituite in output dalla rete neurale.
 
         Parameters:
         -   idTest : l'array contenente gli identificativi degli esempi di testing.
@@ -415,7 +288,7 @@ def plot_predictions(
         print(f"Predizioni errate: {wrongs_label}")
         return
     
-    # Altrimenti, salva i risultati del testing in un istogramma.
+    # Altrimenti, salva i risultati del testing in un barchart.
     plot.title("testing-report", fontsize=20)
     plot.tight_layout()
     bar_chart = plot.bar(
@@ -449,15 +322,8 @@ def plot_predictions(
     plot.savefig(out_directory + "testing-report.pdf", bbox_inches='tight')
 
     plot.close()
-    
-    """
-        Infine, se e' stata selezionata un'altra modalita', stampa anche i singoli risultati delle predizioni.
-        -   constants.PlotTestingMode.ALL : per visulizzare tutte le predizioni.
-        -   constants.PlotTestingMode.HIGH_CONFIDENCE_CORRECT : per visulizzare solo le predizioni corrette ad alta confidenza.
-        -   constants.PlotTestingMode.LOW_CONFIDENCE_CORRECT : per visulizzare tutte le altre predizioni corrette (a bassa confidenza).
-        -   constants.PlotTestingMode.ALMOST_CORRECT : per visulizzare solo le predizioni errate che superano la soglia di confidenza sull'etichetta esatta.
-        -   constants.PlotTestingMode.WRONG : per visulizzare tutte le altre predizioni errate.
-    """
+
+    # ##### #
 
     if plot_mode == constants.PlotTestingMode.ALL or plot_mode == constants.PlotTestingMode.HIGH_CONFIDENCE_CORRECT:
         highs_out = out_directory+"high_confidence_corrects/"

@@ -143,14 +143,14 @@ class NeuralNetwork:
     # end
 
     @property
-    def training_report(self):
-        """E' un'istanza della classe training_report, contenente le metriche di valutazione della fase di addestramento"""
+    def training_report(self) -> TrainingReport:
+        """E' un'istanza della classe TrainingReport, contenente le metriche di valutazione della fase di addestramento."""
         return self._training_report
     # end
 
     @property
-    def training_params(self):
-        """E' un'istanza della classe training_params, contenente gli iper-parametri per la fase di addestramento"""
+    def training_params(self) -> TrainingParams:
+        """E' un'istanza della classe TrainingParams, contenente i valori degli iper-parametri per la fase di addestramento."""
         return self._training_params
     # end
 
@@ -189,7 +189,7 @@ class NeuralNetwork:
         
         # Inizializzazione della matrice di input della rete neurale.
         self._input_size = i_size
-        self.inputs = np.zeros((constants.DIMENSIONE_NEURONE_INPUT, self.input_size))
+        self.inputs = np.zeros((1, self.input_size))
 
         # Controlli sulla lista delle dimensioni e delle funzioni di attivazione dei layers.
         if not isinstance(l_sizes, list):
@@ -612,12 +612,12 @@ class NeuralNetwork:
     ) -> None:
         
         """
-            E' una funzione che effettua l'aggiornamento dei pesi e bias della rete neurale usando l'algoritmo di discesa del gradiente
+            Calcola l'aggiornamento dei pesi e bias della rete neurale utilizzando l'algoritmo di discesa del gradiente.
             
             Parameters:
-            -   gradient_weights : e' un array contenente i pesi calcolati dalla backpropagation
-            -   gradient_biases : e' un array contenente i bias calcolati dalla backpropagation
-            -   learning_rate : e' un parametro utilizzato per l'aggiornamento dei pesi che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
+            -   gradient_weights : e' un array contenente i gradienti dei pesi rispetto alla funzione di costo della rete neurale calcolati dalla backpropagation.
+            -   gradient_biases : e' un array contenente i gradienti dei bias rispetto alla funzione di costo della rete neurale calcolati dalla backpropagation.
+            -   learning_rate : e' un valore float che indica quanto i pesi debbano essere modificati in risposta all'errore calcolato.
 
             Returns:
             -   None.
@@ -649,10 +649,10 @@ class NeuralNetwork:
 
             Parameters:
             -   prod_gradients : e' un array contenente il prodotto elemento per elemento del gradiente della funzione di costo calcolato all'epoca corrente e all'epoca precedente. Si utilizza per capire come cambia il segno.
-            -   eta_minus : Fattore di riduzione dello step size se il segno del gradiente cambia (tipicamente un valore inferiore a 1, come 0.5).
-            -   eta_plus : Fattore di incremento dello step size se il segno del gradiente rimane lo stesso (tipicamente un valore maggiore di 1, come 1.2).
-            -   delta_min : Valore minimo dello step size per evitare che diventi troppo piccolo.
-            -   delta_max : Valore massimo dello step size per evitare che diventi troppo grande.
+            -   eta_minus : e' il fattore di riduzione dello step size quando il segno del gradiente cambia (tipicamente un valore inferiore a 1, es. 0.5).
+            -   eta_plus : e' il fattore di incremento dello step size se il segno del gradiente rimane lo stesso (tipicamente un valore maggiore di 1, es. 1.2).
+            -   delta_min : e' il valore che definisce il limite inferiore dello step size.
+            -   delta_max : e' il valore che definisce il limite superiore dello step size.
 
             Returns:
             -   un array contenente gli step size relativi ad ogni peso / bias della rete.
@@ -691,22 +691,23 @@ class NeuralNetwork:
             -   network_outputs : la lista di output di ogni layer della rete.
             -   network_activations : la lista di valori di attivazione di ogni layer della rete.
             -   training_labels : e' la matrice di tutte le etichette delle coppie del dataset.
-            -   prev_gw : gradiente dei pesi della precedente epoca.
-            -   prev_gb : gradiente dei bias della precedente epoca.
-            -   prev_dlw : step size precedente per i pesi.
-            -   prev_dlb : step size precedente per i bias.
-            -   eta_minus : fattore di riduzione dello step size se il segno del gradiente cambia.
-            -   eta_plus : fattore di incremento dello step size se il segno del gradiente rimane lo stesso.
-            -   delta_min : valore minimo dello step size.
-            -   delta_max : valore massimo dello step size.
+            -   prev_gw : e' il vettore del gradiente dei pesi dell'epoca precedente.
+            -   prev_gb : e' il vettore del gradiente dei bias dell'epoca precedente.
+            -   prev_dlw : e' il vettore degli step size (per i pesi) dell'epoca precedente.
+            -   prev_dlb : e' il vettore degli step size (per i bias) dell'epoca precedente.
+            -   eta_minus : e' il fattore di riduzione dello step size quando il segno del gradiente cambia (tipicamente un valore inferiore a 1, es. 0.5).
+            -   eta_plus : e' il fattore di incremento dello step size se il segno del gradiente rimane lo stesso (tipicamente un valore maggiore di 1, es. 1.2).
+            -   delta_min : e' il valore che definisce il limite inferiore dello step size.
+            -   delta_max : e' il valore che definisce il limite superiore dello step size.
 
             Returns:
-            -   gw : gradiente dei pesi.
-            -   gb : gradiente dei bias.
-            -   dl_weights : step size aggiornato per i pesi.
-            -   dl_biases : step size aggiornato per i bias.
+            -   gw : e' il vettore dei gradiente dei pesi dell'epoca corrente.
+            -   gb : e' il vettore dei gradiente dei bias dell'epoca corrente.
+            -   dl_weights : e' il vettore degli step size (per i pesi) dell'epoca corrente.
+            -   dl_biases : e' il vettore degli step size (per i bias) dell'epoca corrente.
         """
 
+        # Calcolo del vettore del gradiente dei pesi / bias.
         gw, gb = self.__back_propagation(
             network_outputs,
             network_activations,
@@ -717,6 +718,7 @@ class NeuralNetwork:
         prod_gw = np.multiply(prev_gw, gw)
         prod_gb = np.multiply(prev_gb, gb)
 
+        # Calcolo degli step size (per i pesi).
         dl_weights = self.__rprop_delta_layer(
             prod_gw,
             prev_dlw,
@@ -724,6 +726,7 @@ class NeuralNetwork:
             delta_min, delta_max
         )
 
+        # Calcolo degli step size (per i bias).
         dl_biases = self.__rprop_delta_layer(
             prod_gb,
             prev_dlb,
@@ -731,12 +734,13 @@ class NeuralNetwork:
             delta_min, delta_max
         )
 
-        # Applicazione del weight-backtracking
+        # Applicazione del weight-backtracking.
         gw          = np.where(prod_gw < 0, 0, gw)
         gb          = np.where(prod_gb < 0, 0, gb)
         u_weights   = np.where(prod_gw < 0, -np.sign(prev_gw) * prev_dlw, -np.sign(gw) * dl_weights)
         u_biases    = np.where(prod_gb < 0, -np.sign(prev_gb) * prev_dlb, -np.sign(gb) * dl_biases)
 
+        # Si riporta l'aggiornamento dei pesi / bias iterativamente in tutta la rete neurale.
         self.weights += u_weights
         self.biases += u_biases
         self.__scatter_weights()

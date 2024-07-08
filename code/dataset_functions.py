@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene tutte le funzioni per caricare e gestire il dataset
+    Questo file contiene tutte le funzioni per caricare e gestire il dataset.
 
 """
 
@@ -63,7 +63,7 @@ def loadDataset(
     train_set = train_set[:training_length]
 
     # Normalizzazione per valori da 0 a 1
-    train_imgs = np.asfarray(train_set[:, 2:]) / constants.DIMENSIONE_PIXEL
+    train_imgs = np.asfarray(train_set[:, 2:]) / constants.PIXEL_INTENSITY_LEVELS
 
     # Conversione delle etichette degli esempi in rappresentazione one-hot.
     train_labels = convert_to_one_hot(train_set[:, 1])
@@ -80,7 +80,7 @@ def loadDataset(
     np.random.shuffle(test_set)
 
     test_set = test_set[:test_length]
-    test_imgs = np.asfarray(test_set[:, 2:]) / constants.DIMENSIONE_PIXEL
+    test_imgs = np.asfarray(test_set[:, 2:]) / constants.PIXEL_INTENSITY_LEVELS
     test_labels = convert_to_one_hot(test_set[:, 1])
     test_ids = test_set[:, 0].astype(int)
 
@@ -141,13 +141,13 @@ def split_dataset(
 
 def convert_to_one_hot(vet : np.ndarray) -> np.ndarray:
     """
-        Converte un vettore di interi nella rappresentazione one hot in forma di matrice
+        Converte un vettore di interi (un'etichetta per ogni esempio del dataset) nella rappresentazione one-hot in forma di matrice (un vettore one-hot per ogni esempio di training).
         
         Parameters:
-        -   vet : vettore di interi da convertire in formato one hot
+        -   vet : il vettore di interi da convertire nella rappresentazione one-hot.
 
         Returns:
-        -   one_hot_matrix : matrice rappresentante la forma one hot del vettore di ingresso
+        -   one_hot_matrix : una matrice contenente la rappresentazione one-hot dell'etichetta di ogni esempio di training.
     """
     
     num_label = len(vet)
@@ -168,13 +168,13 @@ def convert_to_one_hot(vet : np.ndarray) -> np.ndarray:
 
 def convert_to_label(vet : np.ndarray) -> str:
     """
-        ...
+        Converte la distribuzione di probabilita' dell'output della rete neurale nell'etichetta corrispondente alla predizione.
         
         Parameters:
-        -   ... : ...
+        -   vet : la distribuzione di probabilita' dell'output della rete neurale.
 
         Returns:
-        -   ...
+        -   l'etichetta corrispondente alla predizione della rete neurale.
     """
 
     return constants.ETICHETTE_CLASSI[np.argmax(vet)]
