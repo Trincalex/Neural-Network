@@ -388,3 +388,4 @@ def compute_batches(
 # https://stackoverflow.com/questions/40726490/overflow-error-in-pythons-numpy-exp-function
 # https://www.v7labs.com/blog/cross-entropy-loss-guide
 # https://www.redcrabmath.com/Calculator/Softmax
+# https://www.lokad.com/it/definizione-entropia-incrociata/
