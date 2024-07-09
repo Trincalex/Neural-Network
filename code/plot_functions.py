@@ -13,149 +13,110 @@
 
 import constants
 import dataset_functions as df
-from training_report import TrainingReport
 
 import numpy as np
-import os
+import pandas as pd
 import matplotlib.pyplot as plot
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib.ticker import PercentFormatter
-from datetime import datetime
+import os
 
 # ########################################################################### #
 # FUNZIONI PER LA FASE DI ADDESTRAMENTO
 
-def plot_k_fold_error_scores(
+def plot_search_report(
         out_directory : str,
-        fold_reports : list[dict]
+        title : str,
+        k_fold_report : list[dict],
+        search_report : pd.Series
 ) -> None:
     
     """
-        Disegna un line plot per visualizzare i risultati della k-fold cross validation rispetto agli errori di validazione di ogni singola fold.
+        Disegna una singola immagine contenente:
+        -   un primo barchart per mostrare tutti i valori di errore medio ottenuti dall'addestramento dei modelli sulle diverse fold;
+        -   un secondo barchart per mostrare tutti i valori di accuracy media ottenuti dall'addestramento dei modelli sulle diverse fold.
+        -   infine, tutti i valori contenuti nel 'search_report'.
 
         Parameters:
-        -   out_directory : la directory di output dove salvare i grafici richiesti.
-        -   fold_reports : e' una lista di dizionari contenenti tutte le metriche di valutazione della fase di addestramento della rete neurale su tutte le fold della cross validation.
+        -   out_directory : la directory di output dove salvare il grafico.
+        -   title : il titolo del grafico, che indica il tipo di tecnica di ricerca utilizzata. 
+        -   k_fold_report : una lista di metriche di valutazione relative ai valori di errore e di accuracy di validazione ottenuti durante le fasi di addestramento dei modelli sulle diverse fold.
+        -   search_report : un dizionario contenente i valori degli iper-parametri della combinazione valutata, e la media e la deviazione standard dei punteggi di errore e accuracy ottenuti dall'esecuzione della k-fold cross validation.
 
         Returns:
-        -   err_mean : la media degli errori di validazione su tutte le fold.
-        -   err_std : la deviazione standard degli errori di validazione su tutte le fold.
+        -   None.
     """
 
-    errs = [r['Report'].validation_error for r in fold_reports]
-    err_mean = np.mean(errs)
-    err_std = np.std(errs)
+    # Identificativo del grafico.
+    idx = str(search_report.name)
+
+    # Dati da visualizzare.
+    em          = search_report["Eta minus"]
+    ep          = search_report["Eta plus"]
+    hl          = search_report["Hidden layer"]
+    errs_mean   = search_report["Mean error"]
+    errs_std    = search_report["Std error"]
+    accs_mean   = search_report["Mean accuracy"]
+    accs_std    = search_report["Std accuracy"]
+
+    folds = [f"Fold {r['Fold']}" for r in k_fold_report]
+    errs = [r['E_value'] for r in k_fold_report]
+    accs = [r['A_value'] for r in k_fold_report]
+
+    # Creazione dell'immagine.
+    fig, axes = plot.subplots(1, 2)
+    fig.set_size_inches(constants.PLOT_SEARCH_FIGSIZE)
+    plot.tight_layout()
+    plot.subplots_adjust(top=0.8, wspace=0.25)
 
     # Titolo del grafico.
-    plot.suptitle("Error scores", fontsize=20)
-    plot.title(f"Media: {err_mean:.2f}, Deviazione standard: {err_std:.2f}", fontsize=10)
-    plot.tight_layout()
-
-    # Etichette sull'asse x.
-    x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
-    plot.xlabel("Folds", fontsize=15)
-
-    # Si calcola il massimo errore di validazione di tutte le fold.
-    y_max = max([r['E_max'] for r in fold_reports])
-    # y_min = max([r['E_min'] for r in fold_reports])
-    plot.ylim(0, y_max)
-    plot.margins()
-
-    # Etichette sull'asse y.
-    plot.ylabel("Error", fontsize=15)
-    plot.locator_params(axis='y', nbins=5)
-    plot.yticks([y for y in plot.yticks()[0]] + [err_mean])
-    plot.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-
-    # Disegna un line plot per confrontare gli errori di validazione.
-    # Ad ogni fold e' anche associato una barra di errore che mostra il massimo ed il minimo errore di validazione ottenuto in fase di addestramento.
-    plot.errorbar(
-        x_ticks,
-        [r['E_mean'] for r in fold_reports],
-        yerr=[abs(r['E_max']-r['E_min']) for r in fold_reports],
-        fmt='o'
+    plot_title = (
+        fr"$\bf{{{title}}}$" + "\n" + 
+        fr"$\it{{Eta\;minus\;=\;{em:.5f},\ Eta\;plus\;=\;{ep:.5f},\ Hidden\;layer\;=\;{hl:.0f}}}$"
     )
+    plot.suptitle(plot_title, fontsize=20)
 
-    # Disegna una linea retta rossa che indica la media degli errori di validazione su tutte le fold.
-    plot.plot(
-        x_ticks,
-        [err_mean for _ in fold_reports],
-        color='red', linestyle='dashed', linewidth=1
+    # Creazione del bar chart per l'errore di validazione.
+    errs_bar_chart = axes[0]
+    errs_bars = errs_bar_chart.bar(folds, errs)
+
+    errs_bar_chart.set_ylim(0, np.max(errs)+np.max(errs)*0.1)
+    errs_bar_chart.set_ylabel(fr"$\bf{{Error}}$", fontsize=14)
+    errs_bar_chart.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+    errs_xlabel = (
+        fr"$\bf{{Folds}}$" + "\n" + 
+        fr"$\it{{Media\;=\;{errs_mean:.2f},\ Deviazione\;standard\;=\;{errs_std:.2f}}}$"
     )
+    errs_bar_chart.set_xlabel(errs_xlabel, fontsize=14)
+    errs_bar_chart.tick_params('x', labelrotation=20.0)
+
+    for b in errs_bars:
+        h = b.get_height()
+        errs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f}', ha='center', va='bottom', fontsize=8)
+
+    # Creazione del bar chart per l'accuracy di validazione.
+    accs_bar_chart = axes[1]
+    accs_bars = accs_bar_chart.bar(folds, np.multiply(accs, 100))
+
+    accs_bar_chart.set_ylim(0, 110)
+    accs_bar_chart.set_ylabel(fr"$\bf{{Accuracy}}$", fontsize=14)
+    accs_bar_chart.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+    accs_xlabel = (
+        fr"$\bf{{Folds}}$" + "\n" +
+        fr"$\it{{Media\;=\;{accs_mean*100:.2f}\%,\ Deviazione\;standard\;=\;{accs_std*100:.2f}\%}}$"
+    )
+    accs_bar_chart.set_xlabel(accs_xlabel, fontsize=14)
+    accs_bar_chart.tick_params('x', labelrotation=20.0)
+
+    for b in accs_bars:
+        h = b.get_height()
+        accs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f} %', ha='center', va='bottom', fontsize=8)
 
     # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + "error_scores.pdf", bbox_inches='tight')
+    plot.savefig(out_directory + title.replace(' ', '_').lower() + "_report_" + idx + ".pdf", bbox_inches='tight')
     plot.close()
-
-    return err_mean, err_std
-
-# end
-
-def plot_k_fold_accuracy_scores(
-        out_directory : str,
-        fold_reports : list[dict]
-) -> None:
-    
-    """
-        Disegna un line plot per visualizzare i risultati della k-fold cross validation rispetto alle accuracy di validazione di ogni singola fold.
-
-        Parameters:
-        -   out_directory : la directory di output dove salvare i grafici richiesti.
-        -   fold_reports : e' una lista di dizionari contenenti tutte le metriche di valutazione della fase di addestramento della rete neurale su tutte le fold della cross validation.
-
-        Returns:
-        -   acc_mean : la media delle accuracy di validazione su tutte le fold.
-        -   acc_std : la deviazione standard delle accuracy di validazione su tutte le fold.
-    """
-
-    accs = [r['Report'].validation_accuracy for r in fold_reports]
-    acc_mean = np.mean(accs)
-    acc_std = np.std(accs)
-
-    # Titolo del grafico.
-    plot.suptitle("Accuracy scores", fontsize=20)
-    plot.title(f"Media: {acc_mean:.2%}, Deviazione standard: {acc_std:.2%}", fontsize=10)
-    plot.tight_layout()
-
-    # Etichette sull'asse x.
-    x_ticks = [f"Fold {r['Fold']}" for r in fold_reports]
-    plot.xlabel("Folds", fontsize=15)
-
-    # Si calcola la massima accuracy di validazione di tutte le fold.
-    y_max = max([r['A_max'] for r in fold_reports])
-    y_min = min([r['A_min'] for r in fold_reports])
-    plot.ylim(y_min, y_max)
-    plot.margins()
-
-    # Etichette sull'asse y.
-    plot.ylabel("Accuracy", fontsize=15)
-    plot.locator_params(axis='y', nbins=5)
-    plot.yticks([y for y in plot.yticks()[0]] + [acc_mean])
-    plot.gca().yaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=2))
-
-    # Disegna un line plot per confrontare le accuracy di validazione.
-    # Ad ogni fold e' anche associato una barra di errore che mostra la massima e la minima accuracy di validazione ottenuta in fase di addestramento.
-    plot.errorbar(
-        x_ticks,
-        [r['A_mean'] for r in fold_reports],
-        yerr=[abs(r['A_max']-r['A_min']) for r in fold_reports],
-        fmt='o'
-    )
-
-    # Disegna una linea retta rossa che indica la media delle accuracy di validazione.
-    plot.plot(
-        x_ticks,
-        [acc_mean for _ in fold_reports],
-        color='red', linestyle='dashed', linewidth=1
-    )
-
-    # Salvataggio del grafico.
-    os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + "accuracy_scores.pdf", bbox_inches='tight')
-    plot.close()
-
-    return acc_mean, acc_std
 
 # end
 
@@ -193,7 +154,7 @@ def plot_testing(
         y = Ytest[i]
         prob = probabilities[i]
 
-        fig, axes = plot.subplots(1, constants.PLOT_TESTING_COLUMNS)
+        fig, axes = plot.subplots(1, 2)
         fig.suptitle(f"testing-report_{i}", fontsize=20)
         fig.set_size_inches(constants.PLOT_TESTING_FIGSIZE)
         fig.tight_layout()

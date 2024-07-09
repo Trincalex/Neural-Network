@@ -228,11 +228,11 @@ PlotTestingMode = Enum('PlotTestingMode', [
     
 """
 
-PLOT_TESTING_FIGSIZE = (12, 4)
-""" Indica le dimensioni di altezza e larghezza del report della singola predizione.  """
+PLOT_SEARCH_FIGSIZE = (12, 5.5)
+""" Indica le dimensioni di altezza e larghezza del report della singola predizione. """
 
-PLOT_TESTING_COLUMNS = 2
-""" Indica il numero di colonne in cui dividere il report della singola predizione. """
+PLOT_TESTING_FIGSIZE = (12, 4)
+""" Indica le dimensioni di altezza e larghezza del report della singola predizione. """
 
 PLOT_TESTING_IMAGE_PLOT_INDEX = 0
 """ È l'indice di colonna dell'immagine in scala di grigi della cifra scritta a mano contenuta nel test set nel report della singola predizione. """
