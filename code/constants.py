@@ -139,16 +139,16 @@ DEFAULT_HIDDEN_LAYER_NEURONS = [64, 10]
 DEFAULT_EPOCHS = 500
 """ Valore di default del numero di epoche per la fase di addestramento della rete neurale. Un'epoca e' un'esecuzione completa dell'addestramento (e validazione, se presente) sul training set (e validation set). """
 
-DEFAULT_MINI_BATCH_SIZE = 64
+DEFAULT_MINI_BATCH_SIZE = 1125
 """ Dimensione di default del mini-batch utilizzata durante la fase di addestramento della rete neurale. """
 
-DEFAULT_EARLY_STOPPING_PATIENCE = 20
+DEFAULT_EARLY_STOPPING_PATIENCE = 5
 """ Valore di default per il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
 
 DEFAULT_EARLY_STOPPING_DELTA = 0.1
 """ Valore di default per la soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti significativinell'addestramento. Si sceglie di default il valore 0.1 perche', essendo il dataset MNIST grande e relativamente pulito, il modello dovrebbe migliorare in modo più consistente. """
 
-DEFAULT_LEARNING_RATE = 0.1
+DEFAULT_LEARNING_RATE = 0.2
 """ Valore di default per il tasso di apprendimento utilizzato nella fase di addestramento della rete neurale. Indica quanto i pesi debbano essere modificati in risposta all'errore calcolato. """
 
 # ##### #

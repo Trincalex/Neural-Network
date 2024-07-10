@@ -792,8 +792,9 @@ class NeuralNetwork:
         
         # Inizializzazione delle variabili necessarie all'aggiornamento dei report.
         history_report : list[TrainingReport] = []
-        prev_num_epochs = self.training_report.num_epochs
-        prev_elapsed_time = self.training_report.elapsed_time
+        prev_num_epochs     = self.training_report.num_epochs
+        prev_elapsed_time   = self.training_report.elapsed_time
+        es_counter          = 0
 
         # Inizializzazione del delta_layer rispetto a pesi / bias (per la rprop)
         dlw = np.ones(self.weights.size) * params.learning_rate
@@ -939,13 +940,18 @@ class NeuralNetwork:
                 t_acc, v_acc
             )
 
+            # STEP 4.a : verifica della qualita' dei miglioramenti (early stopping)
             """
                 Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo).
             """
             if validation_data is not None and validation_labels is not None:
-                if e == 0 or curr_net_report.validation_error < best_net_params["Report"].validation_error:
+                if e == 0:
+                    self.training_report.update(curr_net_report)
+                elif params.es_delta < best_net_params["Report"].validation_error - curr_net_report.validation_error:
+                    es_counter = 0
                     self.training_report.update(curr_net_report)
                 else:
+                    es_counter += 1
                     self.weights = copy.deepcopy(best_net_params["Weights"])
                     self.biases = copy.deepcopy(best_net_params["Biases"])
             else:
@@ -956,17 +962,18 @@ class NeuralNetwork:
             del curr_net_report
             gc.collect()
 
-            # STEP 4: stampa del report dell'epoca migliore
-            print("\r\t                                                      ")
-            print(repr(self.training_report))
+            # # STEP 5 : stampa del report dell'epoca migliore
+            # print("\r\t                                                      ")
+            # print(repr(self.training_report))
 
-            # STEP 5 : verifica della qualita' dei miglioramenti (early stopping)
-            if validation_data is not None and validation_labels is not None:
-                if e >= params.es_patience:
-                    value = history_report[-params.es_patience].validation_error - history_report[-1].validation_error
-                    
-                    if not value > params.es_delta:
-                        break
+            # STEP 5 : stampa del report dell'ultima epoca
+            print("\r\t                                                      ")
+            print(repr(history_report[-1]))
+            # print("best:", best_net_params["Report"].validation_error, "curr:", curr_net_report.validation_error, "diff:", best_net_params["Report"].validation_error - curr_net_report.validation_error, "delta:", params.es_delta, "count:", es_counter)
+
+            # STEP 4.b : verifica della qualita' dei miglioramenti (early stopping)
+            if es_counter >= params.es_patience:
+                break
 
             if constants.DEBUG_MODE:
                 break

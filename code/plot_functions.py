@@ -92,7 +92,7 @@ def plot_search_report(
 
     for b in errs_bars:
         h = b.get_height()
-        errs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f}', ha='center', va='bottom', fontsize=8)
+        errs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f}', ha='center', va='bottom', fontsize=7)
 
     # Creazione del bar chart per l'accuracy di validazione.
     accs_bar_chart = axes[1]
@@ -111,7 +111,7 @@ def plot_search_report(
 
     for b in accs_bars:
         h = b.get_height()
-        accs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f} %', ha='center', va='bottom', fontsize=8)
+        accs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f} %', ha='center', va='bottom', fontsize=7)
 
     # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
