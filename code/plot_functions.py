@@ -12,16 +12,48 @@
 # LIBRERIE
 
 import constants
+import auxfunc
 import dataset_functions as df
 
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
 import matplotlib.pyplot as plot
 from matplotlib.ticker import FormatStrFormatter
 import os
 
 # ########################################################################### #
 # FUNZIONI PER LA FASE DI ADDESTRAMENTO
+
+def plot_learning_curves(
+        lc_plot : Axes,
+        y_label : str,
+        history_training : list[float],
+        history_validation : list[float]
+) -> None:
+    
+    """
+        Disegna un grafico che confronta le misure calcolate in fase di training e in fase di validazione.
+
+        Parameters:
+        -   lc_plot : il subplot in cui disegnare la 'learning curve' richiesta.
+        -   y_label : l'etichetta per l'asse delle ordinate.
+        -   history_training : la lista di misure calcolate sui dati di addestramento.
+        -   history_validation : la lista di misure calcolate sui dati di validazione.
+
+        Returns:
+        -   None.
+    """
+
+    x_min = 0
+    x_max = len(history_training)
+
+    lc_plot.set_xlim(x_min, x_max + x_max * 0.1)
+
+    lc_plot.plot(range(x_min, x_max), history_training, 'b', label=f'Training {y_label}')
+    lc_plot.plot(range(x_min, x_max), history_validation, 'r', label=f'Validation {y_label}')
+
+# end
 
 def plot_search_report(
         out_directory : str,
@@ -58,28 +90,33 @@ def plot_search_report(
     accs_mean   = search_report["Mean accuracy"]
     accs_std    = search_report["Std accuracy"]
 
-    folds = [f"Fold {r['Fold']}" for r in k_fold_report]
-    errs = [r['E_value'] for r in k_fold_report]
-    accs = [r['A_value'] for r in k_fold_report]
+    train_errs      = [r['ET_history'] for r in k_fold_report]
+    val_errs        = [r['EV_history'] for r in k_fold_report]
+    train_accs      = [r['AT_history'] for r in k_fold_report]
+    val_accs        = [r['AV_history'] for r in k_fold_report]
+    folds_idx       = [f"Fold {r['Fold']}" for r in k_fold_report]
+    folds_e_value   = [r['E_value'] for r in k_fold_report]
+    folds_a_value   = [r['A_value'] for r in k_fold_report]
 
     # Creazione dell'immagine.
-    fig, axes = plot.subplots(1, 2)
-    fig.set_size_inches(constants.PLOT_SEARCH_FIGSIZE)
-    plot.tight_layout()
-    plot.subplots_adjust(top=0.8, wspace=0.25)
+    fig = plot.figure(layout='constrained', figsize=constants.PLOT_SEARCH_FIGSIZE)
+    subfigs = fig.subfigures(3, 1, wspace=0.07)
 
     # Titolo del grafico.
     plot_title = (
         fr"$\bf{{{title}}}$" + "\n" + 
         fr"$\it{{Eta\;minus\;=\;{em:.5f},\ Eta\;plus\;=\;{ep:.5f},\ Hidden\;layer\;=\;{hl:.0f}}}$"
     )
-    plot.suptitle(plot_title, fontsize=20)
+    fig.suptitle(plot_title, fontsize=20)
+
+    # Creazione dell'immagine superiore contenente i barchart.
+    axes_top = subfigs[0].subplots(1, 2)
 
     # Creazione del bar chart per l'errore di validazione.
-    errs_bar_chart = axes[0]
-    errs_bars = errs_bar_chart.bar(folds, errs)
+    errs_bar_chart = axes_top[0]
+    errs_bars = errs_bar_chart.bar(folds_idx, folds_e_value)
 
-    errs_bar_chart.set_ylim(0, np.max(errs)+np.max(errs)*0.1)
+    errs_bar_chart.set_ylim(0, np.max(folds_e_value)+np.max(folds_e_value)*0.1)
     errs_bar_chart.set_ylabel(fr"$\bf{{Error}}$", fontsize=14)
     errs_bar_chart.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
@@ -95,8 +132,8 @@ def plot_search_report(
         errs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f}', ha='center', va='bottom', fontsize=7)
 
     # Creazione del bar chart per l'accuracy di validazione.
-    accs_bar_chart = axes[1]
-    accs_bars = accs_bar_chart.bar(folds, np.multiply(accs, 100))
+    accs_bar_chart = axes_top[1]
+    accs_bars = accs_bar_chart.bar(folds_idx, np.multiply(folds_a_value, 100))
 
     accs_bar_chart.set_ylim(0, 110)
     accs_bar_chart.set_ylabel(fr"$\bf{{Accuracy}}$", fontsize=14)
@@ -112,6 +149,52 @@ def plot_search_report(
     for b in accs_bars:
         h = b.get_height()
         accs_bar_chart.text(b.get_x() + b.get_width() / 2.0, h, f'{h:.2f} %', ha='center', va='bottom', fontsize=7)
+    
+    # Creazione dell'immagine inferiore contenente le learning curves dell'errore.
+    axes_error = subfigs[1].subplots(1, len(k_fold_report), sharey=True)
+
+    # plot_learning_curves(
+    #     axes_down[0][0],
+    #     "Error",
+    #     train_errs[0],
+    #     val_errs[0]
+    # )
+
+    for n, ax in enumerate(axes_error.ravel()):
+
+        if n == 0:
+            y_max = max(max(map(max, train_errs)), max(map(max, val_errs)))
+            ax.set_ylim(0, y_max + y_max * 0.1)
+            ax.set_ylabel(fr"$\bf{{Error}}$")
+
+        ax.set_title(fr"$\bf{{{folds_idx[n % len(k_fold_report)]}}}$")
+        plot_learning_curves(
+            ax,
+            "Error",
+            train_errs[n],
+            val_errs[n]
+        )
+
+    # end for n, ax
+
+    # Creazione dell'immagine inferiore contenente le learning curves dell'accuracy.
+    axes_accs = subfigs[2].subplots(1, len(k_fold_report), sharey=True)
+
+    for n, ax in enumerate(axes_accs.ravel()):
+
+        if n == 0:
+            ax.set_ylim(0, y_max + y_max * 0.1)
+            ax.set_ylabel(fr"$\bf{{Accuracy}}$")
+
+        ax.set_xlabel(fr"$\bf{{Epochs}}$")
+        plot_learning_curves(
+            ax,
+            "Accuracy",
+            train_accs[n],
+            val_accs[n]
+        )
+
+    # end for n, ax
 
     # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
@@ -339,3 +422,5 @@ def get_random_color() -> str:
 # https://www.geeksforgeeks.org/create-random-hex-color-code-using-python/
 # https://stackoverflow.com/questions/12638408/decorating-hex-function-to-pad-zeros
 # https://machinelearningmastery.com/how-to-configure-k-fold-cross-validation/
+# https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subfigures.html
+# https://engineeringfordatascience.com/posts/matplotlib_subplots/

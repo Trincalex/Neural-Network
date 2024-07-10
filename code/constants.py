@@ -142,7 +142,7 @@ DEFAULT_EPOCHS = 500
 DEFAULT_MINI_BATCH_SIZE = 1125
 """ Dimensione di default del mini-batch utilizzata durante la fase di addestramento della rete neurale. """
 
-DEFAULT_EARLY_STOPPING_PATIENCE = 5
+DEFAULT_EARLY_STOPPING_PATIENCE = 15
 """ Valore di default per il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
 
 DEFAULT_EARLY_STOPPING_DELTA = 0.1
@@ -228,7 +228,7 @@ PlotTestingMode = Enum('PlotTestingMode', [
     
 """
 
-PLOT_SEARCH_FIGSIZE = (12, 5.5)
+PLOT_SEARCH_FIGSIZE = (22, 12)
 """ Indica le dimensioni di altezza e larghezza del report della singola predizione. """
 
 PLOT_TESTING_FIGSIZE = (12, 4)

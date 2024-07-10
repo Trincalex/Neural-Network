@@ -773,7 +773,7 @@ class NeuralNetwork:
             -   params : e' un oggetto della classe TrainingParams che contiene alcuni iperparametri per la fase di addestramento della rete neurale.
 
             Returns:
-            -   None.
+            -   una lista di TrainingReport contenente le metriche di valutazione ottenuti durante le fasi di addestramento e validazione del modello (vedi documentazione di TrainingReport).
         """
 
         if params is None: params = TrainingParams()
@@ -941,26 +941,22 @@ class NeuralNetwork:
             )
 
             # STEP 4.a : verifica della qualita' dei miglioramenti (early stopping)
+            v_diff = best_net_params["Report"].validation_error - curr_net_report.validation_error
             """
                 Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo).
             """
             if validation_data is not None and validation_labels is not None:
                 if e == 0:
                     self.training_report.update(curr_net_report)
-                elif params.es_delta < best_net_params["Report"].validation_error - curr_net_report.validation_error:
+                elif params.es_delta < v_diff:
                     es_counter = 0
                     self.training_report.update(curr_net_report)
                 else:
                     es_counter += 1
-                    self.weights = copy.deepcopy(best_net_params["Weights"])
-                    self.biases = copy.deepcopy(best_net_params["Biases"])
             else:
                 self.training_report.update(curr_net_report)
             
             history_report.append(copy.deepcopy(curr_net_report))
-
-            del curr_net_report
-            gc.collect()
 
             # # STEP 5 : stampa del report dell'epoca migliore
             # print("\r\t                                                      ")
@@ -969,7 +965,22 @@ class NeuralNetwork:
             # STEP 5 : stampa del report dell'ultima epoca
             print("\r\t                                                      ")
             print(repr(history_report[-1]))
-            # print("best:", best_net_params["Report"].validation_error, "curr:", curr_net_report.validation_error, "diff:", best_net_params["Report"].validation_error - curr_net_report.validation_error, "delta:", params.es_delta, "count:", es_counter)
+
+            if constants.DEBUG_MODE:
+                with np.printoptions(threshold=np.inf):
+                    print("\n--- NETWORK TRAINING (validation error) ---\n")
+                    print("Best:", best_net_params["Report"].validation_error)
+                    print("Current:", curr_net_report.validation_error)
+                    print("Diff:", v_diff)
+                    print("\n-----\n")
+                    print("--- NETWORK TRAINING (early stopping) ---\n")
+                    print("Delta:", params.es_delta)
+                    print("Patience:", params.es_patience)
+                    print("Counter:", es_counter)
+                    print("\n-----\n\n")
+
+            del curr_net_report
+            gc.collect()
 
             # STEP 4.b : verifica della qualita' dei miglioramenti (early stopping)
             if es_counter >= params.es_patience:
