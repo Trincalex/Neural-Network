@@ -948,7 +948,7 @@ class NeuralNetwork:
             if validation_data is not None and validation_labels is not None:
                 if e == 0:
                     self.training_report.update(curr_net_report)
-                elif params.es_delta < v_diff:
+                elif v_diff >= params.es_delta:
                     es_counter = 0
                     self.training_report.update(curr_net_report)
                 else:

@@ -71,7 +71,7 @@ class TestError(Exception):
 # end class TestError
 
 class ActivationFunctionError(Exception):
-    """ Eccezione lanciata da errori relativi alla funzione di attivazione. """
+    """ Eccezione lanciata da errori relativi all'esecuzione della funzione di attivazione di un layer della rete neurale. """
 
     def __init__(self, value):
         self.value = value
@@ -84,7 +84,7 @@ class ActivationFunctionError(Exception):
 # end class ActivationFunctionError
 
 class ErrorFunctionError(Exception):
-    """ Eccezione lanciata da errori relativi alla funzione di errore. """
+    """ Eccezione lanciata da errori relativi all'esecuzione della funzione di errore della rete neurale. """
 
     def __init__(self, value):
         self.value = value
@@ -116,7 +116,7 @@ ETICHETTE_CLASSI = [
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
 """ Numero di classi di output del training set e del test set del MNIST dataset. """
 
-COPPIE_TRAINING = 12500
+COPPIE_TRAINING = 2000
 """ Numero di elementi da estrarre dal training set su cui eseguire la fase di addestramento della rete neurale. """
 
 COPPIE_TEST = 2500
@@ -139,7 +139,7 @@ DEFAULT_HIDDEN_LAYER_NEURONS = [64, 10]
 DEFAULT_EPOCHS = 500
 """ Valore di default del numero di epoche per la fase di addestramento della rete neurale. Un'epoca e' un'esecuzione completa dell'addestramento (e validazione, se presente) sul training set (e validation set). """
 
-DEFAULT_MINI_BATCH_SIZE = 1125
+DEFAULT_MINI_BATCH_SIZE = 200
 """ Dimensione di default del mini-batch utilizzata durante la fase di addestramento della rete neurale. """
 
 DEFAULT_EARLY_STOPPING_PATIENCE = 15

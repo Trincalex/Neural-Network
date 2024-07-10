@@ -209,7 +209,7 @@ class TrainingReport:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'TrainingReport(\n\tnum_epochs = {self.num_epochs},\n\telapsed_time = {self.elapsed_time:.3f} secondi,\n\ttraining_examples = {self.training_examples},\n\ttraining_error = {self.training_error:.5f},\n\ttraining_accuracy = {self.training_accuracy:.2%},\n\tvalidation_examples = {self.validation_examples},\n\tvalidation_error = {self.validation_error:.5f}\n\tvalidation_accuracy = {self.validation_accuracy:.2%}\n)'
+        return f'TrainingReport(\n\tnum_epochs = {self.num_epochs},\n\telapsed_time = {self.elapsed_time:.3f} secondi,\n\ttraining_examples = {self.training_examples},\n\ttraining_error = {self.training_error:.5f},\n\ttraining_accuracy = {self.training_accuracy:.2%},\n\tvalidation_examples = {self.validation_examples},\n\tvalidation_error = {self.validation_error:.5f},\n\tvalidation_accuracy = {self.validation_accuracy:.2%}\n)'
     
     # end
 

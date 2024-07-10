@@ -183,7 +183,7 @@ def plot_search_report(
     for n, ax in enumerate(axes_accs.ravel()):
 
         if n == 0:
-            ax.set_ylim(0, y_max + y_max * 0.1)
+            ax.set_ylim(0, 1.1)
             ax.set_ylabel(fr"$\bf{{Accuracy}}$")
 
         ax.set_xlabel(fr"$\bf{{Epochs}}$")
