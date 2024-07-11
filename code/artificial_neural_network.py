@@ -4,7 +4,7 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
+    Questo file contiene l'implementazione di una rete neurale artificiale feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
     In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer).
 
 """
@@ -160,10 +160,11 @@ class NeuralNetwork:
     def __init__(
             self,
             i_size : int = constants.DEFAULT_INPUT_LAYER_NEURONS,
-            l_sizes : list[int] = constants.DEFAULT_HIDDEN_LAYER_NEURONS,
+            l_sizes : list[int] = constants.DEFAULT_LAYER_NEURONS,
             l_act_funs : list[constants.ActivationFunctionType] = [auxfunc.leaky_relu, auxfunc.identity],
             e_fun : constants.ErrorFunctionType = auxfunc.cross_entropy_softmax,
             t_rep : TrainingReport = None,
+            t_par : TrainingParams = None,
             random_init : bool = True
     ) -> None:
         
@@ -177,6 +178,7 @@ class NeuralNetwork:
             -   l_act_funs : e' una lista contenente le funzioni di attivazione di uno o piu' hidden layer e dell'output layer della rete neurale.
             -   e_fun : e' la funzione di errore utilizzata per verificare la qualità della rete neurale.
             -   t_rep : e' un oggetto della classe TrainingReport che contiene alcune metriche di valutazione per la fase di addestramento della rete neurale.
+            -   t_par : e' un oggetto della classe TrainingParams che contiene alcuni iper-parametri per la fase di addestramento della rete neurale.
             -   random_init : indica se i parametri (weights, biases) della rete neurale devono essere inizializzati tramite un generatore di valori casuali con seed fissato o meno.
 
             Returns:
@@ -235,7 +237,7 @@ class NeuralNetwork:
         self._training_report = TrainingReport() if t_rep is None else t_rep
 
         # Inizializzazione degli iper-parametri per la fase di addestramento.
-        self._training_params = TrainingParams()
+        self._training_params = TrainingParams() if t_par is None else t_par
 
     # end
     
@@ -757,8 +759,7 @@ class NeuralNetwork:
             training_data : np.ndarray,
             training_labels : np.ndarray,
             validation_data : np.ndarray = None,
-            validation_labels : np.ndarray = None,
-            params : TrainingParams = None
+            validation_labels : np.ndarray = None
     ) -> list[TrainingReport]:
         
         """
@@ -770,13 +771,10 @@ class NeuralNetwork:
             -   training_labels : una matrice numpy.ndarray contenente le etichette corrispondenti per i dati di addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
             -   validation_data : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta un esempio di addestramento.
             -   validation_labels : una matrice numpy.ndarray da utilizzare per la fase di validazione dell'addestramento. Ogni riga rappresenta l'etichetta per il rispettivo esempio di addestramento.
-            -   params : e' un oggetto della classe TrainingParams che contiene alcuni iperparametri per la fase di addestramento della rete neurale.
 
             Returns:
             -   una lista di TrainingReport contenente le metriche di valutazione ottenuti durante le fasi di addestramento e validazione del modello (vedi documentazione di TrainingReport).
         """
-
-        if params is None: params = TrainingParams()
 
         # Controllo sulla compatibilita' di training_data e training_labels.
         if (not training_data.shape[0] == training_labels.shape[0]):
@@ -786,6 +784,9 @@ class NeuralNetwork:
         if validation_data is not None and validation_labels is not None:
             if (not validation_data.shape[0] == validation_labels.shape[0]):
                 raise constants.TrainError(f"Le dimensioni del dataset [{validation_data.shape[0]}] e delle labels [{validation_labels.shape[0]}] per la validazione non sono compatibili.")
+        
+        # Inizializzazione degli iper-parametri del modello.
+        params = copy.deepcopy(self.training_params)
         
         # Calcolo degli indici dei mini-batch di addestramento.
         training_batches = auxfunc.compute_batches(len(training_data), params.batch_size)
@@ -817,9 +818,9 @@ class NeuralNetwork:
             for start, end in training_batches:
 
                 best_net_params = {
-                    "Weights" : copy.deepcopy(self.weights),
-                    "Biases" : copy.deepcopy(self.biases),
-                    "Report" : copy.deepcopy(self.training_report)
+                    "Weights"   : copy.deepcopy(self.weights),
+                    "Biases"    : copy.deepcopy(self.biases),
+                    "Report"    : copy.deepcopy(self.training_report)
                 }
 
                 # STEP 1a: forward propagation su tutti gli esempi di addestramento
@@ -962,9 +963,9 @@ class NeuralNetwork:
             # print("\r\t                                                      ")
             # print(repr(self.training_report))
 
-            # STEP 5 : stampa del report dell'ultima epoca
-            print("\r\t                                                      ")
-            print(repr(history_report[-1]))
+            # # STEP 5 : stampa del report dell'ultima epoca
+            # print("\r\t                                                      ")
+            # print(repr(history_report[-1]))
 
             if constants.DEBUG_MODE:
                 with np.printoptions(threshold=np.inf):
@@ -1068,9 +1069,9 @@ class NeuralNetwork:
     
     # end 
 
-    def save_network_to_file(self, out_directory : str, out_name : str = "params.pkl" ) -> None:
+    def save_network_to_file(self, out_directory : str, out_name : str = "net.pkl" ) -> None:
         """
-            Salva tutti gli iperparametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
+            Salva tutti gli iper-parametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
 
             Parameters:
             -   out_directory : la directory di output dove memorizzare i parametri della rete neurale.
@@ -1099,6 +1100,7 @@ class NeuralNetwork:
                 "layers_act_funs"   : layers_act_funs,
                 "err_fun"           : self.err_fun,
                 "training_report"   : self.training_report,
+                "training_params"   : self.training_params,
                 "weights"           : self.weights,
                 "biases"            : self.biases
             }
@@ -1130,13 +1132,13 @@ class NeuralNetwork:
     @staticmethod
     def load_network_from_file(filename : str):
         """
-            Carica la configurazione completa di iperparametri e parametri della rete neurale direttamente da un file.
+            Carica la configurazione completa di iper-parametri e parametri della rete neurale direttamente da un file.
 
             Parameters:
-            -   filename : il percorso del file dove sono memorizzati gli iperparametri e parametri della rete neurale.
+            -   filename : il percorso del file dove sono memorizzati gli iper-parametri e parametri della rete neurale.
 
             Returns:
-            -   net : la rete neurale con tutti gli iperparametri e parametri recuperati dal file.
+            -   net : la rete neurale con tutti gli iper-parametri e parametri recuperati dal file.
         """
 
         import dill
@@ -1149,6 +1151,7 @@ class NeuralNetwork:
             layers_act_funs = store_dict["layers_act_funs"]
             err_fun         = store_dict["err_fun"]
             training_report = store_dict["training_report"]
+            training_params = store_dict["training_params"]
             weights         = store_dict["weights"]
             biases          = store_dict["biases"]
         
@@ -1159,7 +1162,8 @@ class NeuralNetwork:
             layers_sizes,
             layers_act_funs,
             err_fun,
-            training_report
+            training_report,
+            training_params
         )
 
         net.weights = copy.deepcopy(weights)

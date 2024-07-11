@@ -79,8 +79,8 @@ class TrainingReport:
             time : float        = 0.0,
             t_examples : int    = 0,
             v_examples : int    = 0,
-            t_error : float     = 0.0,
-            v_error : float     = 0.0,
+            t_error : float     = np.inf,
+            v_error : float     = np.inf,
             t_accuracy : float  = 0.0,
             v_accuracy : float  = 0.0
     ):

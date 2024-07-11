@@ -21,7 +21,7 @@ import numpy as np
 
 def leaky_relu(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        Calcola il valore di attivazione di un neurone utilizzando un miglioramento della classica ReLU (Rectified Linear Unit), in quanto la sua derivata prima e' sempre un valore non negativo.
+        Calcola il valore di attivazione di uno o piu' neuroni utilizzando un miglioramento della classica ReLU (Rectified Linear Unit), in quanto aggiunge una pendenza costante (specificata dall'iper-parametro 'alpha') per gli input negativi, garantendo una maggiore stabilità nell’apprendimento dei modelli.
 
         Parameters:
         -   input : il valore di cui applicare la funzione di attivazione.
@@ -41,7 +41,7 @@ def leaky_relu(input : float | np.ndarray, der : bool = False) -> float | np.nda
 
 def sigmoid(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        Calcola il valore di attivazione di un neurone utilizzando la funzione logistica.
+        Calcola il valore di attivazione di uno o piu' neuroni utilizzando la funzione logistica per normalizzare l'input nell’intervallo tra 0 e 1.
 
         Parameters:
         -   input : il valore o la matrice di valori di cui applicare la funzione di attivazione.
@@ -75,7 +75,7 @@ def sigmoid(input : float | np.ndarray, der : bool = False) -> float | np.ndarra
 
 def tanh(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        Calcola il valore di attivazione di un neurone utilizzando la tangente iperbolica.
+        Calcola il valore di attivazione di uno o piu' neuroni utilizzando la tangente iperbolica per normalizzare l'input nell’intervallo tra -1 e 1.
 
         Parameters:
         -   input : il valore di cui applicare la funzione di attivazione.
@@ -123,7 +123,7 @@ def tanh(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     
 def identity(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        Calcola il valore di attivazione di un neurone utilizzando la funzione identita'.
+        Calcola il valore di attivazione di uno o piu' neuroni utilizzando la funzione identita', mantenendo invariato l’input.
 
         Parameters:
         -   input : il valore di cui applicare la funzione di attivazione.
@@ -145,7 +145,9 @@ def identity(input : float | np.ndarray, der : bool = False) -> float | np.ndarr
 
 def softmax(input : float | np.ndarray, der : bool = False) -> float | np.ndarray:
     """
-        Calcola la funzione softmax, una funzione di errore tipica dei problemi di classificazione multi-classe.
+        Converte i valori di attivazione di uno o più neuroni in un vettore di probabilità, dove ogni valore rappresenta la probabilità che l'input appartenga a una determinata classe.
+        Rispetto alle altre funzioni di attivazione descritte in questa sezione, la funzione softmax è una funzione globale, perché dipende dall'input di tutti i neuroni. Per questo motivo, è utilizzata principalmente per i problemi di classificazione multi-classe.
+        In particolare, in questa libreria, non è fornita l'implementazione della derivata prima della softmax che, se utilizzata, lancia l'eccezione NotImplementedError.
 
         Parameters:
         -   input : il valore di cui applicare la funzione di attivazione.
@@ -181,7 +183,7 @@ def softmax(input : float | np.ndarray, der : bool = False) -> float | np.ndarra
 # FUNZIONI DI ERRORE
 
 def sum_of_squares(
-        prediction : np.ndarray,
+        predictions : np.ndarray,
         target : np.ndarray,
         der : bool = False
 ) -> float | np.ndarray:
@@ -190,7 +192,7 @@ def sum_of_squares(
         E' una funzione di errore tipicamente utilizzata per i problemi di regressione.
 
         Parameters:
-        -   prediction: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   predictions: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
         -   target: e' l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
@@ -199,11 +201,11 @@ def sum_of_squares(
         -   se der=True, invece, restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto al target.
     """
 
-    # print(prediction)
+    # print(predictions)
     # print(target)
 
     # Calcolo delle distanze tra predizioni e target (errori)
-    errors = prediction - target
+    errors = predictions - target
     # print(errors)
 
     """
@@ -220,12 +222,12 @@ def sum_of_squares(
         return errors
     
     # return (np.linalg.norm(errors) ** 2) / 2
-    return (errors ** 2) / 2
+    return np.sum((errors ** 2)) / 2
 
 # end
 
 def cross_entropy(
-        prediction : np.ndarray,
+        predictions : np.ndarray,
         target : np.ndarray,
         der : bool = False
 ) -> float | np.ndarray:
@@ -234,23 +236,23 @@ def cross_entropy(
         E' una funzione di errore tipicamente utilizzata per i problemi di classificazione.
 
         Parameters:
-        -   prediction: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
+        -   predictions: e' l'output fornito dalla rete neurale su una determinata coppia del dataset.
         -   target: e' l'etichetta di classificazione di una determinata coppia del dataset.
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto al target.
 
         Returns:
-        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione (float).
+        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione.
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alla predizione.
     """
 
     if der:
-        # num = prediction - target
-        # den = prediction * (1 - prediction)
+        # num = predictions - target
+        # den = predictions * (1 - predictions)
         # return num / den
-        return prediction - target
+        return predictions - target
     
     # Applica il logaritmo solo alle componenti maggiori di 0.0.
-    return -np.sum(target * np.log(prediction, where=prediction > 0.0))
+    return -np.sum(target * np.log(predictions, where=predictions > 0.0))
 
 # end
 
@@ -269,7 +271,7 @@ def cross_entropy_softmax(
         -   der: permette di distinguere se si vuole calcolare la funzione o la matrice delle derivate prime parziali rispetto alle predizioni.
 
         Returns:
-        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione (float).
+        -   se der=False, restituisce l'entropia incrociata delle due variabili aleatorie discrete relative al target e alla predizione.
         -   se der=True, invece, ne restituisce la matrice delle derivate prime parziali (matrice jacobiana) rispetto alle predizioni.
     """
 
@@ -301,11 +303,11 @@ def print_progress_bar(
         prefix : str = '',
         suffix : str = '',
         length : int = 50,
-        fill : str = '#',
+        fill : str = '#'
 ) -> None:
     
     """
-        Genera una barra di caricamento che si aggiorna ad ogni chiamata di un loop mostrando il numero dell'iterazione corrente rispetto al totale delle iterazioni.
+        Stampa in console una barra di caricamento che si aggiorna ad ogni chiamata di un loop mostrando il numero dell'iterazione corrente rispetto al totale delle iterazioni.
 
         Parameters:
         -   iteration: l'indice dell'iterazione corrente.
@@ -335,7 +337,7 @@ def compute_batches(
 ) -> list[tuple[int, int]]:
     
     """
-        Calcola gli indici di inizio e fine dei mini-batch di un dataset sulla quale eseguire le fasi di addestramento e/o validazione.
+        Calcola gli indici di inizio e fine dei mini-batch di un dataset sulle quali eseguire la fase di addestramento della rete neurale.
 
         Parameters:
         -   length : e' la lunghezza del dataset.

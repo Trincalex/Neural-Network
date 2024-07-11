@@ -25,11 +25,11 @@ def loadDataset(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     """
-        E' la funzione per caricare il dataset mnist.
+        Carica il MNIST dataset e ne restituisce gli identificativi, i dati delle immagini delle cifre scritte a mano e le etichette corrispondenti, sia dal training set che dal test set.
         
         Parameters:
-        -   training_length : intero rappresentante la grandezza del training set.
-        -   test_length : intero rappresentante la grandezza del test set.
+        -   training_length : questo numero intero indica il numero di esempi da estrarre dal training set.
+        -   test_length : questo numero intero indica il numero di esempi da estrarre dal test set.
 
         Returns:
         -   train_ids : array che contiene gli id degli elementi del training set.
@@ -108,7 +108,7 @@ def split_dataset(
 ) -> tuple[list[np.ndarray], list[np.ndarray]]:
     
     """
-        Divide il dataset e le label in k sottoinsiemi.
+        Divide il dataset e le corrispondenti etichette in k sottoinsiemi. Si utilizza questa funzione per la creazione delle fold da utilizzare nella K-fold cross validation.
 
         Parameters:
         -   dataset: il dataset da dividere.

@@ -169,7 +169,7 @@ class TrainingParams:
             -   una stringa contenente i dettagli dell'oggetto.
         """
         
-        return f'TrainingParams(\n\tbatch_size = {self.batch_size},\n\t epochs = {self.epochs},\n\t learning_rate = {self.learning_rate},\n\t rprop = {self.rprop},\n\t eta_minus = {self.eta_minus},\n\t eta_plus = {self.eta_plus},\n\t delta_min = {self.delta_min},\n\t delta_max = {self.delta_max},\n\t es_patience = {self.es_patience},\n\t es_delta = {self.es_delta}\n)'
+        return f'TrainingParams(\n\tbatch_size = {self.batch_size:.0f},\n\t epochs = {self.epochs:.0f},\n\t learning_rate = {self.learning_rate:.2f},\n\t rprop = {self.rprop},\n\t eta_minus = {self.eta_minus:.5f},\n\t eta_plus = {self.eta_plus:.5f},\n\t delta_min = {self.delta_min:.5f},\n\t delta_max = {self.delta_max:.5f},\n\t es_patience = {self.es_patience:.0f},\n\t es_delta = {self.es_delta:.5f}\n)'
     
     # end
 

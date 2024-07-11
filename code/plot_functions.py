@@ -12,7 +12,6 @@
 # LIBRERIE
 
 import constants
-import auxfunc
 import dataset_functions as df
 
 import numpy as np
@@ -198,7 +197,7 @@ def plot_search_report(
 
     # Salvataggio del grafico.
     os.makedirs(out_directory, exist_ok=True)
-    plot.savefig(out_directory + title.replace(' ', '_').lower() + "_report_" + idx + ".pdf", bbox_inches='tight')
+    plot.savefig(out_directory + "report_" + idx + ".pdf", bbox_inches='tight')
     plot.close()
 
 # end
@@ -215,8 +214,8 @@ def plot_testing(
 ) -> None:
     
     """
-        Disegna un'immagine composta di 2 'subplots':
-        -   la prima colonna contiene la rappresentazione in scala di grigi dell'immagine 28x28 delle cifre del dataset MNIST e la relativa etichetta prese dal testing set.
+        Disegna un'immagine divisa in 2 colonne:
+        -   la prima colonna contiene la rappresentazione in scala di grigi dell'immagine 28x28 delle cifre del MNIST test set e, come titolo, la relativa etichetta.
         -   la seconda colonna contiene la rappresentazione della predizione della rete neurale sull'esempio di testing corrispondente, tramite un bar chart.
 
         Parameters:
@@ -274,7 +273,7 @@ def plot_predictions(
         Ytest : np.ndarray,
         probabilities : np.ndarray,
         out_directory : str,
-        plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.REPORT,
+        plot_mode : constants.PlotTestingMode = constants.PlotTestingMode.REPORT
 ) -> None:
     
     """
@@ -396,7 +395,7 @@ def plot_predictions(
 
 def get_random_color() -> str:
     """
-        Genera un numero intero di 24-bit corrispondenti alle 3 componenti di colore RGB, rispettivamente di 8 bit, e ne restituisce la rappresentazione in un codice esadecimale.
+        Genera un numero intero di 24-bit corrispondenti alle 3 componenti di colore RGB, rispettivamente di 8 bit, e ne restituisce la rappresentazione in stringa del codice esadecimale.
 
         Returns:
         -   hex_color : il codice esadecimale di un colore RGB.
