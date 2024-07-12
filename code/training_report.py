@@ -23,50 +23,50 @@ class TrainingReport:
     # ATTRIBUTI DI CLASSE
 
     @property
-    def num_epochs(self) -> float:
-        """ Il numero di epoche impiegate dalla fase di addestramento. """
+    def num_epochs(self) -> int:
+        """ Il numero di epoche impiegate dalla fase di addestramento. Questo valore e' utile per tracciare l'evoluzione del training, soprattutto nel plotting dei grafici relativi alla fase di addestramento. """
         return self._num_epochs
     # end
 
     @property
     def elapsed_time(self) -> float:
-        """ Il tempo impiegato dalla fase di addestramento. """
+        """ Il tempo totale impiegato per completare il numero di epoche indicato dall'attributo di classe 'num_epochs', utile per valutare l'efficienza del processo di addestramento. """
         return self._elapsed_time
     # end
 
     @property
     def training_examples(self) -> int:
-        """ Il numero di esempi del training set utilizzati per la fase di addestramento. """
+        """ Il numero di esempi del training set utilizzati per la fase di addestramento. Questo valore risulta utile per confrontare le prestazioni ottenute da modelli allenati su una quantita' di esempi di training diversa. """
         return self._training_examples
     # end
 
     @property
     def training_error(self) -> float:
-        """ L'errore di addestramento ottenuto al termine della fase di addestramento. """
+        """ L'errore di addestramento ottenuto al termine della fase di addestramento dopo un numero di epoche indicate dall'attributo di classe 'num_epochs'. Questo valore viene rappresentato graficamente nei plot delle curve di apprendimento. """
         return self._training_error
     # end
 
     @property
+    def training_accuracy(self) -> float:
+        """ L'accuracy di addestramento ottenuta al termine della fase di addestramento dopo un numero di epoche indicate dall'attributo di classe 'num_epochs'. Questo valore viene rappresentato graficamente nei plot delle curve di apprendimento. """
+        return self._training_accuracy
+    # end
+
+    @property
     def validation_examples(self) -> int:
-        """ Il numero di esempi del validation set utilizzati per la fase di validazione. """
+        """ Il numero di esempi del validation set utilizzati per la validazione del modello. Proprio come per l'attributo 'training_examples', anche questo valore e' utile per confrontare le prestazioni ottenute da modelli diversi. """
         return self._validation_examples
     # end
 
     @property
     def validation_error(self) -> float:
-        """ L'errore di validazione ottenuto al termine della fase di validazione. """
+        """ L'errore di validazione ottenuto al termine della validazione del modello dopo un numero di epoche indicate dall'attributo di classe 'num_epochs'. Questo valore viene rappresentato graficamente nei plot delle curve di apprendimento. """
         return self._validation_error
     # end
 
     @property
-    def training_accuracy(self) -> float:
-        """ L'accuracy di addestramento ottenuta al termine della fase di addestramento. """
-        return self._training_accuracy
-    # end
-
-    @property
     def validation_accuracy(self) -> float:
-        """ L'accuracy di validazione ottenuta al termine della fase di validazione. """
+        """ L'accuracy di validazione ottenuta al termine della validazione del modello dopo un numero di epoche indicate dall'attributo di classe 'num_epochs'. Questo valore viene rappresentato graficamente nei plot delle curve di apprendimento. """
         return self._validation_accuracy
     # end
 
@@ -203,7 +203,7 @@ class TrainingReport:
 
     def __repr__(self) -> str:
         """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe TrainingReport.
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe TrainingReport. Viene principalmente utilizzata per stampare in console i valori delle proprietà del layer con una formattazione più precisa.
             
             Returns:
             -   una stringa contenente i dettagli dell'oggetto.

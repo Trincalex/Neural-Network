@@ -4,8 +4,8 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di un layer di una rete neurale shallow feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
-    In particolare, ogni oggetto della classe che implementa il layer (Layer) e' composto di uno o più neuroni (Neuron).
+    Questo file contiene l'implementazione di un layer di una rete neurale artificiale feed-forward fully-connected (e.g. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
+    La classe Layer e' il cuore della rete neurale. Rappresenta un singolo livello di neuroni. Gestisce in modo indipendente rispetto al resto della rete neurale i valori dei pesi / bias e le operazioni di attivazione per il livello specifico, facilitando il monitoraggio della propagazione dei dati in avanti (forward-propagation) e all'indietro (back-propagation) attraverso la rete neurale.
 
 """
 
@@ -13,7 +13,6 @@
 # LIBRERIE
 
 import constants
-import auxfunc
 import numpy as np
 import pprint
 
@@ -27,13 +26,13 @@ class Layer:
 
     @property
     def layer_size(self) -> int:
-        """È la dimensione del layer, cioe' il numero di neuroni di cui e' composto."""
+        """E' la dimensione del layer, cioe' il numero di neuroni di cui e' composto."""
         return self._layer_size
     # end
 
     @property
     def neuron_size(self) -> int:
-        """È la dimensione di un neurone del layer, cioe' il numero di connessioni dal livello precedente."""
+        """E' la dimensione di un neurone del layer, cioe' il numero di connessioni provenienti dal livello precedente."""
         return self._neuron_size
     # end
 
@@ -46,7 +45,7 @@ class Layer:
 
     @property
     def inputs(self) -> np.ndarray:
-        """ È la matrice di valori in input al layer. Ha un numero di colonne pari al numero di neuroni del layer precedente ed un numero di righe pari al numero di esempi in input alla rete neurale. """
+        """ E' la matrice di valori in input al layer. Ha un numero di colonne pari al numero di neuroni del layer precedente ed un numero di righe pari al numero di esempi in input alla rete neurale. """
 
         return self._inputs
     # end
@@ -106,7 +105,7 @@ class Layer:
     @property
     def biases(self) -> np.ndarray:
         """
-            E' il vettore dei bias del layer.
+            E' il vettore colonna dei bias del layer.
             
             Returns:
             -   un vettore colonna contenente i bias di tutti i neuroni del layer, dove la prima dimensione indica il numero di neuroni del layer mentre la seconda dimensione e' 1 perche' il bias e' uno scalare.
@@ -139,7 +138,7 @@ class Layer:
 
     @property
     def act_fun(self) -> constants.ActivationFunctionType:
-        """È la funzione di attivazione di tutti i neuroni del layer, con dominio e codominio a valori reali."""
+        """E' la funzione di attivazione di tutti i neuroni del layer, con dominio e codominio a valori reali."""
         return self._act_fun
     # end
 
@@ -160,7 +159,7 @@ class Layer:
     ) -> None:
         
         """
-            È il costruttore della classe Layer.
+            E' il costruttore della classe Layer.
             Inizializza gli attributi dell'oggetto dopo la sua istanziazione.
 
             Parameters:
@@ -225,7 +224,7 @@ class Layer:
 
     def output(self) -> np.ndarray:
         """
-            Calcola gli output dei neuroni del layer corrente.
+            Calcola gli output (o input pesati) dei neuroni del layer corrente come una combinazione lineare dei valori in input al neurone e i pesi lungo le connessioni aggiungendo, infine, il bias.
             
             Returns:
             -   numpy.ndarray : un array contenente tutti gli input pesati dei neuroni del layer corrente.
@@ -252,11 +251,11 @@ class Layer:
             Calcola i valori di attivazione dei neuroni del layer corrente.
 
             Parameters:
-            -   train : serve a distinguere se l'applicazione del metodo è durante la fase di training o meno.
+            -   train : serve a distinguere se l'applicazione del metodo e' durante la fase di training o meno.
 
             Returns:
             -   se train=False, un numpy.ndarray contenente tutti i valori di attivazione dei neuroni.
-            -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia uno per i valori di attivazione.
+            -   se train=True, restituisce sia un numpy.ndarray per gli output intermedi prima dell'applicazione della funzione di attivazione sia un altro per i valori di attivazione.
         """
 
         layer_outputs = self.output()
@@ -280,7 +279,7 @@ class Layer:
 
     def __repr__(self) -> str:
         """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Layer.
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe Layer. Viene principalmente utilizzata per stampare in console i valori delle proprietà del layer con una formattazione più precisa.
             
             Returns:
             -   una stringa contenente i dettagli dell'oggetto.

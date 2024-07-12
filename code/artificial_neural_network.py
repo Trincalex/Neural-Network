@@ -4,8 +4,9 @@
     - Alessandro Trincone
     - Mario Gabriele Carofano
 
-    Questo file contiene l'implementazione di una rete neurale artificiale feed-forward fully-connected (aka. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
+    Questo file contiene l'implementazione di una rete neurale artificiale feed-forward fully-connected (e.g. Multilayer Perceptron) tramite paradigma di programmazione a oggetti.
     In particolare, la classe che implementa la rete neurale (NeuralNetwork) può essere composta di uno o più strati (Layer).
+    È altamente configurabile, in quanto offre la possibilità di scegliere i valori di diversi iper-parametri specifici della rete (e.g. funzioni di attivazione, funzione di errore, numero di layer, ...), ma anche altri iper-parametri specifici della fase di addestramento (e.g. learning rate, numero di epoche, batch size, ...) tramite l'oggetto della classe TrainingParams.
 
 """
 
@@ -639,9 +640,7 @@ class NeuralNetwork:
     def __rprop_delta_layer(
         self,
         prod_gradients : np.ndarray,
-        prev_delta_layer : np.ndarray,
-        eta_minus : float, eta_plus : float,
-        delta_min : float, delta_max : float
+        prev_delta_layer : np.ndarray
     ) -> np.ndarray:
         
         """
@@ -651,10 +650,6 @@ class NeuralNetwork:
 
             Parameters:
             -   prod_gradients : e' un array contenente il prodotto elemento per elemento del gradiente della funzione di costo calcolato all'epoca corrente e all'epoca precedente. Si utilizza per capire come cambia il segno.
-            -   eta_minus : e' il fattore di riduzione dello step size quando il segno del gradiente cambia (tipicamente un valore inferiore a 1, es. 0.5).
-            -   eta_plus : e' il fattore di incremento dello step size se il segno del gradiente rimane lo stesso (tipicamente un valore maggiore di 1, es. 1.2).
-            -   delta_min : e' il valore che definisce il limite inferiore dello step size.
-            -   delta_max : e' il valore che definisce il limite superiore dello step size.
 
             Returns:
             -   un array contenente gli step size relativi ad ogni peso / bias della rete.
@@ -662,10 +657,10 @@ class NeuralNetwork:
 
         return np.where(
             prod_gradients > 0,
-            np.minimum(prev_delta_layer * eta_plus, delta_max),
+            np.minimum(prev_delta_layer * self.training_params.eta_plus, self.training_params.delta_max),
             np.where(
                 prod_gradients < 0,
-                np.maximum(prev_delta_layer * eta_minus, delta_min),
+                np.maximum(prev_delta_layer * self.training_params.eta_minus, self.training_params.delta_min),
                 prev_delta_layer
             )
         )
@@ -678,9 +673,7 @@ class NeuralNetwork:
             network_activations : list[np.ndarray],
             training_labels : np.ndarray,
             prev_gw : np.ndarray, prev_gb : np.ndarray,
-            prev_dlw : np.ndarray, prev_dlb : np.ndarray,
-            eta_minus : float, eta_plus : float,
-            delta_min : float, delta_max : float
+            prev_dlw : np.ndarray, prev_dlb : np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
         """
@@ -697,10 +690,6 @@ class NeuralNetwork:
             -   prev_gb : e' il vettore del gradiente dei bias dell'epoca precedente.
             -   prev_dlw : e' il vettore degli step size (per i pesi) dell'epoca precedente.
             -   prev_dlb : e' il vettore degli step size (per i bias) dell'epoca precedente.
-            -   eta_minus : e' il fattore di riduzione dello step size quando il segno del gradiente cambia (tipicamente un valore inferiore a 1, es. 0.5).
-            -   eta_plus : e' il fattore di incremento dello step size se il segno del gradiente rimane lo stesso (tipicamente un valore maggiore di 1, es. 1.2).
-            -   delta_min : e' il valore che definisce il limite inferiore dello step size.
-            -   delta_max : e' il valore che definisce il limite superiore dello step size.
 
             Returns:
             -   gw : e' il vettore dei gradiente dei pesi dell'epoca corrente.
@@ -721,20 +710,10 @@ class NeuralNetwork:
         prod_gb = np.multiply(prev_gb, gb)
 
         # Calcolo degli step size (per i pesi).
-        dl_weights = self.__rprop_delta_layer(
-            prod_gw,
-            prev_dlw,
-            eta_minus, eta_plus,
-            delta_min, delta_max
-        )
+        dl_weights = self.__rprop_delta_layer(prod_gw, prev_dlw)
 
         # Calcolo degli step size (per i bias).
-        dl_biases = self.__rprop_delta_layer(
-            prod_gb,
-            prev_dlb,
-            eta_minus, eta_plus,
-            delta_min, delta_max
-        )
+        dl_biases = self.__rprop_delta_layer(prod_gb, prev_dlb)
 
         # Applicazione del weight-backtracking.
         gw          = np.where(prod_gw < 0, 0, gw)
@@ -810,18 +789,18 @@ class NeuralNetwork:
         # Prima di iniziare l'addestramento, si recuperano tutti i pesi dai layer della rete.
         self.weights, self.biases = self.__gather_weights()
 
+        # Per la prima epoca, la miglior configurazione di pesi / bias e' la prima disponibile.
+        best_net_params = {
+            "Weights"   : copy.deepcopy(self.weights),
+            "Biases"    : copy.deepcopy(self.biases)
+        }
+
         for e in range(params.epochs):
             print(f"\nEpoca {e+1} di {params.epochs}")
 
             # STEP 1 : FASE DI TRAINING
 
             for start, end in training_batches:
-
-                best_net_params = {
-                    "Weights"   : copy.deepcopy(self.weights),
-                    "Biases"    : copy.deepcopy(self.biases),
-                    "Report"    : copy.deepcopy(self.training_report)
-                }
 
                 # STEP 1a: forward propagation su tutti gli esempi di addestramento
                 print("\r\tEsecuzione della forward propagation...               ", end='\r')
@@ -852,9 +831,7 @@ class NeuralNetwork:
                         training_outputs,
                         training_activations,
                         training_labels[start:end],
-                        gw, gb, dlw, dlb,
-                        params.eta_minus, params.eta_plus,
-                        params.delta_min, params.delta_max
+                        gw, gb, dlw, dlb
                     )
 
                 else:
@@ -942,19 +919,27 @@ class NeuralNetwork:
             )
 
             # STEP 4.a : verifica della qualita' dei miglioramenti (early stopping)
-            v_diff = best_net_params["Report"].validation_error - curr_net_report.validation_error
+            v_diff = self.training_report.validation_error - curr_net_report.validation_error
+
             """
-                Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo).
+                Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo), ma non la configurazione di pesi / bias.
             """
+
             if validation_data is not None and validation_labels is not None:
                 if e == 0:
                     self.training_report.update(curr_net_report)
                 elif v_diff >= params.es_delta:
                     es_counter = 0
                     self.training_report.update(curr_net_report)
+                    best_net_params = {
+                        "Weights"   : copy.deepcopy(self.weights),
+                        "Biases"    : copy.deepcopy(self.biases)
+                    }
                 else:
+                    # Se le prestazioni peggiorano, o si ottiene un miglioramento poco significativo.
                     es_counter += 1
             else:
+                # Se non e' richiesta la validazione del modello, il report viene sempre aggiornato.
                 self.training_report.update(curr_net_report)
             
             history_report.append(copy.deepcopy(curr_net_report))
@@ -967,18 +952,19 @@ class NeuralNetwork:
             # print("\r\t                                                      ")
             # print(repr(history_report[-1]))
 
-            if constants.DEBUG_MODE:
-                with np.printoptions(threshold=np.inf):
-                    print("\n--- NETWORK TRAINING (validation error) ---\n")
-                    print("Best:", best_net_params["Report"].validation_error)
-                    print("Current:", curr_net_report.validation_error)
-                    print("Diff:", v_diff)
-                    print("\n-----\n")
-                    print("--- NETWORK TRAINING (early stopping) ---\n")
-                    print("Delta:", params.es_delta)
-                    print("Patience:", params.es_patience)
-                    print("Counter:", es_counter)
-                    print("\n-----\n\n")
+            if validation_data is not None and validation_labels is not None:
+                if constants.DEBUG_MODE:
+                    with np.printoptions(threshold=np.inf):
+                        print("\n--- NETWORK TRAINING (validation error) ---\n")
+                        print("Best:", self.training_report.validation_error)
+                        print("Current:", curr_net_report.validation_error)
+                        print("Diff:", v_diff)
+                        print("\n-----\n")
+                        print("--- NETWORK TRAINING (early stopping) ---\n")
+                        print("Delta:", params.es_delta)
+                        print("Patience:", params.es_patience)
+                        print("Counter:", es_counter)
+                        print("\n-----\n\n")
 
             del curr_net_report
             gc.collect()
@@ -991,6 +977,10 @@ class NeuralNetwork:
                 break
 
         # end for e
+
+        self.weights = copy.deepcopy(best_net_params["Weights"])
+        self.biases = copy.deepcopy(best_net_params["Biases"])
+        self.__scatter_weights()
 
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
 
@@ -1116,7 +1106,7 @@ class NeuralNetwork:
 
     def __repr__(self) -> str:
         """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe NeuralNetwork.
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe NeuralNetwork. Viene principalmente utilizzata per stampare in console i valori delle proprietà del layer con una formattazione più precisa.
             
             Returns:
             -   una stringa contenente i dettagli dell'oggetto.

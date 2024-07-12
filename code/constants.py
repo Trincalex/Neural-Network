@@ -116,7 +116,7 @@ ETICHETTE_CLASSI = [
 NUMERO_CLASSI = len(ETICHETTE_CLASSI)
 """ Numero di classi di output del training set e del test set del MNIST dataset. Il suo valore e' calcolato al tempo di esecuzione in base al numero di etichette disponibili. """
 
-COPPIE_TRAINING = 2000
+COPPIE_TRAINING = 12500
 """ Numero di elementi da estrarre dal training set su cui eseguire la fase di addestramento della rete neurale. """
 
 COPPIE_TEST = 2500
@@ -128,10 +128,10 @@ DEFAULT_RANDOM_SEED = 0
 """ Valore di default del seed per la generazione random di pesi e bias, utile per la riproducibilita' delle fasi di addestramento e test della rete neurale. """
 
 DEFAULT_DISTRIBUTION_MEAN = 0.0
-""" Valore di default per la media della distribuzione gaussiana utilizzata per l'inizializzazione dei pesi e bias della rete neurale. """
+""" Valore di default per la media della distribuzione gaussiana utilizzata per l'inizializzazione dei pesi e bias della rete neurale. Questo valore e' stato scelto per bilanciare le attivazioni positive e negative e, di conseguenza, supportare una convergenza più rapida e stabile durante la fase di addestramento. """
 
 DEFAULT_STANDARD_DEVIATION = 1.0
-""" Valore di default per la deviazione standard utilizzata per l'inizializzazione dei pesi e bias della rete neurale. """
+""" Valore di default per la deviazione standard utilizzata per l'inizializzazione dei pesi e bias della rete neurale. Questo valore e' stato scelto per evitare che i pesi iniziali siano troppo grandi o troppo piccoli, riducendo il rischio di saturazione dei neuroni. """
 
 DEFAULT_INPUT_LAYER_NEURONS = 784
 """ Valore di default per il numero di neuroni dell'input layer della rete neurale. Questo valore e' dato dalla dimensione di una singola immagine del MNIST dataset in input alla rete neurale (e.g. 28x28). """

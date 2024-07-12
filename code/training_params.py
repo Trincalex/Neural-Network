@@ -36,7 +36,7 @@ class TrainingParams:
 
     @property
     def learning_rate(self) -> float:
-        """ Il tasso di apprendimento utilizzato nella fase di addestramento. """
+        """ Il tasso di apprendimento utilizzato nella fase di addestramento per l'aggiornamento dei pesi / bias. """
         return self._learning_rate
     # end
 
@@ -48,37 +48,37 @@ class TrainingParams:
 
     @property
     def eta_minus(self) -> float:
-        """ Il fattore di riduzione utilizzato per ridurre il passo di aggiornamento dei pesi (step size) quando il gradiente cambia segno. """
+        """ Il fattore di riduzione utilizzato per ridurre il passo di aggiornamento dei pesi (step size) quando il gradiente cambia segno. Serve per stabilizzare il processo di ottimizzazione. """
         return self._eta_minus
     # end
 
     @property
     def eta_plus(self) -> float:
-        """ Il fattore di incremento utilizzato per aumentare il passo di aggiornamento dei pesi (step size) quando il gradiente mantiene lo stesso segno. """
+        """ Il fattore di incremento utilizzato per aumentare il passo di aggiornamento dei pesi (step size) quando il gradiente conserva lo stesso segno. Serve per accelerare la convergenza verso il minimo della funzione di costo. """
         return self._eta_plus
     # end
 
     @property
     def delta_min(self) -> float:
-        """ Il limite inferiore per il passo di aggiornamento dei pesi (step size). """
+        """ Il limite inferiore che il passo di aggiornamento dei pesi (step size) puo' raggiungere, assicurando che gli aggiornamenti non diventino poco significativi. """
         return self._delta_min
     # end
 
     @property
     def delta_max(self) -> float:
-        """ Il limite superiore per il passo di aggiornamento dei pesi (step size). """
+        """ Il limite superiore che il passo di aggiornamento dei pesi (step size) puo' raggiungere durante l'addestramento, utilizzato per limitare l'entita' le oscillazioni. """
         return self._delta_max
     # end
 
     @property
     def es_patience(self) -> int:
-        """ Il numero di epoche dopo il quale fermare l'addestramento se l'errore di validazione non e' diminuito di una certa soglia. """
+        """ Il numero di epoche dopo il quale fermare il processo di addestramento se l'errore di validazione non e' diminuito di una certa soglia (e.g. si e' raggiunta la convergenza oppure l'errore di validazione ricomincia a salire). """
         return self._es_patience
     # end
 
     @property
     def es_delta(self) -> float:
-        """ La soglia che l'errore di validazione deve superare entro un certo numero di epoche per capire se ci sono stati miglioramenti significativi nell'addestramento. """
+        """ La soglia che l'errore di validazione deve superare rispetto alla miglior epoca durante la fase di addestramento per capire se ci sono stati miglioramenti significativi. """
         return self._es_delta
     # end
 
@@ -163,7 +163,7 @@ class TrainingParams:
 
     def __repr__(self) -> str:
         """
-            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe TrainingParams.
+            Restituisce una rappresentazione dettagliata del contenuto di un oggetto della classe TrainingParams. Viene principalmente utilizzata per stampare in console i valori delle proprietà del layer con una formattazione più precisa.
 
             Returns:
             -   una stringa contenente i dettagli dell'oggetto.

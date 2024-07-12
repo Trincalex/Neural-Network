@@ -71,7 +71,7 @@ def plot_search_report(
         -   out_directory : la directory di output dove salvare il grafico.
         -   title : il titolo del grafico, che indica il tipo di tecnica di ricerca utilizzata. 
         -   k_fold_report : una lista di metriche di valutazione relative ai valori di errore e di accuracy di validazione ottenuti durante le fasi di addestramento dei modelli sulle diverse fold.
-        -   search_report : un dizionario contenente i valori degli iper-parametri della combinazione valutata, e la media e la deviazione standard dei punteggi di errore e accuracy ottenuti dall'esecuzione della k-fold cross validation.
+        -   search_report : un dizionario contenente i valori degli iper-parametri della combinazione valutata, la media e la deviazione standard dei punteggi di errore e accuracy ottenuti dall'esecuzione della k-fold cross validation.
 
         Returns:
         -   None.
@@ -423,3 +423,4 @@ def get_random_color() -> str:
 # https://machinelearningmastery.com/how-to-configure-k-fold-cross-validation/
 # https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subfigures.html
 # https://engineeringfordatascience.com/posts/matplotlib_subplots/
+# https://www.researchgate.net/profile/Isaac-Nti-3/publication/356914937_Performance_of_Machine_Learning_Algorithms_with_Different_K_Values_in_K-fold_Cross-Validation/links/61b3101c19083169cb7f2c17/Performance-of-Machine-Learning-Algorithms-with-Different-K-Values-in-K-fold-Cross-Validation.pdf
