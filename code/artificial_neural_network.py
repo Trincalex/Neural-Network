@@ -24,7 +24,6 @@ import pprint
 import time
 from datetime import datetime
 import copy
-import matplotlib.pyplot as plot
 import gc
 
 # ########################################################################### #
@@ -43,13 +42,13 @@ class NeuralNetwork:
 
     @property
     def input_size(self) -> int:
-        """E' la dimensione del vettore di caratteristiche di un singolo input della rete neurale."""
+        """E' la dimensione del vettore di caratteristiche di un singolo esempio di input per la rete neurale."""
         return self._input_size
     # end
 
     @property
     def inputs(self) -> np.ndarray:
-        """E' la matrice di esempi in input alla rete neurale."""
+        """E' la matrice di esempi in input alla rete neurale sulla quale, ad esempio, si vuole eseguire l'addestramento della rete o il testing andando ad elaborarne le predizioni in output."""
         return self._inputs
     # end
 
@@ -79,13 +78,13 @@ class NeuralNetwork:
 
     @property
     def layers(self) -> list[Layer]:
-        """E' una lista di tutti i Layer della rete."""
+        """Una lista di oggetti 'Layer' che costituiscono i vari strati della rete neurale, determinando la struttura e la profondità della rete."""
         return self._layers
     # end
 
     @property
     def weights(self) -> np.ndarray:
-        """E' il vettore serializzato di tutti i pesi di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete."""
+        """E' il vettore serializzato di tutti i pesi di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di connessioni tra neuroni della rete."""
 
         return self._weights
     # end
@@ -112,7 +111,7 @@ class NeuralNetwork:
 
     @property
     def biases(self) -> np.ndarray:
-        """E' il vettore serializzato di tutti i bias di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete."""
+        """E' il vettore serializzato di tutti i bias di tutti i neuroni della rete neurale. La sua dimensione e' pari al numero totale di neuroni in tutta la rete."""
 
         return self._biases
     # end
@@ -139,7 +138,7 @@ class NeuralNetwork:
 
     @property
     def err_fun(self) -> constants.ErrorFunctionType:
-        """E' la funzione di errore utilizzata per verificare la qualità della rete neurale."""
+        """E' la funzione di errore utilizzata per verificare la qualita' della rete neurale, calcolando l'errore tra le previsioni del modello e i valori reali degli esempi forniti in input."""
         return self._err_fun
     # end
 
@@ -151,7 +150,7 @@ class NeuralNetwork:
 
     @property
     def training_params(self) -> TrainingParams:
-        """E' un'istanza della classe TrainingParams, contenente i valori degli iper-parametri per la fase di addestramento."""
+        """E' un'istanza della classe TrainingParams, contenente i valori degli iper-parametri specifici della fase di addestramento."""
         return self._training_params
     # end
 
@@ -250,8 +249,8 @@ class NeuralNetwork:
             Serializza le matrici dei pesi e dei bias di tutti i layer della rete neurale in due vettori separati della giusta dimensione. In altre parole, aggiorna le property self.weights e self.biases di questo oggetto della classe NeuralNetwork.
 
             Returns:
-            -   w : e' il vettore serializzato di tutti i pesi della rete neurale. La sua dimensione e' pari al numero totale di pesi in ogni neurone della rete.
-            -   b : e' il vettore serializzato di tutti i bias della rete neurale. La sua dimensione e' pari al numero totale di neuroni nei layer della rete.
+            -   w : e' il vettore serializzato di tutti i pesi della rete neurale. La sua dimensione e' pari al numero di connessioni della rete.
+            -   b : e' il vettore serializzato di tutti i bias della rete neurale. La sua dimensione e' pari alla somma delle dimensioni dei layer della rete.
         """
 
         w = np.zeros(self.weights.shape)
@@ -276,7 +275,7 @@ class NeuralNetwork:
 
     def __scatter_weights(self) -> None:
         """
-            Distribuisce i vettori dei pesi (self.weights) e dei bias (self.biases) di questo oggetto della classe NeuralNetwork nei layer della rete neurale.
+            Distribuisce i vettori dei pesi (self.weights) e dei bias (self.biases) di questo oggetto della classe NeuralNetwork nei layer della rete neurale. Secondo l'implementazione dei vettori dei pesi e dei bias, il solo assegnamento agli attributi di classe self.weights e self.biases non basta, ma bisogna utilizzare questa funzione per completare correttamente l'aggiornamento dei pesi / bias.
 
             Returns:
             -   None.
@@ -365,7 +364,7 @@ class NeuralNetwork:
             -   targets : e' la matrice di tutte le etichette delle coppie del dataset.
 
             Returns:
-            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer su tutti gli esempi di training. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde al numero di neuroni nell'output layer.
+            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati dell'output layer su tutti gli esempi di training. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde alla dimensione dell'output layer.
         """
 
         """
@@ -426,7 +425,7 @@ class NeuralNetwork:
             -   layer_index : e' l'indice del layer scelto (corrisponde a 'l' nell'equazione proposta da Nielsen).
 
             Returns:
-            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati del layer scelto nella rete neurale. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde al numero di neuroni nel layer scelto.
+            -   np.ndarray : il gradiente della funzione di costo rispetto agli input pesati del layer scelto nella rete neurale. Il numero di righe corrisponde al numero di esempi di training, mentre il numero di colonne corrisponde alla dimensione del layer scelto.
         """
         
         if layer_index == self.depth-1:
@@ -481,7 +480,7 @@ class NeuralNetwork:
     ) -> tuple[np.ndarray, np.ndarray]:
         
         """
-            Aggiusta i valori dei pesi / bias della rete per diminuire il valore della funzione di costo rispetto agli esempi di training e le corrispondenti etichette in input.
+            Aggiusta i valori dei pesi / bias della rete neurale al fine di diminuire il valore della funzione di costo rispetto agli esempi di training e le corrispondenti etichette in input.
             Calcola il gradiente della funzione di costo rispetto a tutti i pesi della rete utilizzando le quattro equazioni (BP1)-(BP4) dal Capitolo 2 del libro "Neural Networks and Deep Learning" di Michael Nielsen. Tali equazioni sono una diretta conseguenza della regola della catena del calcolo multivariabile (essendo la rete fully-connected, l'aggiustamento dei pesi di un layer provoca una catena di effetti in tutti i layer successivi).
             
             Parameters:
@@ -494,14 +493,11 @@ class NeuralNetwork:
             -   np.ndarray : il gradiente della funzione di costo rispetto ai bias della rete neurale.
         """
 
+        # Inizializzazione dei gradienti dei pesi / bias.
         gradient_weights = []
         gradient_biases = []
 
-        """
-            STEP 1:
-            Calcolo dell'errore sull'output layer.
-        """
-
+        # STEP 1: calcolo dell'errore sull'output layer.
         delta_output_layer = self.__delta_output_layer(
             network_outputs[-1],
             network_activations[-1],
@@ -921,6 +917,15 @@ class NeuralNetwork:
             # STEP 4.a : verifica della qualita' dei miglioramenti (early stopping)
             v_diff = self.training_report.validation_error - curr_net_report.validation_error
 
+            # if validation_data is not None and validation_labels is not None:
+                # if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("\n--- NETWORK TRAINING (validation error) ---\n")
+                print("Best:", self.training_report.validation_error)
+                print("Current:", curr_net_report.validation_error)
+                print("Diff:", v_diff)
+                print("\n-----\n")
+
             """
                 Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo), ma non la configurazione di pesi / bias.
             """
@@ -941,6 +946,15 @@ class NeuralNetwork:
             else:
                 # Se non e' richiesta la validazione del modello, il report viene sempre aggiornato.
                 self.training_report.update(curr_net_report)
+
+            # if validation_data is not None and validation_labels is not None:
+                # if constants.DEBUG_MODE:
+            with np.printoptions(threshold=np.inf):
+                print("--- NETWORK TRAINING (early stopping) ---\n")
+                print("Delta:", params.es_delta)
+                print("Patience:", params.es_patience)
+                print("Counter:", es_counter)
+                print("\n-----\n\n")
             
             history_report.append(copy.deepcopy(curr_net_report))
 
@@ -948,23 +962,9 @@ class NeuralNetwork:
             # print("\r\t                                                      ")
             # print(repr(self.training_report))
 
-            # # STEP 5 : stampa del report dell'ultima epoca
-            # print("\r\t                                                      ")
+            # STEP 5 : stampa del report dell'ultima epoca
+            print("\r\t                                                      ")
             # print(repr(history_report[-1]))
-
-            if validation_data is not None and validation_labels is not None:
-                if constants.DEBUG_MODE:
-                    with np.printoptions(threshold=np.inf):
-                        print("\n--- NETWORK TRAINING (validation error) ---\n")
-                        print("Best:", self.training_report.validation_error)
-                        print("Current:", curr_net_report.validation_error)
-                        print("Diff:", v_diff)
-                        print("\n-----\n")
-                        print("--- NETWORK TRAINING (early stopping) ---\n")
-                        print("Delta:", params.es_delta)
-                        print("Patience:", params.es_patience)
-                        print("Counter:", es_counter)
-                        print("\n-----\n\n")
 
             del curr_net_report
             gc.collect()

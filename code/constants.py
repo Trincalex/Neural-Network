@@ -142,7 +142,7 @@ DEFAULT_LAYER_NEURONS = [64, NUMERO_CLASSI]
 DEFAULT_EPOCHS = 500
 """ Valore di default del numero di epoche per la fase di addestramento della rete neurale. Un'epoca e' un'esecuzione completa dell'addestramento (e validazione, se presente) sul training set (e validation set). """
 
-DEFAULT_MINI_BATCH_SIZE = 200
+DEFAULT_MINI_BATCH_SIZE = 1125
 """ Dimensione di default del mini-batch utilizzata durante la fase di addestramento della rete neurale. Questo valore e' stato scelto per avere esattamente 10 mini-batch di addestramento. """
 
 DEFAULT_EARLY_STOPPING_PATIENCE = 15
