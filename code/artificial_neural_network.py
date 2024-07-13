@@ -275,7 +275,7 @@ class NeuralNetwork:
 
     def __scatter_weights(self) -> None:
         """
-            Distribuisce i vettori dei pesi (self.weights) e dei bias (self.biases) di questo oggetto della classe NeuralNetwork nei layer della rete neurale. Secondo l'implementazione dei vettori dei pesi e dei bias, il solo assegnamento agli attributi di classe self.weights e self.biases non basta, ma bisogna utilizzare questa funzione per completare correttamente l'aggiornamento dei pesi / bias.
+            Distribuisce i vettori dei pesi (self.weights) e dei bias (self.biases) di questo oggetto della classe NeuralNetwork in tutti i layer della rete neurale. Secondo l'implementazione dei vettori dei pesi e dei bias, il solo assegnamento agli attributi di classe self.weights e self.biases non basta, ma bisogna utilizzare questa funzione per completare correttamente l'aggiornamento dei pesi / bias.
 
             Returns:
             -   None.
@@ -738,8 +738,8 @@ class NeuralNetwork:
     ) -> list[TrainingReport]:
         
         """
-            Addestra la rete neurale tramite il training set ed il validation set dati in input.
-            Il processo di addestramento ripete le fasi di forward propagation, backpropagation (con calcolo della funzione di costo) e il conseguente aggiornamento dei pesi per un numero limitato di iterazioni (epochs).
+            Avvia il processo di addestramento della rete neurale utilizzando i dati di addestramento e di validazione in input secondo gli iper-parametri specificati.
+            Il processo di addestramento ripete le fasi di forward propagation, backpropagation (con calcolo della funzione di costo) e il conseguente aggiornamento dei pesi per un numero limitato di iterazioni (o epoche).
             
             Parameters:
             -   training_data : una matrice numpy.ndarray contenente i dati di input per l'addestramento. Ogni riga rappresenta un esempio di addestramento.
@@ -787,6 +787,7 @@ class NeuralNetwork:
 
         # Per la prima epoca, la miglior configurazione di pesi / bias e' la prima disponibile.
         best_net_params = {
+            "Report"    : copy.deepcopy(self.training_report),
             "Weights"   : copy.deepcopy(self.weights),
             "Biases"    : copy.deepcopy(self.biases)
         }
@@ -937,6 +938,7 @@ class NeuralNetwork:
                     es_counter = 0
                     self.training_report.update(curr_net_report)
                     best_net_params = {
+                        "Report"    : copy.deepcopy(self.training_report),
                         "Weights"   : copy.deepcopy(self.weights),
                         "Biases"    : copy.deepcopy(self.biases)
                     }
@@ -978,6 +980,7 @@ class NeuralNetwork:
 
         # end for e
 
+        self.training_report = copy.deepcopy(best_net_params["Report"])
         self.weights = copy.deepcopy(best_net_params["Weights"])
         self.biases = copy.deepcopy(best_net_params["Biases"])
         self.__scatter_weights()
@@ -991,7 +994,7 @@ class NeuralNetwork:
     def predict(self, idTest : np.ndarray, Xtest : np.ndarray) -> list[str]:
         
         """
-            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale.
+            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale, utilizzando la funzione 'softmax'.
             
             Parameters:
             -   idTest : l'array contenente gli identificativi degli esempi di testing.
@@ -1030,7 +1033,7 @@ class NeuralNetwork:
     ) -> None:
         
         """
-            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale. Quindi, confronta le etichette della ground truth con le etichette delle predizioni, mostrando i risultati in una grande tabella (vedi documentazione di plot_testing_predictions()).
+            Calcola le predizioni per l'input dato, in base alla configurazione attuale di pesi e bias della rete neurale. Quindi, confronta le etichette della ground truth con le etichette delle predizioni, mostrando i risultati in un grafico dedicato (vedi documentazione di plot_predictions()).
 
             Parameters:
             -   out_directory : la directory di output dove salvare i grafici richiesti.
@@ -1061,7 +1064,7 @@ class NeuralNetwork:
 
     def save_network_to_file(self, out_directory : str, out_name : str = "net.pkl" ) -> None:
         """
-            Salva tutti gli iper-parametri e parametri della rete neurale in un file binario per lo storage persistente. Utilizza il modulo 'pickle' incluso in Python 3.
+            Salva tutti gli iper-parametri e parametri della rete neurale in un file binario alla directory specificata, consentendo di conservare e caricare il modello in futuro.
 
             Parameters:
             -   out_directory : la directory di output dove memorizzare i parametri della rete neurale.
@@ -1122,7 +1125,7 @@ class NeuralNetwork:
     @staticmethod
     def load_network_from_file(filename : str):
         """
-            Carica la configurazione completa di iper-parametri e parametri della rete neurale direttamente da un file.
+            Carica la configurazione completa di iper-parametri e parametri della rete neurale direttamente da un file alla directory specificata, consentendo di ripristinare un modello precedentemente allenato e/o testato.
 
             Parameters:
             -   filename : il percorso del file dove sono memorizzati gli iper-parametri e parametri della rete neurale.
