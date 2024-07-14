@@ -787,7 +787,6 @@ class NeuralNetwork:
 
         # Per la prima epoca, la miglior configurazione di pesi / bias e' la prima disponibile.
         best_net_params = {
-            "Report"    : copy.deepcopy(self.training_report),
             "Weights"   : copy.deepcopy(self.weights),
             "Biases"    : copy.deepcopy(self.biases)
         }
@@ -918,14 +917,17 @@ class NeuralNetwork:
             # STEP 4.a : verifica della qualita' dei miglioramenti (early stopping)
             v_diff = self.training_report.validation_error - curr_net_report.validation_error
 
-            # if validation_data is not None and validation_labels is not None:
-                # if constants.DEBUG_MODE:
-            with np.printoptions(threshold=np.inf):
-                print("\n--- NETWORK TRAINING (validation error) ---\n")
-                print("Best:", self.training_report.validation_error)
-                print("Current:", curr_net_report.validation_error)
-                print("Diff:", v_diff)
-                print("\n-----\n")
+            if validation_data is not None and validation_labels is not None:
+                if constants.DEBUG_MODE:
+                    with np.printoptions(threshold=np.inf):
+                        print("\n--- NETWORK TRAINING (validation error) ---\n")
+                        print("Best error:", self.training_report.validation_error)
+                        print("Current:", curr_net_report.validation_error)
+                        print("Diff:", v_diff)
+                        print("\n-----\n")
+                        print("Best accuracy:", self.training_report.validation_accuracy)
+                        print("Best epoch:", self.training_report.num_epochs)
+                        print("\n-----\n")
 
             """
                 Si confrontano gli errori di validazione della miglior epoca e dell'epoca corrente per capire quale configurazione di parametri (weights, biases) e' migliore. L'unica eccezione si ha per 'e == 0', cioe' la prima epoca, che deve sicuramente aggiornare il report (altrimenti non si potrebbe calcolare correttamente il minimo), ma non la configurazione di pesi / bias.
@@ -938,7 +940,6 @@ class NeuralNetwork:
                     es_counter = 0
                     self.training_report.update(curr_net_report)
                     best_net_params = {
-                        "Report"    : copy.deepcopy(self.training_report),
                         "Weights"   : copy.deepcopy(self.weights),
                         "Biases"    : copy.deepcopy(self.biases)
                     }
@@ -949,24 +950,16 @@ class NeuralNetwork:
                 # Se non e' richiesta la validazione del modello, il report viene sempre aggiornato.
                 self.training_report.update(curr_net_report)
 
-            # if validation_data is not None and validation_labels is not None:
-                # if constants.DEBUG_MODE:
-            with np.printoptions(threshold=np.inf):
-                print("--- NETWORK TRAINING (early stopping) ---\n")
-                print("Delta:", params.es_delta)
-                print("Patience:", params.es_patience)
-                print("Counter:", es_counter)
-                print("\n-----\n\n")
+            if validation_data is not None and validation_labels is not None:
+                if constants.DEBUG_MODE:
+                    with np.printoptions(threshold=np.inf):
+                        print("--- NETWORK TRAINING (early stopping) ---\n")
+                        print("Delta:", params.es_delta)
+                        print("Patience:", params.es_patience)
+                        print("Counter:", es_counter)
+                        print("\n-----\n\n")
             
             history_report.append(copy.deepcopy(curr_net_report))
-
-            # # STEP 5 : stampa del report dell'epoca migliore
-            # print("\r\t                                                      ")
-            # print(repr(self.training_report))
-
-            # STEP 5 : stampa del report dell'ultima epoca
-            print("\r\t                                                      ")
-            # print(repr(history_report[-1]))
 
             del curr_net_report
             gc.collect()
@@ -980,10 +973,17 @@ class NeuralNetwork:
 
         # end for e
 
-        self.training_report = copy.deepcopy(best_net_params["Report"])
-        self.weights = copy.deepcopy(best_net_params["Weights"])
-        self.biases = copy.deepcopy(best_net_params["Biases"])
-        self.__scatter_weights()
+        # # STEP 5 : stampa del report dell'ultima epoca
+        # print("\r\t                                                      ")
+        # print(repr(history_report[-1]))
+
+        # STEP 5 : stampa del report dell'epoca migliore, se e' richiesta la fase di validazione, o dell'ultima epoca di addestramento.
+        print(repr(self.training_report))
+
+        if validation_data is not None and validation_labels is not None:
+            self.weights = copy.deepcopy(best_net_params["Weights"])
+            self.biases = copy.deepcopy(best_net_params["Biases"])
+            self.__scatter_weights()
 
         print(f"\nAddestramento completato: {datetime.now().strftime(constants.PRINT_DATE_TIME_FORMAT)}")
 
